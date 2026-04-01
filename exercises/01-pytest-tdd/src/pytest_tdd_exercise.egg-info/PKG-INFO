@@ -1,7 +1,0 @@
-Metadata-Version: 2.4
-Name: pytest-tdd-exercise
-Version: 0.1.0
-Requires-Python: >=3.11
-Requires-Dist: numpy>=1.26.0
-Provides-Extra: dev
-Requires-Dist: pytest>=8.0.0; extra == "dev"
