@@ -1,0 +1,8 @@
+pyproject.toml
+src/portfolio.py
+src/pytest_tdd_exercise.egg-info/PKG-INFO
+src/pytest_tdd_exercise.egg-info/SOURCES.txt
+src/pytest_tdd_exercise.egg-info/dependency_links.txt
+src/pytest_tdd_exercise.egg-info/requires.txt
+src/pytest_tdd_exercise.egg-info/top_level.txt
+tests/test_portfolio.py
