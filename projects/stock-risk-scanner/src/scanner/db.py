@@ -20,6 +20,8 @@ async def create_pending_scan(session: AsyncSession, request: ScanRequest) -> Sc
 
 async def complete_scan(session: AsyncSession, scan_id: int, result: ScanResult) -> None:
     record = await session.get(ScanRecord, scan_id)
+    if record is None:
+        raise ValueError(f"Scan record {scan_id} not found")
     record.status = "complete"
     record.var_pct = result.metrics.var_pct
     record.cvar_pct = result.metrics.cvar_pct
@@ -33,6 +35,8 @@ async def complete_scan(session: AsyncSession, scan_id: int, result: ScanResult)
 
 async def fail_scan(session: AsyncSession, scan_id: int, error: str) -> None:
     record = await session.get(ScanRecord, scan_id)
+    if record is None:
+        raise ValueError(f"Scan record {scan_id} not found")
     record.status = "failed"
     record.error_message = error
     record.completed_at = datetime.now(UTC)
