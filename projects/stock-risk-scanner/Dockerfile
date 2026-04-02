@@ -16,5 +16,6 @@ COPY src/ src/
 COPY alembic/ alembic/
 COPY alembic.ini .
 
+ENV PYTHONPATH=/app
 EXPOSE 8000
 CMD ["uvicorn", "src.scanner.main:app", "--host", "0.0.0.0", "--port", "8000"]
