@@ -13,10 +13,8 @@ services:
     image: postgres:16
     ports:
       - "5432:5432"
-    environment:
-      POSTGRES_USER: quantlab
-      POSTGRES_PASSWORD: quantlab_dev
-      POSTGRES_DB: quantlab
+    env_file:
+      - .env
     volumes:
       - pgdata:/var/lib/postgresql/data
 

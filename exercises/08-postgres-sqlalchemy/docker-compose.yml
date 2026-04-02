@@ -4,9 +4,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: quantlab
-      POSTGRES_PASSWORD: quantlab_dev
-      POSTGRES_DB: quantlab
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: change-me
+      POSTGRES_DB: dbname
     volumes:
       - pgdata:/var/lib/postgresql/data
 
