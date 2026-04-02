@@ -89,6 +89,7 @@ def create_app() -> FastAPI:
         http_request: Request = None,
     ):
         record = await create_pending_scan(session, request)
+        log.info("scan_requested", scan_id=record.id, tickers=request.tickers)
         asyncio.ensure_future(
             _run_scan(record.id, request, http_request.app.state.session_factory)
         )
