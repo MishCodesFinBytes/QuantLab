@@ -32,7 +32,13 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///scanner.db")
 async def lifespan(app: FastAPI):
     engine = create_async_engine(DATABASE_URL)
     app.state.session_factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    # Auto-run migrations on startup (needed for Render free tier — no shell access)
+    from src.scanner.db_models import Base
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     log.info("app_started", database=DATABASE_URL)
+
     yield
     await engine.dispose()
     log.info("app_stopped")
