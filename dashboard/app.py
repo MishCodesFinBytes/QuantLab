@@ -1,4 +1,7 @@
+from pathlib import Path
 import streamlit as st
+
+HERE = Path(__file__).parent
 
 st.set_page_config(
     page_title="FinBytes QuantLabs",
@@ -7,7 +10,7 @@ st.set_page_config(
 )
 
 # Sidebar with logo
-st.sidebar.image("assets/logo.png", width=180)
+st.sidebar.image(str(HERE / "assets" / "logo.png"), width=180)
 st.sidebar.title("FinBytes QuantLabs")
 st.sidebar.markdown("**Built by** [Manisha](https://mishcodesfinbytes.github.io/FinBytes/)")
 st.sidebar.markdown("---")
