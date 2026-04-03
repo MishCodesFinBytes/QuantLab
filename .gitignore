@@ -7,3 +7,14 @@ build/
 *.egg
 .venv/
 .env
+
+# IDE
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+
+# Personal docs
+docs/Manisha_*.docx
+docs/Manisha_*.xlsx
