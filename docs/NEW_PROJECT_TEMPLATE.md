@@ -195,6 +195,32 @@ Number determines sidebar order. Use next available number after existing pages.
 - Error handling (connection error, timeout, validation)
 - Sample output on first load
 
+### Dashboard tests
+
+Create `dashboard/tests/test_<project>.py`:
+
+```python
+from streamlit.testing.v1 import AppTest
+
+class TestProjectPage:
+    def test_loads_without_error(self):
+        at = AppTest.from_file("pages/<N>_<Project_Name>.py", default_timeout=15)
+        at.run()
+        assert not at.exception
+
+    def test_shows_title(self):
+        at = AppTest.from_file("pages/<N>_<Project_Name>.py", default_timeout=15)
+        at.run()
+        assert any("<Project Name>" in t.value for t in at.title)
+
+    def test_has_tabs(self):
+        at = AppTest.from_file("pages/<N>_<Project_Name>.py", default_timeout=15)
+        at.run()
+        assert len(at.tabs) == 3  # App, System Health, Architecture
+```
+
+Add tests to the System Health tab's test runner display in `dashboard/pages/1_Stock_Risk_Scanner.py` (or the equivalent project page).
+
 ### Update app.py sidebar
 
 Add to the Projects list in `dashboard/app.py`:
