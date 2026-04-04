@@ -95,27 +95,30 @@ if len(raw_tickers) > 5:
 # Weight sliders
 st.markdown("#### Portfolio Weights")
 
-# Detect if tickers changed — auto equal-weight on change
+# Detect if tickers changed
 current_ticker_key = ",".join(tickers)
-if current_ticker_key != st.session_state.get("_prev_tickers", ""):
+tickers_changed = current_ticker_key != st.session_state.get("_prev_tickers", "")
+if tickers_changed:
     st.session_state._prev_tickers = current_ticker_key
-    st.session_state.use_equal_weights = True
 
+# Equal weight: on button click or ticker change
 equal_weight = st.button("Equal Weight")
-if equal_weight or st.session_state.get("use_equal_weights"):
-    st.session_state.use_equal_weights = False
-    for i, t in enumerate(tickers):
-        st.session_state[f"weight_{i}"] = 100.0 / len(tickers)
+need_equal = equal_weight or tickers_changed
+
+eq_val = 100.0 / max(len(tickers), 1)
 
 weights = []
 weight_cols = st.columns(len(tickers)) if tickers else []
 for i, t in enumerate(tickers):
     with weight_cols[i]:
+        default = eq_val if need_equal else st.session_state.get(f"weight_slider_{i}", eq_val)
+        if need_equal:
+            st.session_state[f"weight_slider_{i}"] = eq_val
         w = st.slider(
             f"{t}",
             min_value=0.0,
             max_value=100.0,
-            value=st.session_state.get(f"weight_{i}", 100.0 / max(len(tickers), 1)),
+            value=default,
             step=1.0,
             key=f"weight_slider_{i}",
         )

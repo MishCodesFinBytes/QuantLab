@@ -2,7 +2,7 @@ name: Tests
 
 on:
   push:
-    branches: [working]
+    branches: [working, master]
   pull_request:
     branches: [master]
 
@@ -16,5 +16,24 @@ jobs:
           python-version: "3.11"
       - run: pip install -e ".[dev]"
         working-directory: projects/stock-risk-scanner
-      - run: pytest -v
+      - run: pytest -v --tb=short --junitxml=test-results.xml
         working-directory: projects/stock-risk-scanner
+      - name: Test Summary
+        if: always()
+        run: |
+          python -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('projects/stock-risk-scanner/test-results.xml')
+          suite = tree.getroot()
+          tests = suite.attrib.get('tests', '0')
+          failures = suite.attrib.get('failures', '0')
+          errors = suite.attrib.get('errors', '0')
+          time = suite.attrib.get('time', '0')
+          print(f'Tests: {tests}, Failures: {failures}, Errors: {errors}, Time: {float(time):.2f}s')
+          for tc in suite.iter('testcase'):
+              name = tc.attrib.get('name', '')
+              classname = tc.attrib.get('classname', '').split('.')[-1]
+              failure = tc.find('failure')
+              status = 'FAIL' if failure is not None else 'PASS'
+              print(f'  {status} {classname}::{name}')
+          "

@@ -41,7 +41,7 @@ def get_ci_status() -> dict:
     try:
         resp = requests.get(
             f"https://api.github.com/repos/{GITHUB_REPO}/actions/runs",
-            params={"per_page": 5, "branch": "master"},
+            params={"per_page": 5},
             timeout=10,
         )
         if resp.status_code != 200:
@@ -109,31 +109,130 @@ with col4:
     st.success("Running")
     st.caption("You're seeing this page")
 
-# --- Test Results from CI ---
+# --- CI Details ---
 st.markdown("---")
-st.markdown("## Latest Test Results")
-
-st.markdown(
-    f"![Tests](https://github.com/{GITHUB_REPO}/actions/workflows/test.yml/badge.svg?branch=master)"
-)
+st.markdown("## CI Pipeline")
 
 ci_data = get_ci_status()
-if ci_data.get("url"):
-    st.markdown(f"**Last run:** [{ci_data['name']} #{ci_data['run_number']}]({ci_data['url']}) — {ci_data.get('created_at', '')}")
 
-st.markdown("### Test Suite Coverage")
-st.markdown("""
-| Module | Tests | What's covered |
-|--------|-------|---------------|
-| `models.py` | 6 | Valid request, uppercase, mismatched lengths, bad weights, RiskMetrics, ScanResult |
-| `risk.py` | 3 | VaR/CVaR values, max drawdown, Sharpe ratio sign |
-| `market_data.py` | 2 | Successful fetch (mocked), empty data error |
-| `narrative.py` | 3 | API success (mocked), API error fallback, no key fallback |
-| `scanner.py` | 1 | Full pipeline with mocks |
-| `db.py` | 6 | Create pending, complete, fail, get by ID, get missing, recent scans |
-| `main.py` (API) | 5 | Health, create scan, get scan, 404, list scans |
-| **Total** | **26** | |
-""")
+if ci_data.get("status") == "unknown":
+    st.warning(f"Could not fetch CI status: {ci_data.get('detail', 'Unknown error')}")
+else:
+    conclusion = ci_data.get("conclusion", "in_progress")
+    icon = "✅" if conclusion == "success" else "❌" if conclusion == "failure" else "⏳"
+
+    col_badge, col_info = st.columns([1, 2])
+    with col_badge:
+        st.image(
+            f"https://github.com/{GITHUB_REPO}/actions/workflows/test.yml/badge.svg",
+            width=150,
+        )
+    with col_info:
+        st.markdown(
+            f"**{icon} {ci_data.get('name', 'Tests')} #{ci_data.get('run_number', '?')}** — "
+            f"**{conclusion}** — {ci_data.get('created_at', '')}"
+        )
+        if ci_data.get("url"):
+            st.markdown(f"[View full run on GitHub]({ci_data['url']})")
+
+# --- Test Runner Display ---
+st.markdown("---")
+st.markdown("## Test Suite — 27 tests")
+
+ci_passing = ci_data.get("conclusion") == "success" if ci_data.get("status") != "unknown" else None
+
+# Group tests by module
+TEST_MODULES = {
+    "API Endpoints (test_api.py)": {
+        "icon": "🌐",
+        "tests": [
+            ("test_health", "GET /health returns 200"),
+            ("test_db_connected", "GET /api/health/db returns connected"),
+            ("test_returns_pending", "POST /api/scan returns 202 + pending"),
+            ("test_returns_scan_by_id", "GET /api/scans/{id} returns scan"),
+            ("test_returns_404_for_missing_id", "GET /api/scans/9999 returns 404"),
+            ("test_returns_list", "GET /api/scans returns list"),
+        ],
+    },
+    "Database Layer (test_db_layer.py)": {
+        "icon": "🗄️",
+        "tests": [
+            ("test_creates_pending_record", "Insert pending scan record"),
+            ("test_updates_to_complete", "Update scan to complete with metrics"),
+            ("test_updates_to_failed", "Update scan to failed with error"),
+            ("test_returns_record_by_id", "Fetch scan by ID"),
+            ("test_returns_none_for_missing_id", "Returns None for missing ID"),
+            ("test_returns_completed_scans_newest_first", "Recent scans ordered newest first"),
+        ],
+    },
+    "Pydantic Models (test_models.py)": {
+        "icon": "📋",
+        "tests": [
+            ("test_valid_request", "Valid request accepted"),
+            ("test_tickers_uppercased", "Tickers auto-uppercased"),
+            ("test_mismatched_lengths_raises", "Mismatched tickers/weights raises ValueError"),
+            ("test_weights_not_summing_to_one_raises", "Bad weight sum raises ValueError"),
+            ("test_risk_metrics_fields", "RiskMetrics stores all 5 fields"),
+            ("test_scan_result_fields", "ScanResult stores all fields"),
+        ],
+    },
+    "Risk Calculations (test_risk.py)": {
+        "icon": "📊",
+        "tests": [
+            ("test_var_and_cvar", "VaR is negative, CVaR worse than VaR"),
+            ("test_max_drawdown", "Max drawdown calculation correct"),
+            ("test_sharpe_ratio_sign", "Sharpe positive for uptrend, negative for downtrend"),
+        ],
+    },
+    "Market Data (test_market_data.py)": {
+        "icon": "📈",
+        "tests": [
+            ("test_successful_fetch", "yfinance download returns correct DataFrame"),
+            ("test_empty_data_raises", "Empty data raises ValueError"),
+        ],
+    },
+    "AI Narrative (test_narrative.py)": {
+        "icon": "🤖",
+        "tests": [
+            ("test_generate_with_api", "Claude API returns narrative"),
+            ("test_generate_api_error_returns_fallback", "API error returns fallback string"),
+            ("test_generate_no_api_key_returns_fallback", "No API key returns fallback string"),
+        ],
+    },
+    "Scanner Pipeline (test_scanner.py)": {
+        "icon": "🔄",
+        "tests": [
+            ("test_full_pipeline", "Full pipeline: fetch → risk → narrative → result"),
+        ],
+    },
+}
+
+# Status indicator
+if ci_passing is True:
+    st.success("All 27 tests passing")
+elif ci_passing is False:
+    st.error("Some tests failing — check CI for details")
+else:
+    st.info("CI status unavailable — showing test inventory")
+
+# Expandable modules
+for module_name, module_data in TEST_MODULES.items():
+    test_count = len(module_data["tests"])
+    if ci_passing is True:
+        header = f"{module_data['icon']} {module_name} — ✅ {test_count}/{test_count} passed"
+    elif ci_passing is False:
+        header = f"{module_data['icon']} {module_name} — ⚠️ {test_count} tests (check CI)"
+    else:
+        header = f"{module_data['icon']} {module_name} — {test_count} tests"
+
+    with st.expander(header):
+        for test_name, test_desc in module_data["tests"]:
+            if ci_passing is True:
+                st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;✅ `{test_name}` — {test_desc}")
+            elif ci_passing is False:
+                st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;⚠️ `{test_name}` — {test_desc}")
+            else:
+                st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;⬜ `{test_name}` — {test_desc}")
 
 # --- Service details ---
 st.markdown("---")
