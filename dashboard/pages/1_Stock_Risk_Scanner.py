@@ -233,6 +233,38 @@ with tab_app:
         with m5:
             st.metric(f"{sharpe_color(data['sharpe_ratio'])} Sharpe", f"{data['sharpe_ratio']:.2f}")
 
+        # Business insights — expandable
+        with st.expander("What do these numbers mean?"):
+            st.markdown("""
+**VaR (95%) — "How much could I lose on a bad day?"**
+On 19 out of 20 trading days, your portfolio won't drop more than this percentage. For a $100,000 portfolio with VaR of -2.14%, that's a max expected daily loss of $2,140 under normal conditions.
+
+**CVaR — "When things go really wrong, how bad?"**
+Averages the worst 5% of days. More useful than VaR for tail risk — it tells you what to actually expect when things go south, not just the threshold.
+
+**Max Drawdown — "What's the worst drop I'd have sat through?"**
+The largest peak-to-trough decline during the period. This is the *emotional* risk metric — even if long-term returns are positive, can you stomach a 20% drop? Clients often panic-sell at the bottom.
+
+**Volatility — "How bumpy is the ride?"**
+Annualised standard deviation. Higher = more uncertainty. A pension fund targets 8-12%. Tech-heavy at 24% is moderately aggressive. Not inherently bad — it's the price of higher expected returns.
+
+**Sharpe Ratio — "Am I being paid for the risk?"**
+Return per unit of risk. Above 1.0 = good (adequately compensated). Below 0.5 = you could get similar returns with less risk. Think of it as bang-for-your-buck.
+            """)
+
+        with st.expander("How to read the charts"):
+            st.markdown("""
+**Price History** — Each coloured line is one stock. Look for: *divergence* (one drops while others rise = diversification working), *correlation* (all move together = not truly diversified), *trends* (slope direction).
+
+**Cumulative Return** — Your blended portfolio value over time. Above 1.0 = gained value. Below 1.0 = down. The slope tells you momentum. This is the chart to show a client.
+
+**Drawdown** — The red area shows how far the portfolio dropped from its peak at every point. Look for: *depth* (how far down), *duration* (how long the red lasts), *frequency* (many dips or one big one).
+
+**Allocation Pie** — Your weight split. If one slice dominates, a single stock's bad day becomes the portfolio's bad day.
+
+**Reading a scan result:** Start with Sharpe (is risk worth it?) → check drawdown (can you tolerate the worst dip?) → look at the price chart (are stocks correlated?) → read the AI narrative.
+            """)
+
         st.markdown("### AI Risk Narrative")
         st.info(data.get("narrative", "No narrative available."))
         st.caption(
