@@ -325,11 +325,17 @@ with tab_health:
         c1, c2, c3, c4 = st.columns(4)
         with c1:
             st.markdown("**API**")
-            st.success("Online") if api_status["status"] == "ok" else st.error("Offline")
+            if api_status["status"] == "ok":
+                st.success("Online")
+            else:
+                st.error("Offline")
             st.caption(api_status.get("detail", ""))
         with c2:
             st.markdown("**Database**")
-            st.success("Connected") if db_status.get("status") == "ok" else st.error("Disconnected")
+            if db_status.get("status") == "ok":
+                st.success("Connected")
+            else:
+                st.error("Disconnected")
             st.caption(db_status.get("database", db_status.get("detail", "")))
         with c3:
             st.markdown("**CI Pipeline**")
