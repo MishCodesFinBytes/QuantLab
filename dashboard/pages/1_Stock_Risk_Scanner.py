@@ -23,10 +23,16 @@ st.sidebar.title("FinBytes QuantLabs")
 st.sidebar.markdown("**Built by** [Manisha](https://mishcodesfinbytes.github.io/FinBytes/)")
 st.sidebar.markdown("---")
 st.sidebar.markdown("### Projects")
-st.sidebar.page_link("pages/1_Stock_Risk_Scanner.py", label="Stock Risk Scanner", icon="📊")
+try:
+    st.sidebar.page_link("pages/1_Stock_Risk_Scanner.py", label="Stock Risk Scanner", icon="📊")
+except Exception:
+    st.sidebar.markdown("- Stock Risk Scanner")
 st.sidebar.markdown("*More coming soon...*")
 st.sidebar.markdown("---")
-st.sidebar.page_link("app.py", label="System Health", icon="🩺")
+try:
+    st.sidebar.page_link("app.py", label="System Health", icon="🩺")
+except Exception:
+    st.sidebar.markdown("- System Health")
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     "[GitHub](https://github.com/MishCodesFinBytes/QuantLab) · "
@@ -400,17 +406,18 @@ with tab_health:
         st.session_state._health_ci = ci_status["status"]
 
         # Test runner
-        st.markdown("### Test Suite — 27 tests")
+        st.markdown("### Test Suite — 35 tests (27 backend + 8 dashboard)")
 
         ci_passing = ci_status.get("conclusion") == "success" if ci_status.get("status") != "unknown" else None
 
         if ci_passing is True:
-            st.success("All 27 tests passing")
+            st.success("All 35 tests passing")
         elif ci_passing is False:
             st.error("Some tests failing — check CI for details")
         else:
             st.info("CI status unavailable — showing test inventory")
 
+        st.markdown("#### Backend Tests (27)")
         TEST_MODULES = {
             "🌐 API Endpoints (test_api.py)": [
                 ("test_health", "GET /health returns 200"),
@@ -456,6 +463,36 @@ with tab_health:
         }
 
         for module_name, tests in TEST_MODULES.items():
+            tc = len(tests)
+            if ci_passing is True:
+                header = f"{module_name} — ✅ {tc}/{tc} passed"
+            elif ci_passing is False:
+                header = f"{module_name} — ⚠️ {tc} tests (check CI)"
+            else:
+                header = f"{module_name} — {tc} tests"
+
+            with st.expander(header):
+                for test_name, test_desc in tests:
+                    icon = "✅" if ci_passing is True else "⚠️" if ci_passing is False else "⬜"
+                    st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;{icon} `{test_name}` — {test_desc}")
+
+        st.markdown("#### Dashboard Tests (8)")
+        DASHBOARD_TESTS = {
+            "🖥️ Landing Page (test_app.py)": [
+                ("test_loads_without_error", "Landing page renders without crash"),
+                ("test_shows_title", "Shows FinBytes QuantLabs title"),
+            ],
+            "📊 Scanner Page (test_app.py)": [
+                ("test_loads_without_error", "Scanner page renders without crash"),
+                ("test_shows_title", "Shows Stock Risk Scanner title"),
+                ("test_has_three_tabs", "Page has App, System Health, Architecture tabs"),
+                ("test_has_scan_button", "Scan button is present"),
+                ("test_has_preset_buttons", "Tech Giants, Safe Haven, Balanced presets"),
+                ("test_has_equal_weight_button", "Equal Weight button is present"),
+            ],
+        }
+
+        for module_name, tests in DASHBOARD_TESTS.items():
             tc = len(tests)
             if ci_passing is True:
                 header = f"{module_name} — ✅ {tc}/{tc} passed"
