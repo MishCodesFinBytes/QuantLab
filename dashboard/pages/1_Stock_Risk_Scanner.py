@@ -1,10 +1,11 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import yfinance as yf
 import pandas as pd
 import numpy as np
 import requests
 from datetime import datetime
+
+from lib.mermaid import render_mermaid
 
 from lib.api_client import check_health, submit_scan, poll_scan, get_recent_scans
 from lib.charts import price_history_chart, cumulative_return_chart, drawdown_chart, weight_pie_chart
@@ -335,35 +336,10 @@ with tab_health:
         db_bg, db_fg = rag(db_status.get("status", "unknown"))
         ci_bg, ci_fg = rag(ci_status["status"])
 
-        st.markdown("### Deployment Pipeline")
-        mermaid_html = f"""
-        <div style="background:white;padding:20px;border-radius:8px;border:1px solid #e8e8e8;">
-        <div class="mermaid">
-        graph LR
-            DEV["Code Push"]:::neutral --> WK["working"]:::neutral
-            WK --> PR["Pull Request"]:::neutral
-            PR --> MASTER["master"]:::neutral
-            MASTER --> CI["CI Tests"]:::ci_s
-            MASTER --> API["Scanner API<br/>Render"]:::api_s
-            MASTER --> DASH["Dashboard<br/>Streamlit"]:::dash_s
-            API --> DB[("PostgreSQL")]:::db_s
-            API --> YF["yfinance"]:::neutral
-            API --> CLAUDE["Claude API"]:::neutral
-
-            classDef neutral fill:#f0f2f6,stroke:#ccc,color:#333
-            classDef api_s fill:{api_bg},stroke:{api_bg},color:{api_fg}
-            classDef db_s fill:{db_bg},stroke:{db_bg},color:{db_fg}
-            classDef ci_s fill:{ci_bg},stroke:{ci_bg},color:{ci_fg}
-            classDef dash_s fill:#28a745,stroke:#28a745,color:#fff
-        </div>
-        <p style="text-align:center;font-size:12px;color:#888;margin-top:12px;">
-            🟢 Online &nbsp;&nbsp;&nbsp; 🟡 Unknown &nbsp;&nbsp;&nbsp; 🔴 Offline &nbsp;&nbsp;&nbsp; ⬜ External
-        </p>
-        </div>
-        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-        <script>mermaid.initialize({{startOnLoad: true, theme: 'default'}});</script>
-        """
-        components.html(mermaid_html, height=380)
+        # Store health results for Architecture tab pipeline
+        st.session_state._health_api = api_status["status"]
+        st.session_state._health_db = db_status.get("status", "unknown")
+        st.session_state._health_ci = ci_status["status"]
 
         # Test runner
         st.markdown("### Test Suite — 27 tests")
@@ -443,10 +419,58 @@ with tab_health:
 # TAB 3: ARCHITECTURE
 # ============================================================
 with tab_arch:
+    # Deployment pipeline with RAG
+    def rag(s):
+        if s == "ok": return "#28a745", "#fff"
+        if s == "error": return "#dc3545", "#fff"
+        return "#ffc107", "#333"
+
+    api_bg, api_fg = rag(st.session_state.get("_health_api", "unknown"))
+    db_bg, db_fg = rag(st.session_state.get("_health_db", "unknown"))
+    ci_bg, ci_fg = rag(st.session_state.get("_health_ci", "unknown"))
+
+    st.markdown("### Deployment Pipeline")
+    if st.session_state.get("health_checked"):
+        render_mermaid(f"""
+        graph LR
+            DEV["Code Push"]:::neutral --> WK["working"]:::neutral
+            WK --> PR["Pull Request"]:::neutral
+            PR --> MASTER["master"]:::neutral
+            MASTER --> CI["CI Tests"]:::ci_s
+            MASTER --> API["Scanner API<br/>Render"]:::api_s
+            MASTER --> DASH["Dashboard<br/>Streamlit"]:::dash_s
+            API --> DB[("PostgreSQL")]:::db_s
+            API --> YF["yfinance"]:::neutral
+            API --> CLAUDE["Claude API"]:::neutral
+
+            classDef neutral fill:#f0f2f6,stroke:#ccc,color:#333
+            classDef api_s fill:{api_bg},stroke:{api_bg},color:{api_fg}
+            classDef db_s fill:{db_bg},stroke:{db_bg},color:{db_fg}
+            classDef ci_s fill:{ci_bg},stroke:{ci_bg},color:{ci_fg}
+            classDef dash_s fill:#28a745,stroke:#28a745,color:#fff
+        """, height=350)
+        st.caption("🟢 Online · 🟡 Unknown · 🔴 Offline · ⬜ External")
+    else:
+        render_mermaid("""
+        graph LR
+            DEV["Code Push"]:::neutral --> WK["working"]:::neutral
+            WK --> PR["Pull Request"]:::neutral
+            PR --> MASTER["master"]:::neutral
+            MASTER --> CI["CI Tests"]:::neutral
+            MASTER --> API["Scanner API<br/>Render"]:::neutral
+            MASTER --> DASH["Dashboard<br/>Streamlit"]:::neutral
+            API --> DB[("PostgreSQL")]:::neutral
+            API --> YF["yfinance"]:::neutral
+            API --> CLAUDE["Claude API"]:::neutral
+
+            classDef neutral fill:#f0f2f6,stroke:#ccc,color:#333
+        """, height=350)
+        st.caption("Run health checks in the System Health tab to see live RAG status")
+
+    st.markdown("---")
+
     st.markdown("### System Overview")
-    overview_html = """
-    <div style="background:white;padding:20px;border-radius:8px;border:1px solid #e8e8e8;">
-    <div class="mermaid">
+    render_mermaid("""
     graph LR
         User(["User Browser"]) --> SC["Streamlit Cloud<br/>finbytes.streamlit.app"]
         SC -->|"POST /api/scan<br/>GET /api/scans"| RA["Render API<br/>finbytes-scanner.onrender.com"]
@@ -457,17 +481,10 @@ with tab_arch:
         GH["GitHub Repo"] -->|"auto-deploy master"| SC
         GH -->|"auto-deploy master"| RA
         GH -->|"push working / PR master"| CI["GitHub Actions CI"]
-    </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({startOnLoad: true, theme: 'default'});</script>
-    """
-    components.html(overview_html, height=380)
+    """, height=350)
 
     st.markdown("### Request Flow")
-    sequence_html = """
-    <div style="background:white;padding:20px;border-radius:8px;border:1px solid #e8e8e8;">
-    <div class="mermaid">
+    render_mermaid("""
     sequenceDiagram
         participant U as User
         participant S as Streamlit Cloud
@@ -479,34 +496,27 @@ with tab_arch:
         U->>S: Enter tickers + weights, click Scan
         S->>A: POST /api/scan
         A->>DB: INSERT pending ScanRecord
-        A-->>S: {id: 1, status: "pending"}
+        A-->>S: id 1 status pending
         Note over A: Background task starts
         A->>YF: Fetch price history
         YF-->>A: Price DataFrame
         Note over A: Calculate risk metrics
-        A->>C: Generate narrative (or fallback)
+        A->>C: Generate narrative or fallback
         C-->>A: Risk narrative text
         A->>DB: UPDATE ScanRecord to complete
         loop Poll every 2s
             S->>A: GET /api/scans/1
-            A-->>S: {status: "pending"}
+            A-->>S: status pending
         end
         S->>A: GET /api/scans/1
-        A-->>S: {status: "complete", metrics...}
+        A-->>S: status complete with metrics
         S->>YF: Fetch prices for charts
         Note over S: Render metrics + charts
         S-->>U: Display results
-    </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({startOnLoad: true, theme: 'default'});</script>
-    """
-    components.html(sequence_html, height=550)
+    """, height=550)
 
     st.markdown("### Code Module Map")
-    modules_html = """
-    <div style="background:white;padding:20px;border-radius:8px;border:1px solid #e8e8e8;">
-    <div class="mermaid">
+    render_mermaid("""
     graph TD
         REQ["ScanRequest"] --> SCANNER["scanner.py<br/>Orchestrator"]
         SCANNER --> MD["market_data.py<br/>Fetch prices"]
@@ -521,12 +531,7 @@ with tab_arch:
         MAIN --> DB["db.py<br/>CRUD"]
         DB --> DBMOD["db_models.py<br/>ScanRecord"]
         DBMOD --> PG[("PostgreSQL")]
-    </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({startOnLoad: true, theme: 'default'});</script>
-    """
-    components.html(modules_html, height=450)
+    """, height=450)
 
     st.markdown("---")
     st.markdown(

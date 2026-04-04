@@ -16,8 +16,8 @@ st.sidebar.markdown("**Built by** [Manisha](https://mishcodesfinbytes.github.io/
 st.sidebar.markdown("---")
 
 st.sidebar.markdown("### Projects")
-st.sidebar.markdown("- [Stock Risk Scanner](Stock_Risk_Scanner)")
-st.sidebar.markdown("- *More coming soon...*")
+st.sidebar.page_link("pages/1_Stock_Risk_Scanner.py", label="Stock Risk Scanner", icon="📊")
+st.sidebar.markdown("*More coming soon...*")
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
@@ -50,10 +50,9 @@ with col1:
         - 5 risk metrics (VaR, CVaR, drawdown, volatility, Sharpe)
         - AI-powered risk narrative
         - Interactive Plotly charts
-
-        [Launch →](Stock_Risk_Scanner)
         """
     )
+    st.page_link("pages/1_Stock_Risk_Scanner.py", label="Launch Stock Risk Scanner", icon="📊")
 with col2:
     st.markdown(
         """
