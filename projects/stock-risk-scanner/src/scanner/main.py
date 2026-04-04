@@ -5,6 +5,7 @@ from datetime import datetime, UTC
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.scanner.db import (
@@ -83,6 +84,17 @@ async def get_session(request: Request) -> AsyncSession:
 
 def create_app() -> FastAPI:
     application = FastAPI(title="Stock Risk Scanner", lifespan=lifespan)
+
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "https://mishcodesfinbytes.github.io",
+            "https://finbytes.streamlit.app",
+            "http://localhost:8501",
+        ],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @application.get("/health")
     def health():
