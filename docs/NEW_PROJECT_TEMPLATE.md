@@ -349,6 +349,33 @@ Update `README.md` Projects table:
 
 ---
 
+## 11. Render PostgreSQL — 90-Day Renewal
+
+The free PostgreSQL database expires after 90 days. The System Health dashboard will show the Database check as red when this happens.
+
+### How to recreate
+
+1. Go to [render.com](https://render.com) → Dashboard
+2. The expired database will show a warning. Delete it.
+3. Click **New** → **PostgreSQL**
+   - Name: `finbytes-<project>-db` (same name as before)
+   - Plan: Free
+4. Copy the new **Internal Database URL**
+5. Go to your **web service** (e.g., `finbytes-scanner`) → **Environment**
+6. Update `DATABASE_URL`:
+   - Take the internal URL (starts with `postgres://`)
+   - Change `postgres://` to `postgresql+asyncpg://`
+   - Save
+7. Render will auto-redeploy. Tables are auto-created on startup.
+8. **Data is lost** — the new DB is empty. For a demo project this is fine. For real data, you'd need backups (paid tier).
+
+### When to do it
+- The System Health page shows Database as red
+- Roughly every 90 days from creation
+- Current scanner DB was created on 2026-04-03
+
+---
+
 ## Quick Start Checklist for New Project
 
 - [ ] Create `projects/<name>/` with pyproject.toml, src/, tests/
