@@ -26,8 +26,7 @@ st.sidebar.markdown(
 )
 st.sidebar.markdown(
     "[GitHub Repo](https://github.com/MishCodesFinBytes/QuantLab) · "
-    "[Blog](https://mishcodesfinbytes.github.io/FinBytes/quant-lab/stock-risk-scanner/) · "
-    "[System Health](System_Health)"
+    "[Blog](https://mishcodesfinbytes.github.io/FinBytes/quant-lab/stock-risk-scanner/)"
 )
 
 # Main landing page

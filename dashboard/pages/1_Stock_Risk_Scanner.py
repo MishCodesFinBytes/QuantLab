@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -11,11 +12,8 @@ from lib.risk_colors import var_color, cvar_color, drawdown_color, volatility_co
 
 st.set_page_config(page_title="Stock Risk Scanner | FinBytes QuantLabs", page_icon="📊", layout="wide")
 
-# --- Backend status in sidebar ---
-if check_health():
-    st.sidebar.success("Backend: Online")
-else:
-    st.sidebar.warning("Backend: Warming up...")
+API_URL = st.secrets.get("API_URL", "http://localhost:8000")
+GITHUB_REPO = "MishCodesFinBytes/QuantLab"
 
 # --- Rate limiting ---
 if "scan_count" not in st.session_state:
@@ -31,7 +29,7 @@ def _check_rate_limit() -> bool:
     return st.session_state.scan_count < 10
 
 
-# --- Precomputed sample result for instant display on first load ---
+# --- Precomputed sample ---
 SAMPLE_RESULT = {
     "id": 0,
     "tickers": ["AAPL", "MSFT", "GOOG"],
@@ -52,278 +50,487 @@ SAMPLE_RESULT = {
     "error_message": None,
 }
 
-# --- Title ---
+# ============================================================
 st.title("Stock Risk Scanner")
-st.markdown(
-    "Enter stock tickers and portfolio weights to analyse risk metrics "
-    "with AI-powered commentary."
-)
 
-# --- Preset buttons ---
-PRESETS = {
-    "Tech Giants": (["AAPL", "MSFT", "GOOG"], "Tech heavyweights"),
-    "Safe Haven": (["JNJ", "PG", "KO"], "Defensive consumer stocks"),
-    "Balanced": (["AAPL", "JNJ", "BND"], "Growth + defense + bonds"),
-}
+tab_app, tab_health, tab_arch = st.tabs(["App", "System Health", "Architecture"])
 
-st.markdown("#### Quick Presets")
-preset_cols = st.columns(len(PRESETS))
-for i, (name, (tickers, desc)) in enumerate(PRESETS.items()):
-    with preset_cols[i]:
-        if st.button(f"{name}", help=desc, use_container_width=True):
-            st.session_state.tickers_input = ", ".join(tickers)
-            st.session_state.use_equal_weights = True
+# ============================================================
+# TAB 1: APP
+# ============================================================
+with tab_app:
+    st.markdown(
+        "Enter stock tickers and portfolio weights to analyse risk metrics "
+        "with AI-powered commentary."
+    )
 
-# --- Custom input ---
-st.markdown("#### Custom Portfolio")
+    # Preset buttons
+    PRESETS = {
+        "Tech Giants": (["AAPL", "MSFT", "GOOG"], "Tech heavyweights"),
+        "Safe Haven": (["JNJ", "PG", "KO"], "Defensive consumer stocks"),
+        "Balanced": (["AAPL", "JNJ", "BND"], "Growth + defense + bonds"),
+    }
 
-tickers_input = st.text_input(
-    "Tickers (comma-separated, max 5)",
-    value=st.session_state.get("tickers_input", "AAPL, MSFT, GOOG"),
-    key="tickers_field",
-)
+    st.markdown("#### Quick Presets")
+    preset_cols = st.columns(len(PRESETS))
+    for i, (name, (preset_tickers, desc)) in enumerate(PRESETS.items()):
+        with preset_cols[i]:
+            if st.button(f"{name}", help=desc, use_container_width=True):
+                st.session_state.tickers_input = ", ".join(preset_tickers)
+                st.session_state.use_equal_weights = True
 
-period = st.radio("Period", ["6mo", "1y", "2y"], index=1, horizontal=True)
+    # Custom input
+    st.markdown("#### Custom Portfolio")
 
-# Parse tickers
-raw_tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
-tickers = raw_tickers[:5]
+    tickers_input = st.text_input(
+        "Tickers (comma-separated, max 5)",
+        value=st.session_state.get("tickers_input", "AAPL, MSFT, GOOG"),
+        key="tickers_field",
+    )
 
-if len(raw_tickers) > 5:
-    st.warning("Maximum 5 tickers allowed. Using first 5.")
+    period = st.radio("Period", ["6mo", "1y", "2y"], index=1, horizontal=True)
 
-# Weight sliders
-st.markdown("#### Portfolio Weights")
+    raw_tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
+    tickers = raw_tickers[:5]
+    if len(raw_tickers) > 5:
+        st.warning("Maximum 5 tickers allowed. Using first 5.")
 
-# Detect if tickers changed
-current_ticker_key = ",".join(tickers)
-tickers_changed = current_ticker_key != st.session_state.get("_prev_tickers", "")
-if tickers_changed:
-    st.session_state._prev_tickers = current_ticker_key
+    # Weight sliders
+    st.markdown("#### Portfolio Weights")
 
-# Equal weight: on button click or ticker change
-equal_weight = st.button("Equal Weight")
-need_equal = equal_weight or tickers_changed
+    current_ticker_key = ",".join(tickers)
+    tickers_changed = current_ticker_key != st.session_state.get("_prev_tickers", "")
+    if tickers_changed:
+        st.session_state._prev_tickers = current_ticker_key
 
-eq_val = 100.0 / max(len(tickers), 1)
+    equal_weight = st.button("Equal Weight")
+    need_equal = equal_weight or tickers_changed
+    eq_val = 100.0 / max(len(tickers), 1)
 
-weights = []
-weight_cols = st.columns(len(tickers)) if tickers else []
-for i, t in enumerate(tickers):
-    with weight_cols[i]:
-        default = eq_val if need_equal else st.session_state.get(f"weight_slider_{i}", eq_val)
-        if need_equal:
-            st.session_state[f"weight_slider_{i}"] = eq_val
-        w = st.slider(
-            f"{t}",
-            min_value=0.0,
-            max_value=100.0,
-            value=default,
-            step=1.0,
-            key=f"weight_slider_{i}",
-        )
-        weights.append(w)
+    weights = []
+    weight_cols = st.columns(len(tickers)) if tickers else []
+    for i, t in enumerate(tickers):
+        with weight_cols[i]:
+            default = eq_val if need_equal else st.session_state.get(f"weight_slider_{i}", eq_val)
+            if need_equal:
+                st.session_state[f"weight_slider_{i}"] = eq_val
+            w = st.slider(
+                f"{t}", min_value=0.0, max_value=100.0, value=default,
+                step=1.0, key=f"weight_slider_{i}",
+            )
+            weights.append(w)
 
-weight_sum = sum(weights)
-if tickers and abs(weight_sum - 100.0) > 1.0:
-    st.error(f"Weights must sum to 100% (currently {weight_sum:.0f}%)")
-    can_scan = False
-elif not tickers:
-    can_scan = False
-else:
-    can_scan = True
+    weight_sum = sum(weights)
+    can_scan = bool(tickers) and abs(weight_sum - 100.0) <= 1.0
+    if tickers and not can_scan:
+        st.error(f"Weights must sum to 100% (currently {weight_sum:.0f}%)")
 
-# Normalize weights to 0-1
-norm_weights = [w / 100.0 for w in weights] if weight_sum > 0 else []
+    norm_weights = [w / 100.0 for w in weights] if weight_sum > 0 else []
 
-# --- Scan button ---
-if st.button("Scan", type="primary", disabled=not can_scan, use_container_width=True):
-    if not _check_rate_limit():
-        st.error("Rate limit reached — max 10 scans per hour. Try again later.")
-    else:
-        st.session_state.scan_count += 1
-
-        # Validate tickers
-        with st.spinner("Validating tickers..."):
-            invalid = []
-            for t in tickers:
-                try:
-                    info = yf.Ticker(t).info
-                    if not info or info.get("regularMarketPrice") is None:
+    # Scan button
+    if st.button("Scan", type="primary", disabled=not can_scan, use_container_width=True):
+        if not _check_rate_limit():
+            st.error("Rate limit reached — max 10 scans per hour. Try again later.")
+        else:
+            st.session_state.scan_count += 1
+            with st.spinner("Validating tickers..."):
+                invalid = []
+                for t in tickers:
+                    try:
+                        info = yf.Ticker(t).info
+                        if not info or info.get("regularMarketPrice") is None:
+                            invalid.append(t)
+                    except Exception:
                         invalid.append(t)
-                except Exception:
-                    invalid.append(t)
-
-            if invalid:
-                st.error(
-                    f"Ticker(s) not found: {', '.join(invalid)} "
-                    "— check the symbols and try again."
-                )
-                st.stop()
-
-        # Submit scan
-        try:
-            with st.status("Running scan...", expanded=True) as status:
-                st.write("Submitting scan request...")
-                result = submit_scan(tickers, norm_weights, period)
-                scan_id = result["id"]
-
-                st.write("Fetching market data & calculating risk...")
-                scan_data = poll_scan(scan_id)
-
-                if scan_data["status"] == "failed":
-                    status.update(label="Scan failed", state="error")
-                    st.error(
-                        f"Scan failed: {scan_data.get('error_message', 'Unknown error')}"
-                    )
+                if invalid:
+                    st.error(f"Ticker(s) not found: {', '.join(invalid)} — check the symbols and try again.")
                     st.stop()
 
-                st.write("Fetching chart data...")
-                prices = yf.download(
-                    tickers, period=period, auto_adjust=True, progress=False
-                )
-                if isinstance(prices.columns, pd.MultiIndex):
-                    prices = prices["Close"]
-                else:
-                    prices = prices[["Close"]].rename(columns={"Close": tickers[0]})
-                prices = prices.dropna(how="all").ffill()
+            try:
+                with st.status("Running scan...", expanded=True) as status:
+                    st.write("Submitting scan request...")
+                    result = submit_scan(tickers, norm_weights, period)
+                    scan_id = result["id"]
+                    st.write("Fetching market data & calculating risk...")
+                    scan_data = poll_scan(scan_id)
+                    if scan_data["status"] == "failed":
+                        status.update(label="Scan failed", state="error")
+                        st.error(f"Scan failed: {scan_data.get('error_message', 'Unknown error')}")
+                        st.stop()
+                    st.write("Fetching chart data...")
+                    prices = yf.download(tickers, period=period, auto_adjust=True, progress=False)
+                    if isinstance(prices.columns, pd.MultiIndex):
+                        prices = prices["Close"]
+                    else:
+                        prices = prices[["Close"]].rename(columns={"Close": tickers[0]})
+                    prices = prices.dropna(how="all").ffill()
+                    status.update(label="Scan complete!", state="complete")
+                st.session_state.scan_result = scan_data
+                st.session_state.scan_prices = prices
+                st.session_state.scan_tickers = tickers
+                st.session_state.scan_weights = norm_weights
+            except requests.exceptions.ConnectionError:
+                st.error("Backend is offline — please try again later.")
+            except TimeoutError:
+                st.error("The scan is taking longer than expected — the backend may be waking up. Try again in a minute.")
+            except Exception as e:
+                st.error(f"Something went wrong: {str(e)}")
 
-                status.update(label="Scan complete!", state="complete")
+    # Load sample on first visit
+    if "scan_result" not in st.session_state:
+        st.info("Here's a sample scan of Tech Giants (AAPL, MSFT, GOOG). Try your own portfolio above!")
+        st.session_state.scan_result = SAMPLE_RESULT
+        st.session_state.scan_tickers = SAMPLE_RESULT["tickers"]
+        st.session_state.scan_weights = SAMPLE_RESULT["weights"]
+        try:
+            sample_prices = yf.download(SAMPLE_RESULT["tickers"], period="1y", auto_adjust=True, progress=False)
+            if isinstance(sample_prices.columns, pd.MultiIndex):
+                sample_prices = sample_prices["Close"]
+            sample_prices = sample_prices.dropna(how="all").ffill()
+            st.session_state.scan_prices = sample_prices
+        except Exception:
+            pass
 
-            # Store results in session state for display
-            st.session_state.scan_result = scan_data
-            st.session_state.scan_prices = prices
-            st.session_state.scan_tickers = tickers
-            st.session_state.scan_weights = norm_weights
+    # Display results
+    if "scan_result" in st.session_state:
+        data = st.session_state.scan_result
+        scan_tickers = st.session_state.scan_tickers
+        scan_weights = st.session_state.scan_weights
 
-        except requests.exceptions.ConnectionError:
-            st.error("Backend is offline — please try again later.")
-        except TimeoutError:
-            st.error(
-                "The scan is taking longer than expected — "
-                "the backend may be waking up. Try again in a minute."
-            )
-        except Exception as e:
-            st.error(f"Something went wrong: {str(e)}")
+        st.markdown("---")
+        st.markdown("## Results")
 
-# --- Load sample data on first visit ---
-if "scan_result" not in st.session_state:
-    st.info(
-        "Here's a sample scan of Tech Giants (AAPL, MSFT, GOOG). "
-        "Try your own portfolio above!"
-    )
-    st.session_state.scan_result = SAMPLE_RESULT
-    st.session_state.scan_tickers = SAMPLE_RESULT["tickers"]
-    st.session_state.scan_weights = SAMPLE_RESULT["weights"]
-    try:
-        sample_prices = yf.download(
-            SAMPLE_RESULT["tickers"], period="1y", auto_adjust=True, progress=False
+        m1, m2, m3, m4, m5 = st.columns(5)
+        with m1:
+            st.metric(f"{var_color(data['var_pct'])} VaR (95%)", f"{data['var_pct']:.2f}%")
+        with m2:
+            st.metric(f"{cvar_color(data['cvar_pct'])} CVaR", f"{data['cvar_pct']:.2f}%")
+        with m3:
+            st.metric(f"{drawdown_color(data['max_drawdown_pct'])} Max Drawdown", f"{data['max_drawdown_pct']:.2f}%")
+        with m4:
+            st.metric(f"{volatility_color(data['volatility_pct'])} Volatility", f"{data['volatility_pct']:.2f}%")
+        with m5:
+            st.metric(f"{sharpe_color(data['sharpe_ratio'])} Sharpe", f"{data['sharpe_ratio']:.2f}")
+
+        st.markdown("### AI Risk Narrative")
+        st.info(data.get("narrative", "No narrative available."))
+        st.caption(
+            "Currently showing a **formatted summary** of the metrics. "
+            "When the Claude API is enabled, this section provides a rich, "
+            "plain-English risk assessment — for example:"
         )
-        if isinstance(sample_prices.columns, pd.MultiIndex):
-            sample_prices = sample_prices["Close"]
-        sample_prices = sample_prices.dropna(how="all").ffill()
-        st.session_state.scan_prices = sample_prices
-    except Exception:
-        pass
+        st.markdown(
+            "> *\"This tech-heavy portfolio carries moderate risk. The 95% VaR of "
+            "-2.14% means you could lose up to 2.14% on a typical bad day. The max "
+            "drawdown of -19.37% is notable — during the worst stretch, the portfolio "
+            "fell nearly a fifth from its peak. With a Sharpe ratio of 0.61, the "
+            "risk-adjusted returns are below the 1.0 threshold, suggesting the "
+            "volatility isn't being adequately compensated. Consider diversifying "
+            "beyond tech to reduce concentration risk.\"*"
+        )
 
-# --- Display results if available ---
-if "scan_result" in st.session_state:
-    data = st.session_state.scan_result
-    scan_tickers = st.session_state.scan_tickers
-    scan_weights = st.session_state.scan_weights
+        if "scan_prices" in st.session_state:
+            prices = st.session_state.scan_prices
+            c1, c2 = st.columns(2)
+            with c1:
+                st.plotly_chart(price_history_chart(prices), use_container_width=True)
+            with c2:
+                st.plotly_chart(cumulative_return_chart(prices, scan_weights), use_container_width=True)
+            c3, c4 = st.columns(2)
+            with c3:
+                st.plotly_chart(drawdown_chart(prices, scan_weights), use_container_width=True)
+            with c4:
+                st.plotly_chart(weight_pie_chart(scan_tickers, scan_weights), use_container_width=True)
+
+    # Scan History
+    st.markdown("---")
+    with st.expander("Recent Scans"):
+        history = get_recent_scans(limit=5)
+        if history:
+            for s in history:
+                tks = ", ".join(s["tickers"]) if isinstance(s["tickers"], list) else s["tickers"]
+                st.markdown(f"**{tks}** — VaR: {s.get('var_pct', 'N/A')}%, Sharpe: {s.get('sharpe_ratio', 'N/A')} — _{s.get('created_at', '')[:10]}_")
+        else:
+            st.markdown("No recent scans available.")
+
+
+# ============================================================
+# TAB 2: SYSTEM HEALTH
+# ============================================================
+with tab_health:
+    st.markdown("Live status of all services. Click **Run Checks** to test connectivity.")
+
+    if st.button("Run Checks", type="primary", key="run_checks"):
+        st.session_state.health_checked = True
+
+    if st.session_state.get("health_checked"):
+        # API check
+        api_status = {"status": "unknown", "detail": ""}
+        try:
+            r = requests.get(f"{API_URL}/health", timeout=15)
+            api_status = {"status": "ok", "detail": "API is responding"} if r.ok else {"status": "error", "detail": f"HTTP {r.status_code}"}
+        except requests.exceptions.ConnectionError:
+            api_status = {"status": "error", "detail": "Cannot connect — backend may be sleeping (Render free tier)"}
+        except Exception as e:
+            api_status = {"status": "error", "detail": str(e)}
+
+        # DB check
+        db_status = {"status": "unknown", "database": ""}
+        try:
+            r = requests.get(f"{API_URL}/api/health/db", timeout=15)
+            db_status = r.json()
+        except Exception as e:
+            db_status = {"status": "error", "database": str(e)}
+
+        # CI check
+        ci_status = {"status": "unknown", "detail": ""}
+        try:
+            r = requests.get(f"https://api.github.com/repos/{GITHUB_REPO}/actions/runs", params={"per_page": 3}, timeout=10)
+            runs = r.json().get("workflow_runs", [])
+            if runs:
+                latest = runs[0]
+                ci_status = {
+                    "status": "ok" if latest.get("conclusion") == "success" else "error" if latest.get("conclusion") == "failure" else "unknown",
+                    "conclusion": latest.get("conclusion", "in_progress"),
+                    "run_number": latest["run_number"],
+                    "url": latest["html_url"],
+                    "created_at": latest["created_at"][:10],
+                }
+        except Exception as e:
+            ci_status = {"status": "unknown", "detail": str(e)}
+
+        # Status cards
+        st.markdown("### Service Status")
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.markdown("**API**")
+            st.success("Online") if api_status["status"] == "ok" else st.error("Offline")
+            st.caption(api_status.get("detail", ""))
+        with c2:
+            st.markdown("**Database**")
+            st.success("Connected") if db_status.get("status") == "ok" else st.error("Disconnected")
+            st.caption(db_status.get("database", db_status.get("detail", "")))
+        with c3:
+            st.markdown("**CI Pipeline**")
+            if ci_status["status"] == "ok":
+                st.success(f"Passing (#{ci_status.get('run_number', '?')})")
+            elif ci_status["status"] == "error":
+                st.error(f"Failing (#{ci_status.get('run_number', '?')})")
+            else:
+                st.warning("Unknown")
+            if ci_status.get("url"):
+                st.caption(f"[View run]({ci_status['url']}) — {ci_status.get('created_at', '')}")
+        with c4:
+            st.markdown("**Dashboard**")
+            st.success("Running")
+            st.caption("You're seeing this page")
+
+        # RAG Mermaid pipeline
+        def rag(s):
+            if s == "ok": return "#28a745", "#fff"
+            if s == "error": return "#dc3545", "#fff"
+            return "#ffc107", "#333"
+
+        api_bg, api_fg = rag(api_status["status"])
+        db_bg, db_fg = rag(db_status.get("status", "unknown"))
+        ci_bg, ci_fg = rag(ci_status["status"])
+
+        st.markdown("### Deployment Pipeline")
+        mermaid_html = f"""
+        <div style="background:white;padding:20px;border-radius:8px;border:1px solid #e8e8e8;">
+        <div class="mermaid">
+        graph LR
+            DEV["Code Push"]:::neutral --> WK["working"]:::neutral
+            WK --> PR["Pull Request"]:::neutral
+            PR --> MASTER["master"]:::neutral
+            MASTER --> CI["CI Tests"]:::ci_s
+            MASTER --> API["Scanner API<br/>Render"]:::api_s
+            MASTER --> DASH["Dashboard<br/>Streamlit"]:::dash_s
+            API --> DB[("PostgreSQL")]:::db_s
+            API --> YF["yfinance"]:::neutral
+            API --> CLAUDE["Claude API"]:::neutral
+
+            classDef neutral fill:#f0f2f6,stroke:#ccc,color:#333
+            classDef api_s fill:{api_bg},stroke:{api_bg},color:{api_fg}
+            classDef db_s fill:{db_bg},stroke:{db_bg},color:{db_fg}
+            classDef ci_s fill:{ci_bg},stroke:{ci_bg},color:{ci_fg}
+            classDef dash_s fill:#28a745,stroke:#28a745,color:#fff
+        </div>
+        <p style="text-align:center;font-size:12px;color:#888;margin-top:12px;">
+            🟢 Online &nbsp;&nbsp;&nbsp; 🟡 Unknown &nbsp;&nbsp;&nbsp; 🔴 Offline &nbsp;&nbsp;&nbsp; ⬜ External
+        </p>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({{startOnLoad: true, theme: 'default'}});</script>
+        """
+        components.html(mermaid_html, height=380)
+
+        # Test runner
+        st.markdown("### Test Suite — 27 tests")
+
+        ci_passing = ci_status.get("conclusion") == "success" if ci_status.get("status") != "unknown" else None
+
+        if ci_passing is True:
+            st.success("All 27 tests passing")
+        elif ci_passing is False:
+            st.error("Some tests failing — check CI for details")
+        else:
+            st.info("CI status unavailable — showing test inventory")
+
+        TEST_MODULES = {
+            "🌐 API Endpoints (test_api.py)": [
+                ("test_health", "GET /health returns 200"),
+                ("test_db_connected", "GET /api/health/db returns connected"),
+                ("test_returns_pending", "POST /api/scan returns 202 + pending"),
+                ("test_returns_scan_by_id", "GET /api/scans/{id} returns scan"),
+                ("test_returns_404_for_missing_id", "GET /api/scans/9999 returns 404"),
+                ("test_returns_list", "GET /api/scans returns list"),
+            ],
+            "🗄️ Database Layer (test_db_layer.py)": [
+                ("test_creates_pending_record", "Insert pending scan record"),
+                ("test_updates_to_complete", "Update scan to complete with metrics"),
+                ("test_updates_to_failed", "Update scan to failed with error"),
+                ("test_returns_record_by_id", "Fetch scan by ID"),
+                ("test_returns_none_for_missing_id", "Returns None for missing ID"),
+                ("test_returns_completed_scans_newest_first", "Recent scans ordered newest first"),
+            ],
+            "📋 Pydantic Models (test_models.py)": [
+                ("test_valid_request", "Valid request accepted"),
+                ("test_tickers_uppercased", "Tickers auto-uppercased"),
+                ("test_mismatched_lengths_raises", "Mismatched tickers/weights raises ValueError"),
+                ("test_weights_not_summing_to_one_raises", "Bad weight sum raises ValueError"),
+                ("test_risk_metrics_fields", "RiskMetrics stores all 5 fields"),
+                ("test_scan_result_fields", "ScanResult stores all fields"),
+            ],
+            "📊 Risk Calculations (test_risk.py)": [
+                ("test_var_and_cvar", "VaR is negative, CVaR worse than VaR"),
+                ("test_max_drawdown", "Max drawdown calculation correct"),
+                ("test_sharpe_ratio_sign", "Sharpe positive for uptrend, negative for downtrend"),
+            ],
+            "📈 Market Data (test_market_data.py)": [
+                ("test_successful_fetch", "yfinance download returns correct DataFrame"),
+                ("test_empty_data_raises", "Empty data raises ValueError"),
+            ],
+            "🤖 AI Narrative (test_narrative.py)": [
+                ("test_generate_with_api", "Claude API returns narrative"),
+                ("test_generate_api_error_returns_fallback", "API error returns fallback string"),
+                ("test_generate_no_api_key_returns_fallback", "No API key returns fallback string"),
+            ],
+            "🔄 Scanner Pipeline (test_scanner.py)": [
+                ("test_full_pipeline", "Full pipeline: fetch → risk → narrative → result"),
+            ],
+        }
+
+        for module_name, tests in TEST_MODULES.items():
+            tc = len(tests)
+            if ci_passing is True:
+                header = f"{module_name} — ✅ {tc}/{tc} passed"
+            elif ci_passing is False:
+                header = f"{module_name} — ⚠️ {tc} tests (check CI)"
+            else:
+                header = f"{module_name} — {tc} tests"
+
+            with st.expander(header):
+                for test_name, test_desc in tests:
+                    icon = "✅" if ci_passing is True else "⚠️" if ci_passing is False else "⬜"
+                    st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;{icon} `{test_name}` — {test_desc}")
+
+    else:
+        st.info("Click **Run Checks** above to test all services.")
+
+
+# ============================================================
+# TAB 3: ARCHITECTURE
+# ============================================================
+with tab_arch:
+    st.markdown("### System Overview")
+    overview_html = """
+    <div style="background:white;padding:20px;border-radius:8px;border:1px solid #e8e8e8;">
+    <div class="mermaid">
+    graph LR
+        User(["User Browser"]) --> SC["Streamlit Cloud<br/>finbytes.streamlit.app"]
+        SC -->|"POST /api/scan<br/>GET /api/scans"| RA["Render API<br/>finbytes-scanner.onrender.com"]
+        SC -->|"price data for charts"| YF["yfinance"]
+        RA -->|"persist scans"| PG[("PostgreSQL<br/>Render Managed")]
+        RA -->|"narrative generation"| CL["Claude API<br/>Anthropic"]
+        RA -->|"fallback if no key"| FB["Formatted Summary"]
+        GH["GitHub Repo"] -->|"auto-deploy master"| SC
+        GH -->|"auto-deploy master"| RA
+        GH -->|"push working / PR master"| CI["GitHub Actions CI"]
+    </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad: true, theme: 'default'});</script>
+    """
+    components.html(overview_html, height=380)
+
+    st.markdown("### Request Flow")
+    sequence_html = """
+    <div style="background:white;padding:20px;border-radius:8px;border:1px solid #e8e8e8;">
+    <div class="mermaid">
+    sequenceDiagram
+        participant U as User
+        participant S as Streamlit Cloud
+        participant A as Render API
+        participant DB as PostgreSQL
+        participant YF as yfinance
+        participant C as Claude API
+
+        U->>S: Enter tickers + weights, click Scan
+        S->>A: POST /api/scan
+        A->>DB: INSERT pending ScanRecord
+        A-->>S: {id: 1, status: "pending"}
+        Note over A: Background task starts
+        A->>YF: Fetch price history
+        YF-->>A: Price DataFrame
+        Note over A: Calculate risk metrics
+        A->>C: Generate narrative (or fallback)
+        C-->>A: Risk narrative text
+        A->>DB: UPDATE ScanRecord to complete
+        loop Poll every 2s
+            S->>A: GET /api/scans/1
+            A-->>S: {status: "pending"}
+        end
+        S->>A: GET /api/scans/1
+        A-->>S: {status: "complete", metrics...}
+        S->>YF: Fetch prices for charts
+        Note over S: Render metrics + charts
+        S-->>U: Display results
+    </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad: true, theme: 'default'});</script>
+    """
+    components.html(sequence_html, height=550)
+
+    st.markdown("### Code Module Map")
+    modules_html = """
+    <div style="background:white;padding:20px;border-radius:8px;border:1px solid #e8e8e8;">
+    <div class="mermaid">
+    graph TD
+        REQ["ScanRequest"] --> SCANNER["scanner.py<br/>Orchestrator"]
+        SCANNER --> MD["market_data.py<br/>Fetch prices"]
+        SCANNER --> RISK["risk.py<br/>Calculate metrics"]
+        SCANNER --> NARR["narrative.py<br/>Generate text"]
+        MD --> YF["yfinance"]
+        RISK --> METRICS["RiskMetrics"]
+        NARR --> CLAUDE["Claude API"]
+        NARR --> FB["Fallback"]
+        SCANNER --> RESULT["ScanResult"]
+        MAIN["main.py<br/>FastAPI"] --> SCANNER
+        MAIN --> DB["db.py<br/>CRUD"]
+        DB --> DBMOD["db_models.py<br/>ScanRecord"]
+        DBMOD --> PG[("PostgreSQL")]
+    </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad: true, theme: 'default'});</script>
+    """
+    components.html(modules_html, height=450)
 
     st.markdown("---")
-    st.markdown("## Results")
-
-    # Metrics row
-    m1, m2, m3, m4, m5 = st.columns(5)
-    with m1:
-        st.metric(
-            f"{var_color(data['var_pct'])} VaR (95%)",
-            f"{data['var_pct']:.2f}%",
-        )
-    with m2:
-        st.metric(
-            f"{cvar_color(data['cvar_pct'])} CVaR",
-            f"{data['cvar_pct']:.2f}%",
-        )
-    with m3:
-        st.metric(
-            f"{drawdown_color(data['max_drawdown_pct'])} Max Drawdown",
-            f"{data['max_drawdown_pct']:.2f}%",
-        )
-    with m4:
-        st.metric(
-            f"{volatility_color(data['volatility_pct'])} Volatility",
-            f"{data['volatility_pct']:.2f}%",
-        )
-    with m5:
-        st.metric(
-            f"{sharpe_color(data['sharpe_ratio'])} Sharpe",
-            f"{data['sharpe_ratio']:.2f}",
-        )
-
-    # Narrative
-    st.markdown("### AI Risk Narrative")
-    narrative = data.get("narrative", "No narrative available.")
-    st.info(narrative)
-    st.caption(
-        "Currently showing a **formatted summary** of the metrics. "
-        "When the Claude API is enabled, this section provides a rich, "
-        "plain-English risk assessment — for example:"
-    )
     st.markdown(
-        "> *\"This tech-heavy portfolio carries moderate risk. The 95% VaR of "
-        "-2.14% means you could lose up to 2.14% on a typical bad day. The max "
-        "drawdown of -19.37% is notable — during the worst stretch, the portfolio "
-        "fell nearly a fifth from its peak. With a Sharpe ratio of 0.61, the "
-        "risk-adjusted returns are below the 1.0 threshold, suggesting the "
-        "volatility isn't being adequately compensated. Consider diversifying "
-        "beyond tech to reduce concentration risk.\"*"
+        "For the full architecture deep dive including tech decisions Q&A, "
+        "read the [Architecture blog post]"
+        "(https://mishcodesfinbytes.github.io/FinBytes/2026/04/03/stock-risk-scanner-architecture/)."
     )
-
-    # Charts
-    if "scan_prices" in st.session_state:
-        prices = st.session_state.scan_prices
-
-        chart_col1, chart_col2 = st.columns(2)
-        with chart_col1:
-            st.plotly_chart(
-                price_history_chart(prices), use_container_width=True
-            )
-        with chart_col2:
-            st.plotly_chart(
-                cumulative_return_chart(prices, scan_weights),
-                use_container_width=True,
-            )
-
-        chart_col3, chart_col4 = st.columns(2)
-        with chart_col3:
-            st.plotly_chart(
-                drawdown_chart(prices, scan_weights),
-                use_container_width=True,
-            )
-        with chart_col4:
-            st.plotly_chart(
-                weight_pie_chart(scan_tickers, scan_weights),
-                use_container_width=True,
-            )
-
-# --- Scan History ---
-st.markdown("---")
-with st.expander("Recent Scans"):
-    history = get_recent_scans(limit=5)
-    if history:
-        for scan in history:
-            tks = (
-                ", ".join(scan["tickers"])
-                if isinstance(scan["tickers"], list)
-                else scan["tickers"]
-            )
-            st.markdown(
-                f"**{tks}** — VaR: {scan.get('var_pct', 'N/A')}%, "
-                f"Sharpe: {scan.get('sharpe_ratio', 'N/A')} — "
-                f"_{scan.get('created_at', '')[:10]}_"
-            )
-    else:
-        st.markdown("No recent scans available.")
