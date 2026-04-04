@@ -532,8 +532,8 @@ with tab_arch:
             WK --> PR["Pull Request"]:::neutral
             PR --> MASTER["master"]:::neutral
             MASTER --> CI["CI Tests"]:::ci_s
-            MASTER --> API["Scanner API<br/>Render"]:::api_s
-            MASTER --> DASH["Dashboard<br/>Streamlit"]:::dash_s
+            MASTER --> API["Scanner API"]:::api_s
+            MASTER --> DASH["Dashboard"]:::dash_s
             API --> DB[("PostgreSQL")]:::db_s
             API --> YF["yfinance"]:::neutral
             API --> CLAUDE["Claude API"]:::neutral
@@ -552,8 +552,8 @@ with tab_arch:
             WK --> PR["Pull Request"]:::neutral
             PR --> MASTER["master"]:::neutral
             MASTER --> CI["CI Tests"]:::neutral
-            MASTER --> API["Scanner API<br/>Render"]:::neutral
-            MASTER --> DASH["Dashboard<br/>Streamlit"]:::neutral
+            MASTER --> API["Scanner API"]:::neutral
+            MASTER --> DASH["Dashboard"]:::neutral
             API --> DB[("PostgreSQL")]:::neutral
             API --> YF["yfinance"]:::neutral
             API --> CLAUDE["Claude API"]:::neutral
@@ -567,65 +567,65 @@ with tab_arch:
     st.markdown("### System Overview")
     render_mermaid("""
     graph LR
-        User(["User Browser"]) --> SC["Streamlit Cloud<br/>finbytes.streamlit.app"]
-        SC -->|"POST /api/scan<br/>GET /api/scans"| RA["Render API<br/>finbytes-scanner.onrender.com"]
-        SC -->|"price data for charts"| YF["yfinance"]
-        RA -->|"persist scans"| PG[("PostgreSQL<br/>Render Managed")]
-        RA -->|"narrative generation"| CL["Claude API<br/>Anthropic"]
-        RA -->|"fallback if no key"| FB["Formatted Summary"]
-        GH["GitHub Repo"] -->|"auto-deploy master"| SC
-        GH -->|"auto-deploy master"| RA
-        GH -->|"push working / PR master"| CI["GitHub Actions CI"]
-    """, height=350)
+        User([User Browser]) --> SC[Streamlit Cloud]
+        SC -->|scan requests| RA[Render API]
+        SC -->|chart data| YF[yfinance]
+        RA -->|persist| PG[(PostgreSQL)]
+        RA -->|narrative| CL[Claude API]
+        RA -->|fallback| FB[Summary]
+        GH[GitHub Repo] -->|deploy| SC
+        GH -->|deploy| RA
+        GH -->|CI| CI[GitHub Actions]
+    """, height=300)
 
     st.markdown("### Request Flow")
     render_mermaid("""
     sequenceDiagram
         participant U as User
-        participant S as Streamlit Cloud
-        participant A as Render API
+        participant S as Streamlit
+        participant A as API
         participant DB as PostgreSQL
         participant YF as yfinance
-        participant C as Claude API
+        participant C as Claude
 
-        U->>S: Enter tickers + weights, click Scan
-        S->>A: POST /api/scan
-        A->>DB: INSERT pending ScanRecord
-        A-->>S: id 1 status pending
-        Note over A: Background task starts
-        A->>YF: Fetch price history
-        YF-->>A: Price DataFrame
-        Note over A: Calculate risk metrics
-        A->>C: Generate narrative or fallback
-        C-->>A: Risk narrative text
-        A->>DB: UPDATE ScanRecord to complete
-        loop Poll every 2s
-            S->>A: GET /api/scans/1
-            A-->>S: status pending
+        U->>S: Enter tickers, click Scan
+        S->>A: POST scan request
+        A->>DB: Insert pending record
+        A-->>S: Return scan ID
+        Note over A: Background task
+        A->>YF: Fetch prices
+        YF-->>A: Price data
+        Note over A: Calculate risk
+        A->>C: Generate narrative
+        C-->>A: Narrative text
+        A->>DB: Update to complete
+        loop Polling
+            S->>A: Check status
+            A-->>S: Still pending
         end
-        S->>A: GET /api/scans/1
-        A-->>S: status complete with metrics
-        S->>YF: Fetch prices for charts
-        Note over S: Render metrics + charts
-        S-->>U: Display results
+        S->>A: Check status
+        A-->>S: Complete with metrics
+        S->>YF: Fetch chart data
+        Note over S: Render charts
+        S-->>U: Show results
     """, height=550)
 
     st.markdown("### Code Module Map")
     render_mermaid("""
     graph TD
-        REQ["ScanRequest"] --> SCANNER["scanner.py<br/>Orchestrator"]
-        SCANNER --> MD["market_data.py<br/>Fetch prices"]
-        SCANNER --> RISK["risk.py<br/>Calculate metrics"]
-        SCANNER --> NARR["narrative.py<br/>Generate text"]
-        MD --> YF["yfinance"]
-        RISK --> METRICS["RiskMetrics"]
-        NARR --> CLAUDE["Claude API"]
-        NARR --> FB["Fallback"]
-        SCANNER --> RESULT["ScanResult"]
-        MAIN["main.py<br/>FastAPI"] --> SCANNER
-        MAIN --> DB["db.py<br/>CRUD"]
-        DB --> DBMOD["db_models.py<br/>ScanRecord"]
-        DBMOD --> PG[("PostgreSQL")]
+        REQ[ScanRequest] --> SCANNER[scanner.py]
+        SCANNER --> MD[market_data.py]
+        SCANNER --> RISK[risk.py]
+        SCANNER --> NARR[narrative.py]
+        MD --> YF[yfinance]
+        RISK --> METRICS[RiskMetrics]
+        NARR --> CLAUDE[Claude API]
+        NARR --> FB[Fallback]
+        SCANNER --> RESULT[ScanResult]
+        MAIN[main.py FastAPI] --> SCANNER
+        MAIN --> DB[db.py]
+        DB --> DBMOD[db_models.py]
+        DBMOD --> PG[(PostgreSQL)]
     """, height=450)
 
     st.markdown("---")
