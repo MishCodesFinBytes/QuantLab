@@ -88,6 +88,16 @@ def create_app() -> FastAPI:
     def health():
         return {"status": "ok"}
 
+    @application.get("/api/health/db")
+    async def health_db(session: AsyncSession = Depends(get_session)):
+        try:
+            from sqlalchemy import text
+            result = await session.execute(text("SELECT 1"))
+            result.scalar()
+            return {"status": "ok", "database": "connected"}
+        except Exception as e:
+            return {"status": "error", "database": str(e)}
+
     @application.post("/api/scan", status_code=202)
     async def create_scan(
         request: ScanRequest,
