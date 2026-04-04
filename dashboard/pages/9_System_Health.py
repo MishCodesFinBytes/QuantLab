@@ -1,5 +1,6 @@
 from pathlib import Path
 import streamlit as st
+import streamlit.components.v1 as components
 import requests
 from datetime import datetime
 
@@ -108,6 +109,55 @@ with col4:
     st.markdown("### Dashboard")
     st.success("Running")
     st.caption("You're seeing this page")
+
+# --- Deployment Pipeline Diagram ---
+st.markdown("---")
+st.markdown("## Deployment Pipeline")
+
+# Determine RAG colors for each node
+def rag(status):
+    if status == "ok":
+        return "#28a745", "#fff"  # green
+    elif status == "error":
+        return "#dc3545", "#fff"  # red
+    else:
+        return "#ffc107", "#333"  # amber
+
+api_bg, api_fg = rag(api["status"])
+db_bg, db_fg = rag(db.get("status", "unknown"))
+ci_bg, ci_fg = rag(ci["status"])
+dash_bg, dash_fg = "#28a745", "#fff"  # always green
+gh_bg, gh_fg = "#28a745", "#fff"  # always green
+
+mermaid_html = f"""
+<div style="background:white;padding:16px;border-radius:8px;border:1px solid #e8e8e8;">
+<div class="mermaid">
+graph LR
+    DEV["👩‍💻 Code Push"]:::neutral --> WK["working branch"]:::neutral
+    WK --> PR["Pull Request"]:::neutral
+    PR --> MASTER["master branch"]:::neutral
+    MASTER --> CI["GitHub Actions<br/>CI Tests"]:::ci_status
+    MASTER --> RENDER["Render API<br/>Auto-deploy"]:::api_status
+    MASTER --> STREAM["Streamlit Cloud<br/>Auto-deploy"]:::dash_status
+    RENDER --> DB[("PostgreSQL<br/>Database")]:::db_status
+    RENDER --> YF["yfinance<br/>Market Data"]:::neutral
+    RENDER --> CLAUDE["Claude API<br/>Narratives"]:::neutral
+
+    classDef neutral fill:#f0f2f6,stroke:#ccc,color:#333
+    classDef api_status fill:{api_bg},stroke:{api_bg},color:{api_fg}
+    classDef db_status fill:{db_bg},stroke:{db_bg},color:{db_fg}
+    classDef ci_status fill:{ci_bg},stroke:{ci_bg},color:{ci_fg}
+    classDef dash_status fill:{dash_bg},stroke:{dash_bg},color:{dash_fg}
+</div>
+<p style="text-align:center;font-size:12px;color:#888;margin-top:8px;">
+    🟢 Online &nbsp;&nbsp; 🟡 Unknown &nbsp;&nbsp; 🔴 Offline &nbsp;&nbsp; ⬜ External service
+</p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({{startOnLoad: true, theme: 'default'}});</script>
+"""
+
+components.html(mermaid_html, height=400)
 
 # --- CI Details ---
 st.markdown("---")
