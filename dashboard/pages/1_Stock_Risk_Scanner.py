@@ -95,6 +95,12 @@ if len(raw_tickers) > 5:
 # Weight sliders
 st.markdown("#### Portfolio Weights")
 
+# Detect if tickers changed — auto equal-weight on change
+current_ticker_key = ",".join(tickers)
+if current_ticker_key != st.session_state.get("_prev_tickers", ""):
+    st.session_state._prev_tickers = current_ticker_key
+    st.session_state.use_equal_weights = True
+
 equal_weight = st.button("Equal Weight")
 if equal_weight or st.session_state.get("use_equal_weights"):
     st.session_state.use_equal_weights = False
@@ -256,7 +262,22 @@ if "scan_result" in st.session_state:
 
     # Narrative
     st.markdown("### AI Risk Narrative")
-    st.info(data.get("narrative", "No narrative available."))
+    narrative = data.get("narrative", "No narrative available.")
+    st.info(narrative)
+    st.caption(
+        "Currently showing a **formatted summary** of the metrics. "
+        "When the Claude API is enabled, this section provides a rich, "
+        "plain-English risk assessment — for example:"
+    )
+    st.markdown(
+        "> *\"This tech-heavy portfolio carries moderate risk. The 95% VaR of "
+        "-2.14% means you could lose up to 2.14% on a typical bad day. The max "
+        "drawdown of -19.37% is notable — during the worst stretch, the portfolio "
+        "fell nearly a fifth from its peak. With a Sharpe ratio of 0.61, the "
+        "risk-adjusted returns are below the 1.0 threshold, suggesting the "
+        "volatility isn't being adequately compensated. Consider diversifying "
+        "beyond tech to reduce concentration risk.\"*"
+    )
 
     # Charts
     if "scan_prices" in st.session_state:

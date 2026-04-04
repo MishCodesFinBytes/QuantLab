@@ -36,6 +36,14 @@ class TestHealthEndpoint:
         assert resp.json() == {"status": "ok"}
 
 
+class TestHealthDb:
+    async def test_db_connected(self, client):
+        resp = await client.get("/api/health/db")
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+        assert resp.json()["database"] == "connected"
+
+
 class TestCreateScan:
     async def test_returns_pending(self, client):
         resp = await client.post(
