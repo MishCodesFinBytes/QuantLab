@@ -336,26 +336,10 @@ with tab_health:
         db_bg, db_fg = rag(db_status.get("status", "unknown"))
         ci_bg, ci_fg = rag(ci_status["status"])
 
-        st.markdown("### Deployment Pipeline")
-        render_mermaid(f"""
-        graph LR
-            DEV["Code Push"]:::neutral --> WK["working"]:::neutral
-            WK --> PR["Pull Request"]:::neutral
-            PR --> MASTER["master"]:::neutral
-            MASTER --> CI["CI Tests"]:::ci_s
-            MASTER --> API["Scanner API<br/>Render"]:::api_s
-            MASTER --> DASH["Dashboard<br/>Streamlit"]:::dash_s
-            API --> DB[("PostgreSQL")]:::db_s
-            API --> YF["yfinance"]:::neutral
-            API --> CLAUDE["Claude API"]:::neutral
-
-            classDef neutral fill:#f0f2f6,stroke:#ccc,color:#333
-            classDef api_s fill:{api_bg},stroke:{api_bg},color:{api_fg}
-            classDef db_s fill:{db_bg},stroke:{db_bg},color:{db_fg}
-            classDef ci_s fill:{ci_bg},stroke:{ci_bg},color:{ci_fg}
-            classDef dash_s fill:#28a745,stroke:#28a745,color:#fff
-        """, height=350)
-        st.caption("🟢 Online · 🟡 Unknown · 🔴 Offline · ⬜ External")
+        # Store health results for Architecture tab pipeline
+        st.session_state._health_api = api_status["status"]
+        st.session_state._health_db = db_status.get("status", "unknown")
+        st.session_state._health_ci = ci_status["status"]
 
         # Test runner
         st.markdown("### Test Suite — 27 tests")
@@ -435,6 +419,56 @@ with tab_health:
 # TAB 3: ARCHITECTURE
 # ============================================================
 with tab_arch:
+    # Deployment pipeline with RAG
+    def rag(s):
+        if s == "ok": return "#28a745", "#fff"
+        if s == "error": return "#dc3545", "#fff"
+        return "#ffc107", "#333"
+
+    api_bg, api_fg = rag(st.session_state.get("_health_api", "unknown"))
+    db_bg, db_fg = rag(st.session_state.get("_health_db", "unknown"))
+    ci_bg, ci_fg = rag(st.session_state.get("_health_ci", "unknown"))
+
+    st.markdown("### Deployment Pipeline")
+    if st.session_state.get("health_checked"):
+        render_mermaid(f"""
+        graph LR
+            DEV["Code Push"]:::neutral --> WK["working"]:::neutral
+            WK --> PR["Pull Request"]:::neutral
+            PR --> MASTER["master"]:::neutral
+            MASTER --> CI["CI Tests"]:::ci_s
+            MASTER --> API["Scanner API<br/>Render"]:::api_s
+            MASTER --> DASH["Dashboard<br/>Streamlit"]:::dash_s
+            API --> DB[("PostgreSQL")]:::db_s
+            API --> YF["yfinance"]:::neutral
+            API --> CLAUDE["Claude API"]:::neutral
+
+            classDef neutral fill:#f0f2f6,stroke:#ccc,color:#333
+            classDef api_s fill:{api_bg},stroke:{api_bg},color:{api_fg}
+            classDef db_s fill:{db_bg},stroke:{db_bg},color:{db_fg}
+            classDef ci_s fill:{ci_bg},stroke:{ci_bg},color:{ci_fg}
+            classDef dash_s fill:#28a745,stroke:#28a745,color:#fff
+        """, height=350)
+        st.caption("🟢 Online · 🟡 Unknown · 🔴 Offline · ⬜ External")
+    else:
+        render_mermaid("""
+        graph LR
+            DEV["Code Push"]:::neutral --> WK["working"]:::neutral
+            WK --> PR["Pull Request"]:::neutral
+            PR --> MASTER["master"]:::neutral
+            MASTER --> CI["CI Tests"]:::neutral
+            MASTER --> API["Scanner API<br/>Render"]:::neutral
+            MASTER --> DASH["Dashboard<br/>Streamlit"]:::neutral
+            API --> DB[("PostgreSQL")]:::neutral
+            API --> YF["yfinance"]:::neutral
+            API --> CLAUDE["Claude API"]:::neutral
+
+            classDef neutral fill:#f0f2f6,stroke:#ccc,color:#333
+        """, height=350)
+        st.caption("Run health checks in the System Health tab to see live RAG status")
+
+    st.markdown("---")
+
     st.markdown("### System Overview")
     render_mermaid("""
     graph LR
