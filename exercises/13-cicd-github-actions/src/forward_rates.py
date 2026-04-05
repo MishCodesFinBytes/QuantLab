@@ -1,4 +1,4 @@
-"""Forward rate curve derivation from spot rates.
+"""Forward rate curve derivation from spot rates (OIDC-deployed).
 
 The forward rate f(t₁, t₂) is the rate the market implies today for
 borrowing/lending between future times t₁ and t₂. It falls out of a
