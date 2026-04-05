@@ -148,9 +148,21 @@ Service consoles (region us-east-1):
 
 ---
 
+## RDS Lifecycle Helper
+
+To avoid burning free-tier hours, stop the RDS instance when not actively using it. A helper script at `scripts/rds.py` wraps the boto3 calls:
+
+```bash
+python scripts/rds.py status         # show current state
+python scripts/rds.py stop --wait    # stop and block until stopped
+python scripts/rds.py start --wait   # start and block until available
+```
+
+Env vars override defaults: `RDS_INSTANCE_ID` (default `quant-lab-db`), `AWS_PROFILE` (default `quant-lab`), `AWS_REGION` (default `us-east-1`).
+
 ## Golden Rules
 
-1. **Stop RDS when not actively learning** — free tier is 750 hrs/month, a 24/7 instance = 720 hrs. Two running = over limit.
+1. **Stop RDS when not actively learning** — free tier is 750 hrs/month, a 24/7 instance = 720 hrs. Two running = over limit. Use `scripts/rds.py stop` to save hours.
 2. **Never create NAT Gateways** — #1 surprise AWS bill.
 3. **Confirm region** with `aws configure list --profile quant-lab` before creating resources.
 4. **Run `terraform destroy` at end of each learning session** where you provisioned things.

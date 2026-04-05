@@ -16,6 +16,10 @@ Design notes
 import json
 from datetime import date, datetime, UTC
 from sqlalchemy import String, Float, Integer, Date, DateTime, Text, Boolean
+
+# created_at columns are tz-aware UTC. Postgres stores these as timestamptz;
+# without timezone=True asyncpg rejects the tz-aware default with a "can't
+# subtract offset-naive and offset-aware datetimes" DataError.
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -33,7 +37,7 @@ class ParYieldRecord(Base):
     yields_json: Mapped[str] = mapped_column(Text)
     source: Mapped[str] = mapped_column(String(20), default="FRED")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
 
@@ -46,7 +50,7 @@ class SpotCurveRecord(Base):
     curve_date: Mapped[date] = mapped_column(Date, unique=True, index=True)
     rates_json: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
 
@@ -59,7 +63,7 @@ class ForwardCurveRecord(Base):
     curve_date: Mapped[date] = mapped_column(Date, unique=True, index=True)
     rates_json: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
 
@@ -75,7 +79,7 @@ class FittedCurveRecord(Base):
     fitted_rates_json: Mapped[str] = mapped_column(Text)
     rmse: Mapped[float] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
 
@@ -94,7 +98,7 @@ class BondRecord(Base):
     bond_type: Mapped[str] = mapped_column(String(20), default="treasury")
     is_callable: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
 
@@ -114,5 +118,5 @@ class PricingResultRecord(Base):
     modified_duration: Mapped[float] = mapped_column(Float)
     convexity: Mapped[float] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
