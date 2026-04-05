@@ -1,0 +1,21 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "ControlQuantLabRDS",
+            "Effect": "Allow",
+            "Action": [
+                "rds:StartDBInstance",
+                "rds:StopDBInstance",
+                "rds:DescribeDBInstances"
+            ],
+            "Resource": "arn:aws:rds:us-east-1:349348221529:db:quant-lab-db"
+        },
+        {
+            "Sid": "DescribeAllRequiredByAPI",
+            "Effect": "Allow",
+            "Action": "rds:DescribeDBInstances",
+            "Resource": "*"
+        }
+    ]
+}
