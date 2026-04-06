@@ -1,0 +1,16 @@
+[project]
+name = "cloudwatch-oas-exercise"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26.0", "scipy>=1.13.0", "boto3>=1.35.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0", "moto[cloudwatch]>=5.0.0"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["oas"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
