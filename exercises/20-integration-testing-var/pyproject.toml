@@ -1,0 +1,16 @@
+[project]
+name = "integration-testing-var-exercise"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26.0", "scipy>=1.13.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0", "moto[s3,sqs,sns]>=5.0.0"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["credit_var"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
