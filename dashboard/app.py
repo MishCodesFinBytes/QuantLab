@@ -7,32 +7,59 @@ GITHUB_REPO = "MishCodesFinBytes/QuantLab"
 
 st.set_page_config(
     page_title="FinBytes QuantLabs",
-    
     layout="wide",
 )
 
 # ============================================================
-# Sidebar — shared across all pages
+# Sidebar — custom grouped navigation
 # ============================================================
 st.sidebar.image(str(HERE / "assets" / "logo.png"), width=180)
 st.sidebar.title("FinBytes QuantLabs")
 st.sidebar.markdown("**Built by** [Manisha](https://mishcodesfinbytes.github.io/FinBytes/)")
 st.sidebar.markdown("---")
 
+# Projects
 st.sidebar.markdown("### Projects")
-st.sidebar.page_link("pages/1_Stock_Risk_Scanner.py", label="Stock Risk Scanner", icon="📊")
-st.sidebar.markdown("*More coming soon...*")
+st.sidebar.page_link("pages/1_Stock_Risk_Scanner.py", label="Stock Risk Scanner")
+
+# Mini Projects — Calculators
+st.sidebar.markdown("### Mini Projects")
+st.sidebar.caption("Calculators")
+st.sidebar.page_link("pages/10_Credit_Card_Calculator.py", label="Credit Card Calculator")
+st.sidebar.page_link("pages/11_Loan_Amortization.py", label="Loan Amortization")
+st.sidebar.page_link("pages/12_Loan_Comparison.py", label="Loan Comparison")
+st.sidebar.page_link("pages/13_Retirement_Calculator.py", label="Retirement Calculator")
+st.sidebar.page_link("pages/14_Investment_Planner.py", label="Investment Planner")
+st.sidebar.page_link("pages/15_Budget_Tracker.py", label="Budget Tracker")
+
+# Mini Projects — Dashboards
+st.sidebar.caption("Dashboards")
+st.sidebar.page_link("pages/20_Currency_Dashboard.py", label="Currency Dashboard")
+st.sidebar.page_link("pages/21_Stock_Tracker.py", label="Stock Tracker")
+st.sidebar.page_link("pages/22_Stock_Analysis.py", label="Stock Analysis")
+st.sidebar.page_link("pages/23_Crypto_Portfolio.py", label="Crypto Portfolio")
+st.sidebar.page_link("pages/24_Personal_Finance.py", label="Personal Finance")
+st.sidebar.page_link("pages/25_ESG_Tracker.py", label="ESG Tracker")
+st.sidebar.page_link("pages/26_Financial_Reporting.py", label="Financial Reporting")
+
+# Mini Projects — ML & Quant
+st.sidebar.caption("ML & Quantitative")
+st.sidebar.page_link("pages/30_VaR_CVaR.py", label="VaR & CVaR")
+st.sidebar.page_link("pages/31_Time_Series.py", label="Time Series")
+st.sidebar.page_link("pages/32_Sentiment_Analysis.py", label="Sentiment Analysis")
+st.sidebar.page_link("pages/33_Anomaly_Detection.py", label="Anomaly Detection")
+st.sidebar.page_link("pages/34_Loan_Default.py", label="Loan Default Prediction")
+st.sidebar.page_link("pages/35_Clustering.py", label="Customer Clustering")
+st.sidebar.page_link("pages/36_Portfolio_Optimization.py", label="Portfolio Optimization")
+st.sidebar.page_link("pages/37_Algo_Trading.py", label="Algo Trading Backtest")
+st.sidebar.page_link("pages/38_Stock_Prediction.py", label="Stock Prediction")
+st.sidebar.page_link("pages/39_Market_Insights.py", label="Market Insights")
 
 st.sidebar.markdown("---")
-st.sidebar.page_link("app.py", label="System Health", icon="🩺")
-st.sidebar.markdown("---")
+st.sidebar.page_link("app.py", label="System Health")
 st.sidebar.markdown(
-    "**Built with:** Python, FastAPI, SQLAlchemy, "
-    "Docker, Claude API, Streamlit"
-)
-st.sidebar.markdown(
-    "[GitHub Repo](https://github.com/MishCodesFinBytes/QuantLab) · "
-    "[Blog](https://mishcodesfinbytes.github.io/FinBytes/quant-lab/stock-risk-scanner/)"
+    "[GitHub](https://github.com/MishCodesFinBytes/QuantLab) · "
+    "[Blog](https://mishcodesfinbytes.github.io/FinBytes/)"
 )
 
 # ============================================================
@@ -43,7 +70,6 @@ st.markdown("Shared infrastructure status for all FinBytes QuantLabs projects.")
 
 st.markdown("---")
 
-# GitHub
 st.markdown("### Shared Infrastructure")
 
 ci_status = {"status": "unknown", "detail": ""}
@@ -112,4 +138,4 @@ st.warning(
 st.markdown("---")
 st.markdown("### Per-Project Health")
 st.markdown("Each project has its own **System Health** tab with API, database, and test checks.")
-st.page_link("pages/1_Stock_Risk_Scanner.py", label="Stock Risk Scanner → System Health tab", icon="📊")
+st.page_link("pages/1_Stock_Risk_Scanner.py", label="Stock Risk Scanner")
