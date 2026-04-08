@@ -10,7 +10,7 @@ import pandas as pd
 import plotly.express as px
 from data import fetch_exchange_rates
 
-st.set_page_config(page_title="Currency Dashboard", page_icon="💱", layout="wide")
+st.set_page_config(page_title="Currency Dashboard", layout="wide")
 st.title("Currency Dashboard")
 
 # ── Sidebar ──────────────────────────────────────────────────────────────────

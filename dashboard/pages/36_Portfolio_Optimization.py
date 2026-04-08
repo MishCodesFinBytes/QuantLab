@@ -11,7 +11,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from data import fetch_multiple_stocks
 
-st.set_page_config(page_title="Portfolio Optimization", page_icon="💼", layout="wide")
+st.set_page_config(page_title="Portfolio Optimization", layout="wide")
 st.title("Portfolio Optimization — Efficient Frontier")
 
 # ── Sidebar ──────────────────────────────────────────────────────────────────

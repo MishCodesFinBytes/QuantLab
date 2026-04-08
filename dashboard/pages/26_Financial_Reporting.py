@@ -12,7 +12,7 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from data import fetch_stock_history
 
-st.set_page_config(page_title="Financial Reporting", page_icon="📄", layout="wide")
+st.set_page_config(page_title="Financial Reporting", layout="wide")
 st.title("Financial Reporting")
 
 # ── Sidebar ──────────────────────────────────────────────────────────────────

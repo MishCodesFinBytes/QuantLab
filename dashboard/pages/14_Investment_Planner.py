@@ -9,8 +9,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from finance import compound_growth
 
-st.set_page_config(page_title="Investment Planner", page_icon="📈", layout="wide")
-st.title("📈 Investment Growth Planner")
+st.set_page_config(page_title="Investment Planner", layout="wide")
+st.title("Investment Growth Planner")
 st.caption("Project how your investments grow over time with compound interest.")
 
 # ── Sidebar inputs ──────────────────────────────────────────────────────────

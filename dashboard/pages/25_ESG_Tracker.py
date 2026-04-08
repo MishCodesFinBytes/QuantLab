@@ -11,7 +11,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from data import SAMPLE_ESG_DATA
 
-st.set_page_config(page_title="ESG Tracker", page_icon="🌱", layout="wide")
+st.set_page_config(page_title="ESG Tracker", layout="wide")
 st.title("ESG Score Tracker")
 
 esg = SAMPLE_ESG_DATA.copy()

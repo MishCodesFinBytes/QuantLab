@@ -9,8 +9,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from finance import retirement_projection
 
-st.set_page_config(page_title="Retirement Calculator", page_icon="🏖️", layout="wide")
-st.title("🏖️ Retirement Calculator")
+st.set_page_config(page_title="Retirement Calculator", layout="wide")
+st.title("Retirement Calculator")
 st.caption("Project your retirement savings with deterministic and Monte Carlo estimates.")
 
 # ── Sidebar inputs ──────────────────────────────────────────────────────────

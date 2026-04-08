@@ -14,7 +14,7 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import acf
 from data import fetch_stock_history
 
-st.set_page_config(page_title="Time Series", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Time Series", layout="wide")
 st.title("Time Series Decomposition")
 
 # ── Sidebar ──────────────────────────────────────────────────────────────────

@@ -12,7 +12,7 @@ import plotly.graph_objects as go
 from scipy import stats as sp_stats
 from data import fetch_stock_history
 
-st.set_page_config(page_title="VaR & CVaR", page_icon="⚠️", layout="wide")
+st.set_page_config(page_title="VaR & CVaR", layout="wide")
 st.title("Value at Risk & Conditional VaR")
 
 # ── Sidebar ──────────────────────────────────────────────────────────────────

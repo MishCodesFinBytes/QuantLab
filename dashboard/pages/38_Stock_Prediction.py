@@ -14,7 +14,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from data import fetch_stock_history
 
-st.set_page_config(page_title="Stock Prediction", page_icon="🔮", layout="wide")
+st.set_page_config(page_title="Stock Prediction", layout="wide")
 st.title("Stock Return Prediction (ML)")
 
 st.warning(

@@ -10,7 +10,7 @@ import pandas as pd
 import plotly.express as px
 from data import fetch_crypto_prices
 
-st.set_page_config(page_title="Crypto Portfolio", page_icon="🪙", layout="wide")
+st.set_page_config(page_title="Crypto Portfolio", layout="wide")
 st.title("Crypto Portfolio Tracker")
 
 # ── Sidebar: Holdings Editor ─────────────────────────────────────────────────

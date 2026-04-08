@@ -10,7 +10,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Personal Finance", page_icon="💰", layout="wide")
+st.set_page_config(page_title="Personal Finance", layout="wide")
 st.title("Personal Finance Dashboard")
 
 # ── Sidebar: Income & Editable Tables ────────────────────────────────────────
