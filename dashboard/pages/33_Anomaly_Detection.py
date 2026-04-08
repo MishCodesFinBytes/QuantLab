@@ -1,0 +1,98 @@
+"""Anomaly Detection — flag unusual returns with Z-score or Isolation Forest."""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
+
+import streamlit as st
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from data import fetch_stock_history
+
+st.set_page_config(page_title="Anomaly Detection", page_icon="🔍", layout="wide")
+st.title("Return Anomaly Detection")
+
+# ── Sidebar ──────────────────────────────────────────────────────────────────
+ticker = st.sidebar.text_input("Ticker Symbol", value="AAPL").upper().strip()
+period = st.sidebar.selectbox("Period", ["3mo", "6mo", "1y", "2y", "5y"], index=2)
+method = st.sidebar.radio("Detection Method", ["Z-Score", "Isolation Forest"])
+threshold = st.sidebar.slider("Z-Score Threshold", 1.5, 4.0, 2.5, 0.1,
+                              disabled=(method != "Z-Score"))
+
+if not ticker:
+    st.info("Enter a ticker symbol in the sidebar.")
+    st.stop()
+
+
+@st.cache_data(show_spinner=False)
+def load_returns(tkr: str, per: str) -> pd.DataFrame:
+    df = fetch_stock_history(tkr, per)
+    df["Return"] = df["Close"].pct_change()
+    return df.dropna(subset=["Return"])
+
+
+with st.spinner(f"Loading {ticker}..."):
+    df = load_returns(ticker, period)
+
+if df.empty:
+    st.error(f"No data found for **{ticker}**.")
+    st.stop()
+
+
+# ── Detect anomalies ────────────────────────────────────────────────────────
+@st.cache_data(show_spinner=False)
+def detect_anomalies(returns: pd.Series, meth: str, thresh: float) -> pd.Series:
+    if meth == "Z-Score":
+        z = (returns - returns.mean()) / returns.std()
+        return z.abs() > thresh
+    else:
+        from sklearn.ensemble import IsolationForest
+        iso = IsolationForest(contamination=0.05, random_state=42)
+        preds = iso.fit_predict(returns.values.reshape(-1, 1))
+        return pd.Series(preds == -1, index=returns.index)
+
+
+anomaly_mask = detect_anomalies(df["Return"], method, threshold)
+df["Anomaly"] = anomaly_mask.values
+
+# ── Metrics ──────────────────────────────────────────────────────────────────
+n_anomalies = df["Anomaly"].sum()
+pct = n_anomalies / len(df) * 100
+
+c1, c2, c3 = st.columns(3)
+c1.metric("Total Observations", len(df))
+c2.metric("Anomalies Detected", int(n_anomalies))
+c3.metric("Anomaly Rate", f"{pct:.1f}%")
+
+# ── Chart ────────────────────────────────────────────────────────────────────
+normal = df[~df["Anomaly"]]
+outliers = df[df["Anomaly"]]
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(
+    x=normal.index, y=normal["Return"], mode="lines",
+    name="Normal", line=dict(color="steelblue", width=1),
+))
+fig.add_trace(go.Scatter(
+    x=outliers.index, y=outliers["Return"], mode="markers",
+    name="Anomaly", marker=dict(color="red", size=8, symbol="circle"),
+))
+fig.update_layout(
+    title=f"{ticker} Daily Returns — Anomalies ({method})",
+    xaxis_title="Date", yaxis_title="Daily Return",
+    height=500, margin=dict(t=60, b=40),
+)
+st.plotly_chart(fig, use_container_width=True)
+
+# ── Anomaly dates table ─────────────────────────────────────────────────────
+if n_anomalies > 0:
+    st.subheader("Anomaly Dates")
+    anomaly_df = outliers[["Close", "Return"]].copy()
+    anomaly_df["Return"] = anomaly_df["Return"].map("{:.4%}".format)
+    anomaly_df.index = anomaly_df.index.strftime("%Y-%m-%d")
+    anomaly_df.index.name = "Date"
+    st.dataframe(anomaly_df, use_container_width=True)
+else:
+    st.info("No anomalies detected with current settings.")
