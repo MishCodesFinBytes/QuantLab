@@ -209,3 +209,7 @@ st.caption(
     "Sentiment scores are computed using VADER. "
     "Correlation measures the relationship between headline sentiment and next-day stock return."
 )
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · yfinance · VADER · Plotly · Streamlit")

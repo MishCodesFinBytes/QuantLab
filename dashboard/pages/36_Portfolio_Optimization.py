@@ -153,3 +153,7 @@ fig.update_layout(
     yaxis_title="Annualized Return", height=550, margin=dict(t=60, b=40),
 )
 st.plotly_chart(fig, use_container_width=True)
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · yfinance · NumPy · Plotly · Streamlit")

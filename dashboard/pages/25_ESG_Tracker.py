@@ -202,3 +202,7 @@ with tab2:
     )
     fig_bar.update_layout(yaxis_range=[0, 100])
     st.plotly_chart(fig_bar, use_container_width=True)
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · yfinance · Plotly · Streamlit")

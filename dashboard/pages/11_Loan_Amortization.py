@@ -154,3 +154,7 @@ with st.expander("Full Amortization Schedule"):
     for col in ["payment", "principal", "interest", "balance"]:
         display_df[col] = display_df[col].map(lambda x: f"${x:,.2f}")
     st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · NumPy · Plotly · Streamlit")

@@ -125,3 +125,7 @@ if bar_data:
             )
             fig_donut.update_traces(textinfo="percent+label")
             st.plotly_chart(fig_donut, use_container_width=True)
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · Plotly · Streamlit")

@@ -116,3 +116,7 @@ st.caption(
     "Multiplicative decomposition separates price into trend, seasonal, and residual "
     "components. ACF measures the correlation of returns with their lagged values."
 )
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · yfinance · statsmodels · Plotly · Streamlit")

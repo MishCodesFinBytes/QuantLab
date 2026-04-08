@@ -121,3 +121,7 @@ with col_b:
         file_name=f"{ticker}_{period}_stats.csv",
         mime="text/csv",
     )
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · yfinance · pandas · Plotly · Streamlit")

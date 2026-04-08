@@ -119,3 +119,7 @@ with tab2:
         }),
         use_container_width=True,
     )
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · CoinGecko API · Plotly · Streamlit")
