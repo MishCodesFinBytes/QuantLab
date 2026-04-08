@@ -163,3 +163,7 @@ if run_mc and "finals" in result:
         fig_hist.add_vline(x=result["final"], line_dash="dash", line_color="red",
                            annotation_text="Deterministic")
         st.plotly_chart(fig_hist, use_container_width=True)
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · NumPy · Plotly · Streamlit")

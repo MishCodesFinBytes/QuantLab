@@ -162,3 +162,7 @@ with st.expander("Cluster Profiles"):
     profile.index = profile.index.astype(str)
     profile["count"] = data.groupby("Cluster").size()
     st.dataframe(profile, use_container_width=True)
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · scikit-learn · NumPy · Plotly · Streamlit")

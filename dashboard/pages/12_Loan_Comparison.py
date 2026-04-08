@@ -139,3 +139,7 @@ with st.expander("Month-by-Month Comparison"):
         compare = compare.merge(temp, on="period", how="left")
     compare = compare.fillna("--")
     st.dataframe(compare, use_container_width=True, hide_index=True)
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · NumPy · Plotly · Streamlit")

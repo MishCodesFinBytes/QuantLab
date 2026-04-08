@@ -113,3 +113,7 @@ else:
         )
         rate_df["Converted"] = rate_df["Rate"] * amount
         st.dataframe(rate_df, use_container_width=True, height=400)
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · Exchange Rate API · Plotly · Streamlit")

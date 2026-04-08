@@ -98,3 +98,7 @@ fig.update_yaxes(title_text="Price ($)", row=1, col=1)
 fig.update_yaxes(title_text="Volume", row=2, col=1)
 
 st.plotly_chart(fig, use_container_width=True)
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · yfinance · Plotly · Streamlit")

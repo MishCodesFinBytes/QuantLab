@@ -139,3 +139,7 @@ with st.expander("Headlines and Scores"):
         ),
         use_container_width=True, hide_index=True,
     )
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · VADER · TextBlob · Plotly · Streamlit")

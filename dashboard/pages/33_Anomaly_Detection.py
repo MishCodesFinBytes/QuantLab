@@ -126,3 +126,7 @@ if n_anomalies > 0:
         st.dataframe(anomaly_df, use_container_width=True)
 else:
     st.info("No anomalies detected with current settings.")
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · yfinance · scikit-learn · Plotly · Streamlit")

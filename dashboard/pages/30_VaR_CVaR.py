@@ -120,3 +120,7 @@ st.caption(
     "VaR estimates the maximum expected loss at a given confidence level. "
     "CVaR (Expected Shortfall) measures the average loss beyond the VaR threshold."
 )
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · yfinance · NumPy · SciPy · Plotly · Streamlit")

@@ -167,3 +167,7 @@ with st.expander("Detailed Breakdown"):
     detail_df["pct"] = detail_df["pct"].map(lambda x: f"{x:.1f}%")
     detail_df.columns = ["Category", "Amount", "% of Income"]
     st.dataframe(detail_df, use_container_width=True, hide_index=True)
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · Plotly · Streamlit")

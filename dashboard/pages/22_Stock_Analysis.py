@@ -128,3 +128,7 @@ if show_macd:
 fig.update_layout(height=200 + n_rows * 250, margin=dict(t=60, b=30),
                   xaxis_rangeslider_visible=False)
 st.plotly_chart(fig, use_container_width=True)
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · yfinance · pandas · Plotly · Streamlit")

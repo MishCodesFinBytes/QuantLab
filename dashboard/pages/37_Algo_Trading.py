@@ -154,3 +154,7 @@ with tab2:
     fig2.update_layout(title="Equity Curve", yaxis_title="Cumulative Return",
                        height=400, margin=dict(t=50, b=40))
     st.plotly_chart(fig2, use_container_width=True)
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · yfinance · pandas · Plotly · Streamlit")

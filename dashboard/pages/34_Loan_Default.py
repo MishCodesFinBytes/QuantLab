@@ -174,3 +174,7 @@ if pred == 1:
     st.error(f"Prediction: **DEFAULT** (probability: {prob:.1%})")
 else:
     st.success(f"Prediction: **NO DEFAULT** (probability of default: {prob:.1%})")
+
+# -- Tech stack ---------------------------------------------------------------
+st.markdown("---")
+st.caption("**Tech:** Python · scikit-learn · NumPy · Plotly · Streamlit")
