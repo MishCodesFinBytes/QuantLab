@@ -18,7 +18,7 @@ render_sidebar()
 st.set_page_config(page_title="Market Insights", layout="wide")
 st.title("Market Insights -- Sentiment vs Price")
 
-# -- Inputs -------------------------------------------------------------------
+# -- Inputs --------------------------------------------------------------------
 col1, col2 = st.columns(2)
 
 with col1:
@@ -31,9 +31,7 @@ if not ticker:
     st.info("Enter a ticker symbol above.")
     st.stop()
 
-st.divider()
-
-# -- Sample headlines with dates ----------------------------------------------
+# -- Sample headlines with dates -----------------------------------------------
 SAMPLE_HEADLINES = [
     ("2025-11-01", "Apple reports record quarterly revenue beating analyst expectations"),
     ("2025-11-08", "Tech stocks rally on strong earnings season across the board"),
@@ -57,6 +55,52 @@ SAMPLE_HEADLINES = [
     ("2026-03-23", "Pharmaceutical stocks surge on breakthrough drug approvals"),
 ]
 
+DEFAULT_HEADLINE_TEXT = "\n".join(f"{d} | {h}" for d, h in SAMPLE_HEADLINES)
+
+if "insights_headline_text" not in st.session_state:
+    st.session_state["insights_headline_text"] = DEFAULT_HEADLINE_TEXT
+
+headline_text = st.text_area(
+    "Headlines (one per line, format: YYYY-MM-DD | headline text)",
+    value=st.session_state["insights_headline_text"],
+    height=250,
+    key="insights_headline_input",
+)
+
+if st.button("Reset to samples"):
+    st.session_state["insights_headline_text"] = DEFAULT_HEADLINE_TEXT
+    st.rerun()
+else:
+    st.session_state["insights_headline_text"] = headline_text
+
+
+def parse_headlines(text: str) -> list[tuple]:
+    """Parse 'YYYY-MM-DD | headline' lines into (date_str, headline) tuples."""
+    results = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if "|" in line:
+            parts = line.split("|", 1)
+            date_str = parts[0].strip()
+            headline = parts[1].strip()
+            if date_str and headline:
+                results.append((date_str, headline))
+        else:
+            # Tolerate lines without a date -- skip them with a warning
+            st.warning(f"Skipping line (no date found): {line[:60]}")
+    return results
+
+
+headlines = parse_headlines(headline_text)
+
+if not headlines:
+    st.info("Enter at least one headline in YYYY-MM-DD | text format.")
+    st.stop()
+
+st.divider()
+
 
 @st.cache_data(show_spinner=False)
 def score_headlines(headlines: list[tuple]) -> pd.DataFrame:
@@ -73,7 +117,7 @@ def load_prices(tkr: str, per: str) -> pd.DataFrame:
     return fetch_stock_history(tkr, per)
 
 
-sent_df = score_headlines(SAMPLE_HEADLINES)
+sent_df = score_headlines(headlines)
 
 with st.spinner(f"Loading {ticker}..."):
     price_df = load_prices(ticker, period)
@@ -85,7 +129,7 @@ if price_df.empty:
 price_df["Return"] = price_df["Close"].pct_change()
 price_df["Next_Return"] = price_df["Return"].shift(-1)
 
-# -- Merge sentiment with nearest trading date --------------------------------
+# -- Merge sentiment with nearest trading date ---------------------------------
 price_daily = price_df[["Close", "Return", "Next_Return"]].copy()
 price_daily.index = price_daily.index.normalize()
 
@@ -95,7 +139,7 @@ merged = pd.merge_asof(
     left_on="Date", right_on="Trade_Date", direction="nearest",
 )
 
-# -- Metrics ------------------------------------------------------------------
+# -- Metrics -------------------------------------------------------------------
 valid = merged.dropna(subset=["Sentiment", "Next_Return"])
 if len(valid) > 2:
     corr = valid["Sentiment"].corr(valid["Next_Return"])
@@ -108,7 +152,7 @@ c1.metric("Average Sentiment", f"{avg_sent:.3f}")
 c2.metric("Sentiment-Return Correlation", f"{corr:.3f}")
 c3.metric("Headlines Analyzed", len(sent_df))
 
-# -- Dual-axis chart ----------------------------------------------------------
+# -- Dual-axis chart -----------------------------------------------------------
 fig = make_subplots(specs=[[{"secondary_y": True}]])
 
 fig.add_trace(go.Scatter(
@@ -130,7 +174,7 @@ fig.update_yaxes(title_text="Price ($)", secondary_y=False)
 fig.update_yaxes(title_text="Sentiment Score", secondary_y=True, range=[-1, 1])
 st.plotly_chart(fig, use_container_width=True)
 
-# -- Top positive / negative headlines ----------------------------------------
+# -- Top positive / negative headlines -----------------------------------------
 tab1, tab2 = st.tabs(["Top 5 Most Positive", "Top 5 Most Negative"])
 
 with tab1:
@@ -146,6 +190,6 @@ with tab2:
     st.dataframe(top_neg, use_container_width=True, hide_index=True)
 
 st.caption(
-    "Sentiment scores are computed using VADER on sample headlines. "
+    "Sentiment scores are computed using VADER. "
     "Correlation measures the relationship between headline sentiment and next-day stock return."
 )

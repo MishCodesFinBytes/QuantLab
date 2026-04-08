@@ -12,8 +12,8 @@ import plotly.graph_objects as go
 st.set_page_config(page_title="Sentiment Analysis", layout="wide")
 st.title("Headline Sentiment Analysis")
 
-# -- Sample headlines ---------------------------------------------------------
-HEADLINES = [
+# -- Sample headlines ----------------------------------------------------------
+DEFAULT_HEADLINES = [
     "Apple reports record quarterly revenue beating analyst expectations",
     "Federal Reserve raises interest rates by 25 basis points",
     "Tesla shares plunge 12% after disappointing delivery numbers",
@@ -34,8 +34,32 @@ HEADLINES = [
     "Boeing receives largest order in company history from airlines",
 ]
 
-# -- Inputs -------------------------------------------------------------------
+DEFAULT_TEXT = "\n".join(DEFAULT_HEADLINES)
+
+# -- Inputs --------------------------------------------------------------------
 analyzer = st.radio("Sentiment Analyzer", ["VADER", "TextBlob"], horizontal=True)
+
+if "headline_text" not in st.session_state:
+    st.session_state["headline_text"] = DEFAULT_TEXT
+
+headline_text = st.text_area(
+    "Headlines (one per line)",
+    value=st.session_state["headline_text"],
+    height=250,
+    key="headline_input",
+)
+
+if st.button("Reset to samples"):
+    st.session_state["headline_text"] = DEFAULT_TEXT
+    st.rerun()
+else:
+    st.session_state["headline_text"] = headline_text
+
+HEADLINES = [line.strip() for line in headline_text.splitlines() if line.strip()]
+
+if not HEADLINES:
+    st.info("Enter at least one headline above.")
+    st.stop()
 
 st.divider()
 
@@ -62,7 +86,7 @@ def compute_sentiment(headlines: list[str], method: str) -> pd.DataFrame:
 with st.spinner("Analyzing sentiment..."):
     df = compute_sentiment(HEADLINES, analyzer)
 
-# -- Metrics ------------------------------------------------------------------
+# -- Metrics -------------------------------------------------------------------
 avg_score = df["Score"].mean()
 pct_pos = (df["Label"] == "Positive").mean() * 100
 pct_neg = (df["Label"] == "Negative").mean() * 100
@@ -72,7 +96,7 @@ c1.metric("Average Sentiment", f"{avg_score:.3f}")
 c2.metric("% Positive", f"{pct_pos:.0f}%")
 c3.metric("% Negative", f"{pct_neg:.0f}%")
 
-# -- Bar chart ----------------------------------------------------------------
+# -- Bar chart -----------------------------------------------------------------
 sorted_df = df.sort_values("Score")
 colors = ["#2ca02c" if s > 0.05 else "#d62728" if s < -0.05 else "#999999"
           for s in sorted_df["Score"]]
@@ -89,7 +113,7 @@ fig.update_layout(
 )
 st.plotly_chart(fig, use_container_width=True)
 
-# -- Table --------------------------------------------------------------------
+# -- Table ---------------------------------------------------------------------
 with st.expander("Headlines and Scores"):
     st.dataframe(
         df.style.applymap(
