@@ -8,7 +8,7 @@ import plotly.express as px
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans, DBSCAN
 
-st.set_page_config(page_title="Clustering", page_icon="🔬", layout="wide")
+st.set_page_config(page_title="Clustering", layout="wide")
 st.title("Customer Segmentation via Clustering")
 
 # ── Sidebar ──────────────────────────────────────────────────────────────────

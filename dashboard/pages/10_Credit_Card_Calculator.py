@@ -9,8 +9,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from finance import credit_card_payoff, credit_card_payment_for_months
 
-st.set_page_config(page_title="Credit Card Calculator", page_icon="💳", layout="wide")
-st.title("💳 Credit Card Payoff Calculator")
+st.set_page_config(page_title="Credit Card Calculator", layout="wide")
+st.title("Credit Card Payoff Calculator")
 
 # ── Mode selection ─────────────────────────────────────────────────────────
 mode = st.radio(

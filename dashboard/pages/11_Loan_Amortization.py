@@ -9,8 +9,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from finance import loan_amortization
 
-st.set_page_config(page_title="Loan Amortization", page_icon="🏠", layout="wide")
-st.title("🏠 Loan Amortization Calculator")
+st.set_page_config(page_title="Loan Amortization", layout="wide")
+st.title("Loan Amortization Calculator")
 st.caption("Visualize how each payment splits between principal and interest over the life of a loan.")
 
 # ── Sidebar inputs ──────────────────────────────────────────────────────────

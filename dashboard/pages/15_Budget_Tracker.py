@@ -10,8 +10,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from finance import budget_summary
 
-st.set_page_config(page_title="Budget Tracker", page_icon="💰", layout="wide")
-st.title("💰 Budget Tracker")
+st.set_page_config(page_title="Budget Tracker", layout="wide")
+st.title("Budget Tracker")
 st.caption("Track your monthly spending and see where your money goes.")
 
 # ── Sidebar inputs ──────────────────────────────────────────────────────────

@@ -13,7 +13,7 @@ from plotly.subplots import make_subplots
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from data import fetch_stock_history
 
-st.set_page_config(page_title="Market Insights", page_icon="📰", layout="wide")
+st.set_page_config(page_title="Market Insights", layout="wide")
 st.title("Market Insights — Sentiment vs Price")
 
 # ── Sidebar ──────────────────────────────────────────────────────────────────

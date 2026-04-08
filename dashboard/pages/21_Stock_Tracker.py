@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from data import fetch_stock_history
 
-st.set_page_config(page_title="Stock Tracker", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Stock Tracker", layout="wide")
 st.title("Stock Tracker")
 
 # ── Sidebar ──────────────────────────────────────────────────────────────────

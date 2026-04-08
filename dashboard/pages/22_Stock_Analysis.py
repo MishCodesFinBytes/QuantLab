@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from data import fetch_stock_history, compute_technical_indicators
 
-st.set_page_config(page_title="Stock Analysis", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Stock Analysis", layout="wide")
 st.title("Technical Analysis")
 
 # ── Sidebar ──────────────────────────────────────────────────────────────────

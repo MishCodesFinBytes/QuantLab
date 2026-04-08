@@ -9,8 +9,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from finance import loan_amortization
 
-st.set_page_config(page_title="Loan Comparison", page_icon="⚖️", layout="wide")
-st.title("⚖️ Loan Comparison")
+st.set_page_config(page_title="Loan Comparison", layout="wide")
+st.title("Loan Comparison")
 st.caption("Compare two loan options side by side to find the better deal.")
 
 # ── Sidebar inputs ──────────────────────────────────────────────────────────

@@ -11,7 +11,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from data import fetch_stock_history
 
-st.set_page_config(page_title="Algo Trading", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="Algo Trading", layout="wide")
 st.title("Algorithmic Trading Backtest")
 
 # ── Sidebar ──────────────────────────────────────────────────────────────────
