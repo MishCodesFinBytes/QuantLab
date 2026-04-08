@@ -39,16 +39,16 @@ if "specific" in mode.lower():
     with col_b2:
         term_b = st.selectbox("Term B (years)", [5, 10, 15, 20, 25, 30], index=2, key="tb")
 else:
-    col_in1, col_in2, col_in3 = st.columns(3)
+    col_in1, col_in2, col_in3, col_in4 = st.columns(4)
     with col_in1:
         principal = st.number_input("Loan Principal ($)", min_value=100.0, value=250000.0, step=5000.0)
     with col_in2:
-        base_rate = st.number_input("Base Rate (%)", min_value=1.0, max_value=15.0, value=6.5, step=0.1)
+        rate_a = st.number_input("Rate A (%)", min_value=1.0, max_value=15.0, value=6.5, step=0.1, key="rs_a")
     with col_in3:
+        rate_b = st.number_input("Rate B (%)", min_value=1.0, max_value=15.0, value=5.0, step=0.1, key="rs_b")
+    with col_in4:
         term_both = st.selectbox("Loan Term (years)", [5, 10, 15, 20, 25, 30], index=5)
 
-    rate_a = base_rate
-    rate_b = max(1.0, base_rate - 1.5)
     term_a = term_both
     term_b = term_both
 
