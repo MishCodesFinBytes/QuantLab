@@ -85,29 +85,38 @@ category: calculators
 
 ### Quant Lab index page update
 
-The `_tabs/quant-lab.md` page needs updating to list mini projects grouped by category under the capstone:
+Flat list — all projects at the same level. Category shown as an inline badge/label next to each name:
 
 ```
 Quant Lab
 
-Projects
-  Stock Risk Scanner — capstone (existing link)
-
-Mini Projects
-
-  Calculators
-    Credit Card Calculator — payoff schedule...
-    Loan Amortization — PMT formula...
-    ...
-
-  Dashboards
-    Currency Dashboard — live rates...
-    ...
-
-  ML & Quantitative
-    VaR & CVaR — risk measurement...
-    ...
+Stock Risk Scanner — Capstone
+Credit Card Calculator · Mini Project · Calculator
+Loan Amortization · Mini Project · Calculator
+Loan Comparison · Mini Project · Calculator
+Retirement Calculator · Mini Project · Calculator
+Investment Planner · Mini Project · Calculator
+Budget Tracker · Mini Project · Calculator
+Currency Dashboard · Mini Project · Dashboard
+Stock Tracker · Mini Project · Dashboard
+Stock Analysis · Mini Project · Dashboard
+Crypto Portfolio · Mini Project · Dashboard
+Personal Finance · Mini Project · Dashboard
+ESG Tracker · Mini Project · Dashboard
+Financial Reporting · Mini Project · Dashboard
+VaR & CVaR · Mini Project · ML & Quant
+Time Series · Mini Project · ML & Quant
+Sentiment Analysis · Mini Project · ML & Quant
+Anomaly Detection · Mini Project · ML & Quant
+Loan Default Prediction · Mini Project · ML & Quant
+Customer Clustering · Mini Project · ML & Quant
+Portfolio Optimization · Mini Project · ML & Quant
+Algo Trading Backtest · Mini Project · ML & Quant
+Stock Prediction · Mini Project · ML & Quant
+Market Insights · Mini Project · ML & Quant
 ```
+
+Badge styling: `Mini Project` in a neutral badge, category (`Calculator` / `Dashboard` / `ML & Quant`) in a colored badge.
 
 ### Posts to delete from `_posts/`
 
