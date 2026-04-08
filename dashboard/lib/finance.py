@@ -33,6 +33,17 @@ def credit_card_payoff(balance: float, apr: float, monthly_payment: float) -> di
     return {"months": month, "total_interest": round(total_interest, 2), "schedule": schedule}
 
 
+def credit_card_payment_for_months(balance: float, apr: float, target_months: int) -> float:
+    """Calculate the monthly payment needed to pay off in target_months."""
+    monthly_rate = apr / 100 / 12
+    if monthly_rate == 0:
+        return balance / target_months
+    payment = balance * monthly_rate * (1 + monthly_rate) ** target_months / (
+        (1 + monthly_rate) ** target_months - 1
+    )
+    return round(payment, 2)
+
+
 def loan_amortization(principal: float, annual_rate: float, years: int,
                       payments_per_year: int = 12) -> list[dict]:
     """Generate loan amortization schedule."""
