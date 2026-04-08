@@ -1,10 +1,9 @@
-"""Loan Default Prediction — classify defaults with Logistic Regression or Random Forest."""
+"""Loan Default Prediction -- classify defaults with Logistic Regression or Random Forest."""
 
 import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.figure_factory as ff
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
@@ -14,22 +13,22 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, confu
 st.set_page_config(page_title="Loan Default", layout="wide")
 st.title("Loan Default Prediction")
 
-# ── Sidebar ──────────────────────────────────────────────────────────────────
-model_choice = st.sidebar.radio("Model", ["Logistic Regression", "Random Forest"])
-test_size = st.sidebar.slider("Test Size (%)", 10, 40, 20) / 100
+# -- Model parameters ---------------------------------------------------------
+col1, col2 = st.columns(2)
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("Predict for New Applicant")
-inp_income = st.sidebar.number_input("Income ($)", 20000, 200000, 55000, 5000)
-inp_credit = st.sidebar.number_input("Credit Score", 300, 850, 680, 10)
-inp_debt = st.sidebar.number_input("Debt Ratio", 0.0, 1.0, 0.35, 0.05)
-inp_amount = st.sidebar.number_input("Loan Amount ($)", 1000, 500000, 25000, 1000)
-inp_years = st.sidebar.number_input("Employment Years", 0, 40, 5, 1)
+with col1:
+    model_choice = st.radio("Model", ["Logistic Regression", "Random Forest"],
+                            horizontal=True)
+
+with col2:
+    test_size = st.slider("Test Size (%)", 10, 40, 20) / 100
+
+st.divider()
 
 FEATURES = ["income", "credit_score", "debt_ratio", "loan_amount", "employment_years"]
 
 
-# ── Generate synthetic data ──────────────────────────────────────────────────
+# -- Generate synthetic data --------------------------------------------------
 @st.cache_data(show_spinner=False)
 def generate_data(n: int = 1000) -> pd.DataFrame:
     rng = np.random.default_rng(42)
@@ -53,7 +52,7 @@ def generate_data(n: int = 1000) -> pd.DataFrame:
 data = generate_data()
 
 
-# ── Train model ──────────────────────────────────────────────────────────────
+# -- Train model --------------------------------------------------------------
 @st.cache_data(show_spinner=False)
 def train_model(df: pd.DataFrame, model_name: str, ts: float):
     X = df[FEATURES]
@@ -70,7 +69,6 @@ def train_model(df: pd.DataFrame, model_name: str, ts: float):
 
     model.fit(X_train_s, y_train)
     preds = model.predict(X_test_s)
-    proba = model.predict_proba(X_test_s)[:, 1]
 
     if hasattr(model, "feature_importances_"):
         importance = model.feature_importances_
@@ -93,16 +91,16 @@ def train_model(df: pd.DataFrame, model_name: str, ts: float):
 with st.spinner("Training model..."):
     results = train_model(data, model_choice, test_size)
 
-# ── Metrics ──────────────────────────────────────────────────────────────────
+# -- Metrics ------------------------------------------------------------------
 c1, c2, c3 = st.columns(3)
 c1.metric("Accuracy", f"{results['accuracy']:.2%}")
 c2.metric("Precision", f"{results['precision']:.2%}")
 c3.metric("Recall", f"{results['recall']:.2%}")
 
-# ── Feature importance ───────────────────────────────────────────────────────
-col1, col2 = st.columns(2)
+# -- Feature importance & confusion matrix ------------------------------------
+tab1, tab2 = st.tabs(["Feature Importance", "Confusion Matrix"])
 
-with col1:
+with tab1:
     imp_df = pd.DataFrame({"Feature": FEATURES, "Importance": results["importance"]})
     imp_df = imp_df.sort_values("Importance")
     fig_imp = go.Figure(go.Bar(x=imp_df["Importance"], y=imp_df["Feature"],
@@ -110,8 +108,7 @@ with col1:
     fig_imp.update_layout(title="Feature Importance", height=350, margin=dict(t=40, b=30))
     st.plotly_chart(fig_imp, use_container_width=True)
 
-# ── Confusion matrix ────────────────────────────────────────────────────────
-with col2:
+with tab2:
     cm = results["cm"]
     labels = ["No Default", "Default"]
     fig_cm = go.Figure(go.Heatmap(
@@ -123,8 +120,27 @@ with col2:
                          margin=dict(t=40, b=30))
     st.plotly_chart(fig_cm, use_container_width=True)
 
-# ── User prediction ─────────────────────────────────────────────────────────
-st.subheader("Prediction for New Applicant")
+# -- User prediction ----------------------------------------------------------
+st.divider()
+st.subheader("Predict for New Applicant")
+
+inp_col1, inp_col2, inp_col3, inp_col4, inp_col5 = st.columns(5)
+
+with inp_col1:
+    inp_income = st.number_input("Income ($)", 20000, 200000, 55000, 5000)
+
+with inp_col2:
+    inp_credit = st.number_input("Credit Score", 300, 850, 680, 10)
+
+with inp_col3:
+    inp_debt = st.number_input("Debt Ratio", 0.0, 1.0, 0.35, 0.05)
+
+with inp_col4:
+    inp_amount = st.number_input("Loan Amount ($)", 1000, 500000, 25000, 1000)
+
+with inp_col5:
+    inp_years = st.number_input("Employment Years", 0, 40, 5, 1)
+
 user_input = np.array([[inp_income, inp_credit, inp_debt, inp_amount, inp_years]])
 user_scaled = results["scaler"].transform(user_input)
 pred = results["model"].predict(user_scaled)[0]

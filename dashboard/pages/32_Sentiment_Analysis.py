@@ -1,4 +1,4 @@
-"""Sentiment Analysis — analyze finance headlines with TextBlob or VADER."""
+"""Sentiment Analysis -- analyze finance headlines with TextBlob or VADER."""
 
 import streamlit as st
 import pandas as pd
@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 st.set_page_config(page_title="Sentiment Analysis", layout="wide")
 st.title("Headline Sentiment Analysis")
 
-# ── Sample headlines ─────────────────────────────────────────────────────────
+# -- Sample headlines ---------------------------------------------------------
 HEADLINES = [
     "Apple reports record quarterly revenue beating analyst expectations",
     "Federal Reserve raises interest rates by 25 basis points",
@@ -29,8 +29,10 @@ HEADLINES = [
     "Boeing receives largest order in company history from airlines",
 ]
 
-# ── Sidebar ──────────────────────────────────────────────────────────────────
-analyzer = st.sidebar.radio("Sentiment Analyzer", ["VADER", "TextBlob"])
+# -- Inputs -------------------------------------------------------------------
+analyzer = st.radio("Sentiment Analyzer", ["VADER", "TextBlob"], horizontal=True)
+
+st.divider()
 
 
 @st.cache_data(show_spinner=False)
@@ -55,7 +57,7 @@ def compute_sentiment(headlines: list[str], method: str) -> pd.DataFrame:
 with st.spinner("Analyzing sentiment..."):
     df = compute_sentiment(HEADLINES, analyzer)
 
-# ── Metrics ──────────────────────────────────────────────────────────────────
+# -- Metrics ------------------------------------------------------------------
 avg_score = df["Score"].mean()
 pct_pos = (df["Label"] == "Positive").mean() * 100
 pct_neg = (df["Label"] == "Negative").mean() * 100
@@ -65,18 +67,7 @@ c1.metric("Average Sentiment", f"{avg_score:.3f}")
 c2.metric("% Positive", f"{pct_pos:.0f}%")
 c3.metric("% Negative", f"{pct_neg:.0f}%")
 
-# ── Table ────────────────────────────────────────────────────────────────────
-st.subheader("Headlines & Scores")
-st.dataframe(
-    df.style.applymap(
-        lambda v: "color: green" if v == "Positive" else (
-            "color: red" if v == "Negative" else "color: gray"),
-        subset=["Label"],
-    ),
-    use_container_width=True, hide_index=True,
-)
-
-# ── Bar chart ────────────────────────────────────────────────────────────────
+# -- Bar chart ----------------------------------------------------------------
 sorted_df = df.sort_values("Score")
 colors = ["#2ca02c" if s > 0.05 else "#d62728" if s < -0.05 else "#999999"
           for s in sorted_df["Score"]]
@@ -92,3 +83,14 @@ fig.update_layout(
     margin=dict(l=350, t=60, b=40),
 )
 st.plotly_chart(fig, use_container_width=True)
+
+# -- Table --------------------------------------------------------------------
+with st.expander("Headlines and Scores"):
+    st.dataframe(
+        df.style.applymap(
+            lambda v: "color: green" if v == "Positive" else (
+                "color: red" if v == "Negative" else "color: gray"),
+            subset=["Label"],
+        ),
+        use_container_width=True, hide_index=True,
+    )

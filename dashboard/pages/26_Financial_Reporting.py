@@ -15,15 +15,22 @@ from data import fetch_stock_history
 st.set_page_config(page_title="Financial Reporting", layout="wide")
 st.title("Financial Reporting")
 
-# ── Sidebar ──────────────────────────────────────────────────────────────────
-ticker = st.sidebar.text_input("Ticker Symbol", value="AAPL").upper().strip()
-period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=3)
+# -- Inputs (main area) ------------------------------------------------------
+col_in1, col_in2 = st.columns(2)
+
+with col_in1:
+    ticker = st.text_input("Ticker Symbol", value="AAPL").upper().strip()
+
+with col_in2:
+    period = st.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=3)
+
+st.divider()
 
 if not ticker:
-    st.info("Enter a ticker symbol in the sidebar.")
+    st.info("Enter a ticker symbol above.")
     st.stop()
 
-# ── Fetch Data ───────────────────────────────────────────────────────────────
+# -- Fetch Data ---------------------------------------------------------------
 with st.spinner(f"Fetching {ticker} data..."):
     df = fetch_stock_history(ticker, period)
 
@@ -31,18 +38,11 @@ if df.empty:
     st.error(f"No data found for **{ticker}**.")
     st.stop()
 
-# ── Compute Returns ──────────────────────────────────────────────────────────
+# -- Compute Returns ----------------------------------------------------------
 df["Daily_Return"] = df["Close"].pct_change()
 df["Cumulative_Return"] = (1 + df["Daily_Return"]).cumprod() - 1
 
-# ── Summary Statistics ───────────────────────────────────────────────────────
-st.subheader("Summary Statistics")
-stats = df[["Open", "High", "Low", "Close", "Volume"]].describe().T
-stats["range"] = stats["max"] - stats["min"]
-st.dataframe(stats.style.format("{:.2f}"), use_container_width=True)
-
-# ── Key Metrics ──────────────────────────────────────────────────────────────
-st.subheader("Key Metrics")
+# -- Key Metrics --------------------------------------------------------------
 c1, c2, c3, c4 = st.columns(4)
 total_return = df["Cumulative_Return"].iloc[-1] * 100 if len(df) > 1 else 0
 avg_daily = df["Daily_Return"].mean() * 100
@@ -55,23 +55,31 @@ c2.metric("Avg Daily Return", f"{avg_daily:.4f}%")
 c3.metric("Daily Volatility", f"{volatility:.4f}%")
 c4.metric("Sharpe Ratio (ann.)", f"{sharpe:.2f}")
 
-# ── Charts: Price + Returns Histogram ────────────────────────────────────────
-st.subheader("Price History")
-fig_price = px.line(df, x=df.index, y="Close", title=f"{ticker} Closing Price")
-fig_price.update_layout(xaxis_title="Date", yaxis_title="Price ($)")
-st.plotly_chart(fig_price, use_container_width=True)
+# -- Summary Statistics -------------------------------------------------------
+with st.expander("Summary Statistics"):
+    stats = df[["Open", "High", "Low", "Close", "Volume"]].describe().T
+    stats["range"] = stats["max"] - stats["min"]
+    st.dataframe(stats.style.format("{:.2f}"), use_container_width=True)
 
-st.subheader("Daily Returns Distribution")
-returns_clean = df["Daily_Return"].dropna()
-fig_hist = px.histogram(
-    returns_clean, nbins=50,
-    title="Daily Returns Histogram",
-    labels={"value": "Daily Return", "count": "Frequency"},
-)
-fig_hist.update_layout(showlegend=False)
-st.plotly_chart(fig_hist, use_container_width=True)
+# -- Charts -------------------------------------------------------------------
+tab1, tab2 = st.tabs(["Price History", "Daily Returns Distribution"])
 
-# ── Download Buttons ─────────────────────────────────────────────────────────
+with tab1:
+    fig_price = px.line(df, x=df.index, y="Close", title=f"{ticker} Closing Price")
+    fig_price.update_layout(xaxis_title="Date", yaxis_title="Price ($)")
+    st.plotly_chart(fig_price, use_container_width=True)
+
+with tab2:
+    returns_clean = df["Daily_Return"].dropna()
+    fig_hist = px.histogram(
+        returns_clean, nbins=50,
+        title="Daily Returns Histogram",
+        labels={"value": "Daily Return", "count": "Frequency"},
+    )
+    fig_hist.update_layout(showlegend=False)
+    st.plotly_chart(fig_hist, use_container_width=True)
+
+# -- Export Data --------------------------------------------------------------
 st.subheader("Export Data")
 col_a, col_b = st.columns(2)
 
@@ -85,6 +93,8 @@ with col_a:
     )
 
 with col_b:
+    stats = df[["Open", "High", "Low", "Close", "Volume"]].describe().T
+    stats["range"] = stats["max"] - stats["min"]
     csv_stats = stats.to_csv()
     st.download_button(
         label="Download Summary Stats (CSV)",

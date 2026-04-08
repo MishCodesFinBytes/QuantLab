@@ -13,15 +13,22 @@ from data import fetch_stock_history
 st.set_page_config(page_title="Stock Tracker", layout="wide")
 st.title("Stock Tracker")
 
-# ── Sidebar ──────────────────────────────────────────────────────────────────
-ticker = st.sidebar.text_input("Ticker Symbol", value="AAPL").upper().strip()
-period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=3)
+# -- Inputs (main area) ------------------------------------------------------
+col_in1, col_in2 = st.columns(2)
+
+with col_in1:
+    ticker = st.text_input("Ticker Symbol", value="AAPL").upper().strip()
+
+with col_in2:
+    period = st.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=3)
+
+st.divider()
 
 if not ticker:
-    st.info("Enter a ticker symbol in the sidebar.")
+    st.info("Enter a ticker symbol above.")
     st.stop()
 
-# ── Fetch Data ───────────────────────────────────────────────────────────────
+# -- Fetch Data ---------------------------------------------------------------
 with st.spinner(f"Fetching {ticker} data..."):
     df = fetch_stock_history(ticker, period)
 
@@ -29,8 +36,7 @@ if df.empty:
     st.error(f"No data found for ticker **{ticker}**. Please check the symbol and try again.")
     st.stop()
 
-# ── Key Metrics ──────────────────────────────────────────────────────────────
-st.subheader(f"{ticker} — Key Metrics")
+# -- Key Metrics --------------------------------------------------------------
 latest = df.iloc[-1]
 prev = df.iloc[-2] if len(df) > 1 else latest
 
@@ -41,8 +47,7 @@ col2.metric("52-Week High", f"${df['High'].max():.2f}")
 col3.metric("52-Week Low", f"${df['Low'].min():.2f}")
 col4.metric("Volume (latest)", f"{int(latest['Volume']):,}")
 
-# ── Candlestick + Volume Chart ───────────────────────────────────────────────
-st.subheader("Price & Volume")
+# -- Candlestick + Volume Chart -----------------------------------------------
 fig = make_subplots(
     rows=2, cols=1, shared_xaxes=True,
     vertical_spacing=0.03,
@@ -68,7 +73,7 @@ fig.add_trace(
 fig.update_layout(
     xaxis_rangeslider_visible=False,
     height=600,
-    title_text=f"{ticker} — {period}",
+    title_text=f"{ticker} -- {period}",
     margin=dict(t=60, b=30),
 )
 fig.update_yaxes(title_text="Price ($)", row=1, col=1)

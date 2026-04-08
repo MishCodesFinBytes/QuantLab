@@ -1,4 +1,4 @@
-"""Interactive Budget Tracker."""
+"""Interactive Budget Tracker -- two modes."""
 
 import streamlit as st
 import plotly.express as px
@@ -12,14 +12,37 @@ from finance import budget_summary
 
 st.set_page_config(page_title="Budget Tracker", layout="wide")
 st.title("Budget Tracker")
-st.caption("Track your monthly spending and see where your money goes.")
 
-# ── Sidebar inputs ──────────────────────────────────────────────────────────
-with st.sidebar:
-    st.header("Income")
+# -- Mode selection ------------------------------------------------------------
+mode = st.radio(
+    "What do you want to do?",
+    ["Track my monthly budget",
+     "Plan a budget from a savings target"],
+    horizontal=True,
+)
+
+st.divider()
+
+# -- Inputs (main area) -------------------------------------------------------
+col_in1, col_in2, col_in3 = st.columns(3)
+
+with col_in1:
     income = st.number_input("Monthly Income ($)", min_value=0.0, value=5000.0, step=100.0)
 
-# ── Editable expense table ──────────────────────────────────────────────────
+with col_in2:
+    if "plan" in mode.lower():
+        savings_target = st.number_input("Monthly Savings Target ($)", min_value=0.0, value=800.0, step=50.0)
+    else:
+        st.write("")  # spacer
+
+with col_in3:
+    if "plan" in mode.lower():
+        spending_budget = income - savings_target if income > savings_target else 0.0
+        st.metric("Available for Spending", f"${spending_budget:,.2f}")
+    else:
+        st.write("")  # spacer
+
+# -- Editable expense table ----------------------------------------------------
 st.subheader("Monthly Expenses")
 st.caption("Edit the amounts below or add new categories.")
 
@@ -39,7 +62,7 @@ edited_df = st.data_editor(
     hide_index=True,
 )
 
-# ── Build expenses dict and compute ────────────────────────────────────────
+# -- Build expenses dict and compute ------------------------------------------
 expenses_dict = {}
 for _, row in edited_df.iterrows():
     cat = str(row["Category"]).strip()
@@ -53,7 +76,9 @@ if income <= 0:
 
 result = budget_summary(income, expenses_dict)
 
-# ── Metrics ─────────────────────────────────────────────────────────────────
+st.divider()
+
+# -- Metrics -------------------------------------------------------------------
 c1, c2, c3 = st.columns(3)
 c1.metric("Monthly Income", f"${result['income']:,.2f}")
 c2.metric("Total Expenses", f"${result['total_expenses']:,.2f}")
@@ -66,19 +91,33 @@ c3.metric(
     delta_color="normal" if surplus >= 0 else "inverse",
 )
 
-if surplus < 0:
-    st.error(f"You are overspending by **${abs(surplus):,.2f}** per month.")
-elif surplus == 0:
-    st.warning("Your budget is exactly balanced with no room for unexpected costs.")
+if "plan" in mode.lower():
+    if surplus >= savings_target:
+        st.success(
+            f"You meet your savings target of **${savings_target:,.2f}** "
+            f"with **${surplus - savings_target:,.2f}** extra."
+        )
+    elif surplus >= 0:
+        st.warning(
+            f"Your surplus of **${surplus:,.2f}** is below your savings target of **${savings_target:,.2f}**. "
+            f"Reduce spending by **${savings_target - surplus:,.2f}** to hit your goal."
+        )
+    else:
+        st.error(f"You are overspending by **${abs(surplus):,.2f}** per month.")
 else:
-    st.success(f"You have **${surplus:,.2f}** left over each month.")
+    if surplus < 0:
+        st.error(f"You are overspending by **${abs(surplus):,.2f}** per month.")
+    elif surplus == 0:
+        st.warning("Your budget is exactly balanced with no room for unexpected costs.")
+    else:
+        st.success(f"You have **${surplus:,.2f}** left over each month.")
 
-# ── Charts ──────────────────────────────────────────────────────────────────
-chart_col1, chart_col2 = st.columns(2)
-
-# Pie chart
+# -- Charts --------------------------------------------------------------------
 breakdown_df = pd.DataFrame(result["breakdown"])
-with chart_col1:
+
+tab1, tab2 = st.tabs(["Spending by Category", "Spending as % of Income"])
+
+with tab1:
     fig_pie = px.pie(
         breakdown_df, names="category", values="amount",
         title="Spending by Category",
@@ -87,8 +126,7 @@ with chart_col1:
     fig_pie.update_traces(textinfo="label+percent")
     st.plotly_chart(fig_pie, use_container_width=True)
 
-# Horizontal bar: proportion of income
-with chart_col2:
+with tab2:
     fig_bar = go.Figure()
     fig_bar.add_trace(go.Bar(
         y=breakdown_df["category"], x=breakdown_df["pct"],
@@ -104,7 +142,7 @@ with chart_col2:
     )
     st.plotly_chart(fig_bar, use_container_width=True)
 
-# ── Breakdown table ─────────────────────────────────────────────────────────
+# -- Breakdown table -----------------------------------------------------------
 with st.expander("Detailed Breakdown"):
     detail_df = breakdown_df.copy()
     detail_df["amount"] = detail_df["amount"].map(lambda x: f"${x:,.2f}")

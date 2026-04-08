@@ -13,22 +13,34 @@ from data import fetch_stock_history, compute_technical_indicators
 st.set_page_config(page_title="Stock Analysis", layout="wide")
 st.title("Technical Analysis")
 
-# ── Sidebar ──────────────────────────────────────────────────────────────────
-ticker = st.sidebar.text_input("Ticker Symbol", value="AAPL").upper().strip()
-period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=3)
+# -- Inputs (main area) ------------------------------------------------------
+col_in1, col_in2 = st.columns(2)
 
-st.sidebar.markdown("**Indicators**")
-show_sma = st.sidebar.checkbox("SMA (20 & 50)", value=True)
-show_ema = st.sidebar.checkbox("EMA (20)")
-show_bb = st.sidebar.checkbox("Bollinger Bands")
-show_rsi = st.sidebar.checkbox("RSI", value=True)
-show_macd = st.sidebar.checkbox("MACD", value=True)
+with col_in1:
+    ticker = st.text_input("Ticker Symbol", value="AAPL").upper().strip()
+
+with col_in2:
+    period = st.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=3)
+
+col_ind1, col_ind2, col_ind3, col_ind4, col_ind5 = st.columns(5)
+with col_ind1:
+    show_sma = st.checkbox("SMA (20 & 50)", value=True)
+with col_ind2:
+    show_ema = st.checkbox("EMA (20)")
+with col_ind3:
+    show_bb = st.checkbox("Bollinger Bands")
+with col_ind4:
+    show_rsi = st.checkbox("RSI", value=True)
+with col_ind5:
+    show_macd = st.checkbox("MACD", value=True)
+
+st.divider()
 
 if not ticker:
-    st.info("Enter a ticker symbol in the sidebar.")
+    st.info("Enter a ticker symbol above.")
     st.stop()
 
-# ── Fetch & Compute ─────────────────────────────────────────────────────────
+# -- Fetch & Compute ---------------------------------------------------------
 with st.spinner(f"Loading {ticker}..."):
     df = fetch_stock_history(ticker, period)
 
@@ -38,7 +50,7 @@ if df.empty:
 
 df = compute_technical_indicators(df)
 
-# ── Build Subplots ───────────────────────────────────────────────────────────
+# -- Build Subplots -----------------------------------------------------------
 n_rows = 1 + int(show_rsi) + int(show_macd)
 heights = [0.6]
 titles = [f"{ticker} Price"]

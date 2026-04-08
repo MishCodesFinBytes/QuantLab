@@ -1,4 +1,4 @@
-"""Market Insights — correlate headline sentiment with stock price movements."""
+"""Market Insights -- correlate headline sentiment with stock price movements."""
 
 import sys
 from pathlib import Path
@@ -14,17 +14,24 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from data import fetch_stock_history
 
 st.set_page_config(page_title="Market Insights", layout="wide")
-st.title("Market Insights — Sentiment vs Price")
+st.title("Market Insights -- Sentiment vs Price")
 
-# ── Sidebar ──────────────────────────────────────────────────────────────────
-ticker = st.sidebar.text_input("Ticker Symbol", value="AAPL").upper().strip()
-period = st.sidebar.selectbox("Period", ["3mo", "6mo", "1y"], index=1)
+# -- Inputs -------------------------------------------------------------------
+col1, col2 = st.columns(2)
+
+with col1:
+    ticker = st.text_input("Ticker Symbol", value="AAPL").upper().strip()
+
+with col2:
+    period = st.selectbox("Period", ["3mo", "6mo", "1y"], index=1)
 
 if not ticker:
-    st.info("Enter a ticker symbol in the sidebar.")
+    st.info("Enter a ticker symbol above.")
     st.stop()
 
-# ── Sample headlines with dates ──────────────────────────────────────────────
+st.divider()
+
+# -- Sample headlines with dates ----------------------------------------------
 SAMPLE_HEADLINES = [
     ("2025-11-01", "Apple reports record quarterly revenue beating analyst expectations"),
     ("2025-11-08", "Tech stocks rally on strong earnings season across the board"),
@@ -76,7 +83,7 @@ if price_df.empty:
 price_df["Return"] = price_df["Close"].pct_change()
 price_df["Next_Return"] = price_df["Return"].shift(-1)
 
-# ── Merge sentiment with nearest trading date ────────────────────────────────
+# -- Merge sentiment with nearest trading date --------------------------------
 price_daily = price_df[["Close", "Return", "Next_Return"]].copy()
 price_daily.index = price_daily.index.normalize()
 
@@ -86,7 +93,7 @@ merged = pd.merge_asof(
     left_on="Date", right_on="Trade_Date", direction="nearest",
 )
 
-# ── Metrics ──────────────────────────────────────────────────────────────────
+# -- Metrics ------------------------------------------------------------------
 valid = merged.dropna(subset=["Sentiment", "Next_Return"])
 if len(valid) > 2:
     corr = valid["Sentiment"].corr(valid["Next_Return"])
@@ -99,7 +106,7 @@ c1.metric("Average Sentiment", f"{avg_sent:.3f}")
 c2.metric("Sentiment-Return Correlation", f"{corr:.3f}")
 c3.metric("Headlines Analyzed", len(sent_df))
 
-# ── Dual-axis chart ──────────────────────────────────────────────────────────
+# -- Dual-axis chart ----------------------------------------------------------
 fig = make_subplots(specs=[[{"secondary_y": True}]])
 
 fig.add_trace(go.Scatter(
@@ -121,18 +128,16 @@ fig.update_yaxes(title_text="Price ($)", secondary_y=False)
 fig.update_yaxes(title_text="Sentiment Score", secondary_y=True, range=[-1, 1])
 st.plotly_chart(fig, use_container_width=True)
 
-# ── Top positive / negative headlines ────────────────────────────────────────
-col1, col2 = st.columns(2)
+# -- Top positive / negative headlines ----------------------------------------
+tab1, tab2 = st.tabs(["Top 5 Most Positive", "Top 5 Most Negative"])
 
-with col1:
-    st.subheader("Top 5 Most Positive")
+with tab1:
     top_pos = sent_df.nlargest(5, "Sentiment")[["Date", "Headline", "Sentiment"]]
     top_pos["Date"] = top_pos["Date"].dt.strftime("%Y-%m-%d")
     top_pos["Sentiment"] = top_pos["Sentiment"].map("{:.3f}".format)
     st.dataframe(top_pos, use_container_width=True, hide_index=True)
 
-with col2:
-    st.subheader("Top 5 Most Negative")
+with tab2:
     top_neg = sent_df.nsmallest(5, "Sentiment")[["Date", "Headline", "Sentiment"]]
     top_neg["Date"] = top_neg["Date"].dt.strftime("%Y-%m-%d")
     top_neg["Sentiment"] = top_neg["Sentiment"].map("{:.3f}".format)

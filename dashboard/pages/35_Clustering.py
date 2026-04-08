@@ -1,4 +1,4 @@
-"""Clustering — segment synthetic customers with K-Means or DBSCAN."""
+"""Clustering -- segment synthetic customers with K-Means or DBSCAN."""
 
 import streamlit as st
 import numpy as np
@@ -11,15 +11,22 @@ from sklearn.cluster import KMeans, DBSCAN
 st.set_page_config(page_title="Clustering", layout="wide")
 st.title("Customer Segmentation via Clustering")
 
-# ── Sidebar ──────────────────────────────────────────────────────────────────
-algorithm = st.sidebar.radio("Algorithm", ["K-Means", "DBSCAN"])
-n_clusters = st.sidebar.slider("Number of Clusters (K-Means)", 2, 8, 4,
-                                disabled=(algorithm != "K-Means"))
+# -- Model parameters ---------------------------------------------------------
+col1, col2 = st.columns(2)
+
+with col1:
+    algorithm = st.radio("Algorithm", ["K-Means", "DBSCAN"], horizontal=True)
+
+with col2:
+    n_clusters = st.slider("Number of Clusters (K-Means)", 2, 8, 4,
+                            disabled=(algorithm != "K-Means"))
+
+st.divider()
 
 FEATURE_COLS = ["income", "annual_spending", "credit_score", "account_balance"]
 
 
-# ── Generate synthetic data ──────────────────────────────────────────────────
+# -- Generate synthetic data --------------------------------------------------
 @st.cache_data(show_spinner=False)
 def generate_customers(n: int = 500) -> pd.DataFrame:
     rng = np.random.default_rng(42)
@@ -38,7 +45,7 @@ def generate_customers(n: int = 500) -> pd.DataFrame:
 data = generate_customers()
 
 
-# ── Clustering ───────────────────────────────────────────────────────────────
+# -- Clustering ---------------------------------------------------------------
 @st.cache_data(show_spinner=False)
 def run_clustering(df: pd.DataFrame, algo: str, k: int):
     scaler = StandardScaler()
@@ -70,43 +77,48 @@ c1, c2 = st.columns(2)
 c1.metric("Algorithm", algorithm)
 c2.metric("Clusters Found", actual_k)
 
-# ── Elbow chart (K-Means only) ──────────────────────────────────────────────
-if algorithm == "K-Means" and inertias is not None:
-    elbow_fig = go.Figure(go.Scatter(
-        x=list(range(2, 9)), y=inertias, mode="lines+markers",
-        marker=dict(size=8, color="steelblue"),
-    ))
-    elbow_fig.add_vline(x=n_clusters, line_dash="dash", line_color="red",
-                        annotation_text=f"k={n_clusters}")
-    elbow_fig.update_layout(
-        title="Elbow Method — Inertia vs k",
-        xaxis_title="Number of Clusters (k)", yaxis_title="Inertia",
-        height=350, margin=dict(t=50, b=40),
+# -- Charts -------------------------------------------------------------------
+tab1, tab2 = st.tabs(["Scatter Plot", "Elbow Method (K-Means)"])
+
+with tab1:
+    plot_df = data.copy()
+    plot_df["Cluster"] = plot_df["Cluster"].astype(str)
+
+    fig = px.scatter(
+        plot_df, x="income", y="annual_spending", color="Cluster",
+        title="Income vs Annual Spending by Cluster",
+        labels={"income": "Income ($)", "annual_spending": "Annual Spending ($)"},
+        height=500, color_discrete_sequence=px.colors.qualitative.Set2,
     )
-    st.plotly_chart(elbow_fig, use_container_width=True)
+    fig.update_layout(margin=dict(t=50, b=40))
+    st.plotly_chart(fig, use_container_width=True)
 
-# ── Scatter plot ─────────────────────────────────────────────────────────────
-plot_df = data.copy()
-plot_df["Cluster"] = plot_df["Cluster"].astype(str)
+with tab2:
+    if algorithm == "K-Means" and inertias is not None:
+        elbow_fig = go.Figure(go.Scatter(
+            x=list(range(2, 9)), y=inertias, mode="lines+markers",
+            marker=dict(size=8, color="steelblue"),
+        ))
+        elbow_fig.add_vline(x=n_clusters, line_dash="dash", line_color="red",
+                            annotation_text=f"k={n_clusters}")
+        elbow_fig.update_layout(
+            title="Elbow Method -- Inertia vs k",
+            xaxis_title="Number of Clusters (k)", yaxis_title="Inertia",
+            height=350, margin=dict(t=50, b=40),
+        )
+        st.plotly_chart(elbow_fig, use_container_width=True)
+    else:
+        st.info("Elbow method is only available for K-Means.")
 
-fig = px.scatter(
-    plot_df, x="income", y="annual_spending", color="Cluster",
-    title="Income vs Annual Spending by Cluster",
-    labels={"income": "Income ($)", "annual_spending": "Annual Spending ($)"},
-    height=500, color_discrete_sequence=px.colors.qualitative.Set2,
-)
-fig.update_layout(margin=dict(t=50, b=40))
-st.plotly_chart(fig, use_container_width=True)
-
-# ── Cluster profiles ────────────────────────────────────────────────────────
-st.subheader("Cluster Profiles")
-profile = data.groupby("Cluster")[FEATURE_COLS].mean().round(0)
-profile.index = profile.index.astype(str)
-profile["count"] = data.groupby("Cluster").size()
-st.dataframe(
-    profile.style.format({
-        "income": "${:,.0f}", "annual_spending": "${:,.0f}",
-        "credit_score": "{:.0f}", "account_balance": "${:,.0f}",
-    }),
-    use_container_width=True,
-)
+# -- Cluster profiles ---------------------------------------------------------
+with st.expander("Cluster Profiles"):
+    profile = data.groupby("Cluster")[FEATURE_COLS].mean().round(0)
+    profile.index = profile.index.astype(str)
+    profile["count"] = data.groupby("Cluster").size()
+    st.dataframe(
+        profile.style.format({
+            "income": "${:,.0f}", "annual_spending": "${:,.0f}",
+            "credit_score": "{:.0f}", "account_balance": "${:,.0f}",
+        }),
+        use_container_width=True,
+    )

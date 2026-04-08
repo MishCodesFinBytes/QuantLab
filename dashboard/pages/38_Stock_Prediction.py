@@ -1,4 +1,4 @@
-"""Stock Prediction — predict next-day returns with ML features."""
+"""Stock Prediction -- predict next-day returns with ML features."""
 
 import sys
 from pathlib import Path
@@ -22,15 +22,26 @@ st.warning(
     "ML models is not reliable for real trading. Past patterns do not guarantee future results."
 )
 
-# ── Sidebar ──────────────────────────────────────────────────────────────────
-ticker = st.sidebar.text_input("Ticker Symbol", value="AAPL").upper().strip()
-period = st.sidebar.selectbox("Period", ["1y", "2y", "5y"], index=1)
-model_choice = st.sidebar.radio("Model", ["Linear Regression", "Random Forest"])
-test_pct = st.sidebar.slider("Test Size (%)", 10, 40, 20)
+# -- Inputs -------------------------------------------------------------------
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    ticker = st.text_input("Ticker Symbol", value="AAPL").upper().strip()
+
+with col2:
+    period = st.selectbox("Period", ["1y", "2y", "5y"], index=1)
+
+with col3:
+    model_choice = st.radio("Model", ["Linear Regression", "Random Forest"])
+
+with col4:
+    test_pct = st.slider("Test Size (%)", 10, 40, 20)
 
 if not ticker:
-    st.info("Enter a ticker symbol in the sidebar.")
+    st.info("Enter a ticker symbol above.")
     st.stop()
+
+st.divider()
 
 
 @st.cache_data(show_spinner=False)
@@ -73,7 +84,7 @@ FEATURES = ["Ret_Lag1", "Ret_Lag2", "Ret_Lag3", "Ret_Lag4", "Ret_Lag5",
             "SMA_Ratio", "Vol_20", "RSI", "Vol_Change"]
 
 
-# ── Train / Test (chronological) ────────────────────────────────────────────
+# -- Train / Test (chronological) --------------------------------------------
 @st.cache_data(show_spinner=False)
 def train_and_evaluate(data: pd.DataFrame, features: list, model_name: str, test_frac: float):
     split = int(len(data) * (1 - test_frac / 100))
@@ -104,44 +115,47 @@ def train_and_evaluate(data: pd.DataFrame, features: list, model_name: str, test
 with st.spinner("Training model..."):
     results = train_and_evaluate(df, FEATURES, model_choice, test_pct)
 
-# ── Metrics ──────────────────────────────────────────────────────────────────
+# -- Metrics ------------------------------------------------------------------
 c1, c2, c3 = st.columns(3)
 c1.metric("MAE", f"{results['mae']:.6f}")
 c2.metric("RMSE", f"{results['rmse']:.6f}")
 c3.metric("R-squared", f"{results['r2']:.4f}")
 
-# ── Actual vs Predicted ─────────────────────────────────────────────────────
-fig = go.Figure()
-fig.add_trace(go.Scatter(
-    x=results["test_index"], y=results["y_test"],
-    name="Actual", line=dict(color="steelblue"),
-))
-fig.add_trace(go.Scatter(
-    x=results["test_index"], y=results["preds"],
-    name="Predicted", line=dict(color="orange", dash="dash"),
-))
-fig.update_layout(
-    title=f"{ticker} — Actual vs Predicted Next-Day Return ({model_choice})",
-    xaxis_title="Date", yaxis_title="Daily Return",
-    height=500, margin=dict(t=60, b=40),
-)
-st.plotly_chart(fig, use_container_width=True)
+# -- Charts -------------------------------------------------------------------
+tab1, tab2 = st.tabs(["Actual vs Predicted (Time Series)", "Actual vs Predicted (Scatter)"])
 
-# ── Scatter: actual vs predicted ─────────────────────────────────────────────
-fig2 = go.Figure()
-fig2.add_trace(go.Scatter(
-    x=results["y_test"], y=results["preds"], mode="markers",
-    marker=dict(size=4, color="steelblue", opacity=0.5), name="Predictions",
-))
-min_val = min(results["y_test"].min(), results["preds"].min())
-max_val = max(results["y_test"].max(), results["preds"].max())
-fig2.add_trace(go.Scatter(
-    x=[min_val, max_val], y=[min_val, max_val],
-    mode="lines", line=dict(dash="dash", color="gray"), name="Perfect",
-))
-fig2.update_layout(
-    title="Predicted vs Actual Scatter",
-    xaxis_title="Actual Return", yaxis_title="Predicted Return",
-    height=400, margin=dict(t=50, b=40),
-)
-st.plotly_chart(fig2, use_container_width=True)
+with tab1:
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=results["test_index"], y=results["y_test"],
+        name="Actual", line=dict(color="steelblue"),
+    ))
+    fig.add_trace(go.Scatter(
+        x=results["test_index"], y=results["preds"],
+        name="Predicted", line=dict(color="orange", dash="dash"),
+    ))
+    fig.update_layout(
+        title=f"{ticker} -- Actual vs Predicted Next-Day Return ({model_choice})",
+        xaxis_title="Date", yaxis_title="Daily Return",
+        height=500, margin=dict(t=60, b=40),
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+with tab2:
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(
+        x=results["y_test"], y=results["preds"], mode="markers",
+        marker=dict(size=4, color="steelblue", opacity=0.5), name="Predictions",
+    ))
+    min_val = min(results["y_test"].min(), results["preds"].min())
+    max_val = max(results["y_test"].max(), results["preds"].max())
+    fig2.add_trace(go.Scatter(
+        x=[min_val, max_val], y=[min_val, max_val],
+        mode="lines", line=dict(dash="dash", color="gray"), name="Perfect",
+    ))
+    fig2.update_layout(
+        title="Predicted vs Actual Scatter",
+        xaxis_title="Actual Return", yaxis_title="Predicted Return",
+        height=400, margin=dict(t=50, b=40),
+    )
+    st.plotly_chart(fig2, use_container_width=True)
