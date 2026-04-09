@@ -5,6 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 import streamlit as st
@@ -125,6 +126,11 @@ if bar_data:
             )
             fig_donut.update_traces(textinfo="percent+label")
             st.plotly_chart(fig_donut, use_container_width=True)
+
+# -- Tests --------------------------------------------------------------------
+st.markdown("---")
+with st.expander("Tests"):
+    render_test_tab("test_personal_finance.py")
 
 # -- Tech stack ---------------------------------------------------------------
 st.markdown("---")

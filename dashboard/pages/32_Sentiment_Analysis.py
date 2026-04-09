@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 import streamlit as st
@@ -139,6 +140,10 @@ with st.expander("Headlines and Scores"):
         ),
         use_container_width=True, hide_index=True,
     )
+
+# -- Tests ----------------------------------------------------------------
+with st.expander("Test Results"):
+    render_test_tab("test_sentiment_analysis.py")
 
 # -- Tech stack ---------------------------------------------------------------
 st.markdown("---")

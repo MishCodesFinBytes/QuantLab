@@ -11,6 +11,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from data import fetch_multiple_stocks
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Portfolio Optimization", layout="wide")
@@ -153,6 +154,10 @@ fig.update_layout(
     yaxis_title="Annualized Return", height=550, margin=dict(t=60, b=40),
 )
 st.plotly_chart(fig, use_container_width=True)
+
+# -- Tests ----------------------------------------------------------------
+with st.expander("Test Results"):
+    render_test_tab("test_portfolio_optimization.py")
 
 # -- Tech stack ---------------------------------------------------------------
 st.markdown("---")

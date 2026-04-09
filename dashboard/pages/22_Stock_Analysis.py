@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from data import fetch_stock_history, compute_technical_indicators
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Stock Analysis", layout="wide")
@@ -128,6 +129,10 @@ if show_macd:
 fig.update_layout(height=200 + n_rows * 250, margin=dict(t=60, b=30),
                   xaxis_rangeslider_visible=False)
 st.plotly_chart(fig, use_container_width=True)
+
+# -- Tests ----------------------------------------------------------------
+with st.expander("Test Results"):
+    render_test_tab("test_stock_analysis.py")
 
 # -- Tech stack ---------------------------------------------------------------
 st.markdown("---")

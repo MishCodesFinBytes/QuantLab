@@ -12,6 +12,7 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from data import fetch_stock_history
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Financial Reporting", layout="wide")
@@ -81,7 +82,7 @@ with st.expander("Summary Statistics"):
     st.dataframe(stats.style.format("{:.2f}"), use_container_width=True)
 
 # -- Charts -------------------------------------------------------------------
-tab1, tab2 = st.tabs(["Price History", "Daily Returns Distribution"])
+tab1, tab2, tab_tests = st.tabs(["Price History", "Daily Returns Distribution", "Tests"])
 
 with tab1:
     fig_price = px.line(df, x=df.index, y="Close", title=f"{ticker} Closing Price")
@@ -97,6 +98,9 @@ with tab2:
     )
     fig_hist.update_layout(showlegend=False)
     st.plotly_chart(fig_hist, use_container_width=True)
+
+with tab_tests:
+    render_test_tab("test_financial_reporting.py")
 
 # -- Export Data --------------------------------------------------------------
 st.subheader("Export Data")

@@ -13,11 +13,16 @@ Required st.secrets keys:
     aws.rds_instance_id         default quant-lab-db
 """
 
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 import boto3
 import streamlit as st
 from botocore.exceptions import ClientError
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
+from test_tab import render_test_tab
 
 st.set_page_config(page_title="Admin · RDS", page_icon="🔒", layout="centered")
 st.title("RDS Admin")
@@ -199,6 +204,10 @@ def _s3_status() -> None:
 _lambda_status()
 _apigw_status()
 _s3_status()
+
+# -- Tests ----------------------------------------------------------------
+with st.expander("Test Results"):
+    render_test_tab("test_admin.py")
 
 st.markdown("---")
 if st.button("Log out"):

@@ -11,6 +11,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from data import fetch_stock_history
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Algo Trading", layout="wide")
@@ -124,7 +125,7 @@ m4.metric("Max Drawdown", f"{max_dd:.2%}")
 m5.metric("Trades", n_trades)
 
 # -- Charts -------------------------------------------------------------------
-tab1, tab2 = st.tabs(["Price and Signals", "Equity Curve"])
+tab1, tab2, tab_tests = st.tabs(["Price and Signals", "Equity Curve", "Tests"])
 
 with tab1:
     fig1 = go.Figure()
@@ -154,6 +155,9 @@ with tab2:
     fig2.update_layout(title="Equity Curve", yaxis_title="Cumulative Return",
                        height=400, margin=dict(t=50, b=40))
     st.plotly_chart(fig2, use_container_width=True)
+
+with tab_tests:
+    render_test_tab("test_algo_trading.py")
 
 # -- Tech stack ---------------------------------------------------------------
 st.markdown("---")

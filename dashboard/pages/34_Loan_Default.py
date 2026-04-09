@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 import streamlit as st
@@ -122,7 +123,7 @@ c2.metric("Precision", f"{results['precision']:.2%}")
 c3.metric("Recall", f"{results['recall']:.2%}")
 
 # -- Feature importance & confusion matrix ------------------------------------
-tab1, tab2 = st.tabs(["Feature Importance", "Confusion Matrix"])
+tab1, tab2, tab_tests = st.tabs(["Feature Importance", "Confusion Matrix", "Tests"])
 
 with tab1:
     imp_df = pd.DataFrame({"Feature": FEATURES, "Importance": results["importance"]})
@@ -143,6 +144,9 @@ with tab2:
                          xaxis_title="Predicted", yaxis_title="Actual",
                          margin=dict(t=40, b=30))
     st.plotly_chart(fig_cm, use_container_width=True)
+
+with tab_tests:
+    render_test_tab("test_loan_default.py")
 
 # -- User prediction ----------------------------------------------------------
 st.divider()

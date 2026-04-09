@@ -14,6 +14,7 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import acf
 from data import fetch_stock_history
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Time Series", layout="wide")
@@ -68,7 +69,7 @@ if prices.empty or len(prices) < 260:
 # -- Decompose ----------------------------------------------------------------
 decomp = seasonal_decompose(prices, model="multiplicative", period=252)
 
-tab1, tab2 = st.tabs(["Decomposition", "Autocorrelation (ACF)"])
+tab1, tab2, tab_tests = st.tabs(["Decomposition", "Autocorrelation (ACF)", "Tests"])
 
 with tab1:
     fig = make_subplots(
@@ -111,6 +112,9 @@ with tab2:
         height=400, margin=dict(t=60, b=40),
     )
     st.plotly_chart(acf_fig, use_container_width=True)
+
+with tab_tests:
+    render_test_tab("test_time_series.py")
 
 st.caption(
     "Multiplicative decomposition separates price into trend, seasonal, and residual "

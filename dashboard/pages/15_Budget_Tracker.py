@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from finance import budget_summary
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Budget Tracker", layout="wide")
@@ -133,7 +134,7 @@ else:
 # -- Charts --------------------------------------------------------------------
 breakdown_df = pd.DataFrame(result["breakdown"])
 
-tab1, tab2 = st.tabs(["Spending by Category", "Spending as % of Income"])
+tab1, tab2, tab_tests = st.tabs(["Spending by Category", "Spending as % of Income", "Tests"])
 
 with tab1:
     fig_pie = px.pie(
@@ -159,6 +160,9 @@ with tab2:
         showlegend=False,
     )
     st.plotly_chart(fig_bar, use_container_width=True)
+
+with tab_tests:
+    render_test_tab("test_budget_tracker.py")
 
 # -- Breakdown table -----------------------------------------------------------
 with st.expander("Detailed Breakdown"):

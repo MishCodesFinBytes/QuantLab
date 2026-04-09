@@ -13,6 +13,7 @@ from plotly.subplots import make_subplots
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from data import fetch_stock_history
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Market Insights", layout="wide")
@@ -191,7 +192,7 @@ fig.update_yaxes(title_text="Sentiment Score", secondary_y=True, range=[-1, 1])
 st.plotly_chart(fig, use_container_width=True)
 
 # -- Top positive / negative headlines -----------------------------------------
-tab1, tab2 = st.tabs(["Top 5 Most Positive", "Top 5 Most Negative"])
+tab1, tab2, tab_tests = st.tabs(["Top 5 Most Positive", "Top 5 Most Negative", "Tests"])
 
 with tab1:
     top_pos = sent_df.nlargest(5, "Sentiment")[["Date", "Headline", "Sentiment"]]
@@ -204,6 +205,9 @@ with tab2:
     top_neg["Date"] = top_neg["Date"].dt.strftime("%Y-%m-%d")
     top_neg["Sentiment"] = top_neg["Sentiment"].map("{:.3f}".format)
     st.dataframe(top_neg, use_container_width=True, hide_index=True)
+
+with tab_tests:
+    render_test_tab("test_market_insights.py")
 
 st.caption(
     "Sentiment scores are computed using VADER. "

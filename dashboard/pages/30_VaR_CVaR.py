@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 from scipy import stats as sp_stats
 from data import fetch_stock_history
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="VaR & CVaR", layout="wide")
@@ -120,6 +121,10 @@ st.caption(
     "VaR estimates the maximum expected loss at a given confidence level. "
     "CVaR (Expected Shortfall) measures the average loss beyond the VaR threshold."
 )
+
+# -- Tests ----------------------------------------------------------------
+with st.expander("Test Results"):
+    render_test_tab("test_var_cvar.py")
 
 # -- Tech stack ---------------------------------------------------------------
 st.markdown("---")

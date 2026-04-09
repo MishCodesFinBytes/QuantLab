@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 import yfinance as yf
 import pandas as pd
@@ -85,7 +86,7 @@ SAMPLE_RESULT = {
 # ============================================================
 st.title("Stock Risk Scanner")
 
-tab_app, tab_health, tab_arch = st.tabs(["App", "System Health", "Architecture"])
+tab_app, tab_health, tab_arch, tab_tests = st.tabs(["App", "System Health", "Architecture", "Tests"])
 
 # ============================================================
 # TAB 1: APP
@@ -639,3 +640,9 @@ with tab_arch:
         "read the [Architecture blog post]"
         "(https://mishcodesfinbytes.github.io/FinBytes/2026/04/03/stock-risk-scanner-architecture/)."
     )
+
+# ============================================================
+# TAB 4: TESTS
+# ============================================================
+with tab_tests:
+    render_test_tab("test_stock_risk_scanner.py")

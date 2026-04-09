@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from finance import loan_amortization
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Loan Amortization", layout="wide")
@@ -110,7 +111,7 @@ else:
 df["cum_principal"] = df["principal"].cumsum()
 df["cum_interest"] = df["interest"].cumsum()
 
-tab1, tab2 = st.tabs(["Cumulative Principal vs Interest", "Monthly Breakdown"])
+tab1, tab2, tab_tests = st.tabs(["Cumulative Principal vs Interest", "Monthly Breakdown", "Tests"])
 
 with tab1:
     fig = go.Figure()
@@ -147,6 +148,9 @@ with tab2:
         hovermode="x unified",
     )
     st.plotly_chart(fig2, use_container_width=True)
+
+with tab_tests:
+    render_test_tab("test_loan_amortization.py")
 
 # -- Full schedule -------------------------------------------------------------
 with st.expander("Full Amortization Schedule"):

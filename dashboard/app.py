@@ -5,6 +5,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 from nav import render_sidebar
+from test_tab import render_test_tab
 
 HERE = Path(__file__).parent
 GITHUB_REPO = "MishCodesFinBytes/QuantLab"
@@ -93,3 +94,7 @@ st.markdown("---")
 st.markdown("### Per-Project Health")
 st.markdown("Each project has its own **System Health** tab with API, database, and test checks.")
 st.page_link("pages/1_Stock_Risk_Scanner.py", label="Stock Risk Scanner")
+
+# -- Tests ----------------------------------------------------------------
+with st.expander("Test Results"):
+    render_test_tab("test_app.py")

@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from data import fetch_stock_history
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Stock Tracker", layout="wide")
@@ -98,6 +99,10 @@ fig.update_yaxes(title_text="Price ($)", row=1, col=1)
 fig.update_yaxes(title_text="Volume", row=2, col=1)
 
 st.plotly_chart(fig, use_container_width=True)
+
+# -- Tests ----------------------------------------------------------------
+with st.expander("Test Results"):
+    render_test_tab("test_stock_tracker.py")
 
 # -- Tech stack ---------------------------------------------------------------
 st.markdown("---")

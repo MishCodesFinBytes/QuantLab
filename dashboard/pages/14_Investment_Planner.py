@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from finance import compound_growth
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Investment Planner", layout="wide")
@@ -101,7 +102,7 @@ else:
     st.info(f"To reach **${target_balance:,.0f}** in **{years} years**, invest **${required_monthly:,.2f}/month**.")
 
 # -- Charts --------------------------------------------------------------------
-tab1, tab2 = st.tabs(["Growth Over Time", "Compare Return Rates"])
+tab1, tab2, tab_tests = st.tabs(["Growth Over Time", "Compare Return Rates", "Tests"])
 
 with tab1:
     fig = go.Figure()
@@ -138,6 +139,9 @@ with tab2:
         xaxis_title="Year", yaxis_title="Balance ($)", hovermode="x unified",
     )
     st.plotly_chart(fig2, use_container_width=True)
+
+with tab_tests:
+    render_test_tab("test_investment_planner.py")
 
 # -- Summary table -------------------------------------------------------------
 with st.expander("Year-by-Year Schedule"):

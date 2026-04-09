@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 import streamlit as st
@@ -126,7 +127,7 @@ c3.metric("Data Points", len(data))
 # -- Charts -------------------------------------------------------------------
 x_col, y_col = feature_cols[0], feature_cols[1] if len(feature_cols) > 1 else feature_cols[0]
 
-tab1, tab2 = st.tabs(["Scatter Plot", "Elbow Method (K-Means)"])
+tab1, tab2, tab_tests = st.tabs(["Scatter Plot", "Elbow Method (K-Means)", "Tests"])
 
 with tab1:
     plot_df = data.copy()
@@ -155,6 +156,9 @@ with tab2:
         st.plotly_chart(elbow_fig, use_container_width=True)
     else:
         st.info("Elbow method is only available for K-Means.")
+
+with tab_tests:
+    render_test_tab("test_clustering.py")
 
 # -- Cluster profiles ---------------------------------------------------------
 with st.expander("Cluster Profiles"):

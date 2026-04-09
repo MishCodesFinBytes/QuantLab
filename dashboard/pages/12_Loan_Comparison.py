@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from finance import loan_amortization
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Loan Comparison", layout="wide")
@@ -107,7 +108,7 @@ if total_a != total_b:
     st.success(f"Loan {cheaper} saves you **${savings:,.2f}** in total cost.")
 
 # -- Charts --------------------------------------------------------------------
-tab1, tab2 = st.tabs(["Summary Comparison", "Balance Over Time"])
+tab1, tab2, tab_tests = st.tabs(["Summary Comparison", "Balance Over Time", "Tests"])
 
 with tab1:
     categories = ["Monthly Payment", "Total Interest", "Total Cost"]
@@ -127,6 +128,9 @@ with tab2:
         xaxis_title="Payment Period", yaxis_title="Balance ($)", hovermode="x unified",
     )
     st.plotly_chart(fig2, use_container_width=True)
+
+with tab_tests:
+    render_test_tab("test_loan_comparison.py")
 
 # -- Month-by-month comparison ------------------------------------------------
 with st.expander("Month-by-Month Comparison"):

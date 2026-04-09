@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from finance import retirement_projection
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Retirement Calculator", layout="wide")
@@ -163,6 +164,10 @@ if run_mc and "finals" in result:
         fig_hist.add_vline(x=result["final"], line_dash="dash", line_color="red",
                            annotation_text="Deterministic")
         st.plotly_chart(fig_hist, use_container_width=True)
+
+# -- Tests ----------------------------------------------------------------
+with st.expander("Test Results"):
+    render_test_tab("test_retirement_calculator.py")
 
 # -- Tech stack ---------------------------------------------------------------
 st.markdown("---")

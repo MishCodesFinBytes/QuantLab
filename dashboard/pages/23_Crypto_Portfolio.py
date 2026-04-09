@@ -10,6 +10,7 @@ import pandas as pd
 import plotly.express as px
 from data import fetch_crypto_prices
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Crypto Portfolio", layout="wide")
@@ -98,7 +99,7 @@ col2.metric("24h Weighted Change", f"{weighted_change:.2f}%")
 col3.metric("Assets Tracked", len(portfolio_df))
 
 # -- Charts -------------------------------------------------------------------
-tab1, tab2 = st.tabs(["Allocation by Value", "Holdings Detail"])
+tab1, tab2, tab_tests = st.tabs(["Allocation by Value", "Holdings Detail", "Tests"])
 
 with tab1:
     fig = px.pie(
@@ -119,6 +120,9 @@ with tab2:
         }),
         use_container_width=True,
     )
+
+with tab_tests:
+    render_test_tab("test_crypto_portfolio.py")
 
 # -- Tech stack ---------------------------------------------------------------
 st.markdown("---")

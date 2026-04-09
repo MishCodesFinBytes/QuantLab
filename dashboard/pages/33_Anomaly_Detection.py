@@ -11,6 +11,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from data import fetch_stock_history
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Anomaly Detection", layout="wide")
@@ -126,6 +127,10 @@ if n_anomalies > 0:
         st.dataframe(anomaly_df, use_container_width=True)
 else:
     st.info("No anomalies detected with current settings.")
+
+# -- Tests ----------------------------------------------------------------
+with st.expander("Test Results"):
+    render_test_tab("test_anomaly_detection.py")
 
 # -- Tech stack ---------------------------------------------------------------
 st.markdown("---")

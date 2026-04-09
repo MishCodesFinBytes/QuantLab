@@ -10,6 +10,7 @@ import pandas as pd
 import plotly.express as px
 from data import fetch_exchange_rates
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Currency Dashboard", layout="wide")
@@ -113,6 +114,11 @@ else:
         )
         rate_df["Converted"] = rate_df["Rate"] * amount
         st.dataframe(rate_df, use_container_width=True, height=400)
+
+# -- Tests --------------------------------------------------------------------
+st.markdown("---")
+with st.expander("Tests"):
+    render_test_tab("test_currency_dashboard.py")
 
 # -- Tech stack ---------------------------------------------------------------
 st.markdown("---")

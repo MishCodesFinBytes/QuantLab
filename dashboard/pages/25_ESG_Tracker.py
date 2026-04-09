@@ -12,6 +12,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import yfinance as yf
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="ESG Tracker", layout="wide")
@@ -164,7 +165,7 @@ with st.expander("ESG Score Comparison"):
 categories = ["E_Score", "S_Score", "G_Score"]
 labels = ["Environmental", "Social", "Governance"]
 
-tab1, tab2 = st.tabs(["E / S / G Radar Comparison", "Sector Averages"])
+tab1, tab2, tab_tests = st.tabs(["E / S / G Radar Comparison", "Sector Averages", "Tests"])
 
 with tab1:
     fig_radar = go.Figure()
@@ -202,6 +203,9 @@ with tab2:
     )
     fig_bar.update_layout(yaxis_range=[0, 100])
     st.plotly_chart(fig_bar, use_container_width=True)
+
+with tab_tests:
+    render_test_tab("test_esg_tracker.py")
 
 # -- Tech stack ---------------------------------------------------------------
 st.markdown("---")

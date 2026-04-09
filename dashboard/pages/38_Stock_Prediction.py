@@ -14,6 +14,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from data import fetch_stock_history
 from nav import render_sidebar
+from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Stock Prediction", layout="wide")
@@ -142,7 +143,7 @@ c2.metric("RMSE", f"{results['rmse']:.6f}")
 c3.metric("R-squared", f"{results['r2']:.4f}")
 
 # -- Charts -------------------------------------------------------------------
-tab1, tab2 = st.tabs(["Actual vs Predicted (Time Series)", "Actual vs Predicted (Scatter)"])
+tab1, tab2, tab_tests = st.tabs(["Actual vs Predicted (Time Series)", "Actual vs Predicted (Scatter)", "Tests"])
 
 with tab1:
     fig = go.Figure()
@@ -179,6 +180,9 @@ with tab2:
         height=400, margin=dict(t=50, b=40),
     )
     st.plotly_chart(fig2, use_container_width=True)
+
+with tab_tests:
+    render_test_tab("test_stock_prediction.py")
 
 # -- Tech stack ---------------------------------------------------------------
 st.markdown("---")
