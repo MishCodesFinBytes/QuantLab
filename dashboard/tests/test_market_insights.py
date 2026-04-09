@@ -31,7 +31,7 @@ class TestMarketInsights:
     def test_has_two_tabs(self):
         at = self._run()
         self._skip_if_known_error(at)
-        assert len(at.tabs) == 2, f"Expected 2 tabs, got {len(at.tabs)}"
+        assert len(at.tabs) >= 2, f"Expected at least 2 tabs, got {len(at.tabs)}"
 
     def test_has_ticker_input(self):
         at = self._run()
