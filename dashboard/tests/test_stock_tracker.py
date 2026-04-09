@@ -17,9 +17,9 @@ class TestStockTracker:
         at = self._run()
         assert any("Stock Tracker" in t.value for t in at.title)
 
-    def test_has_no_tabs(self):
+    def test_has_top_level_tabs(self):
         at = self._run()
-        assert len(at.tabs) == 0
+        assert len(at.tabs) >= 2
 
     def test_has_ticker_text_input(self):
         at = self._run()
