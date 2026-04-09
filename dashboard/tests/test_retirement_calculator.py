@@ -17,9 +17,9 @@ class TestRetirementCalculator:
         at = self._run()
         assert any("Retirement Calculator" in t.value for t in at.title)
 
-    def test_has_no_tabs(self):
+    def test_has_top_level_tabs(self):
         at = self._run()
-        assert len(at.tabs) == 0
+        assert len(at.tabs) >= 2
 
     def test_has_radio_mode_selector(self):
         at = self._run()

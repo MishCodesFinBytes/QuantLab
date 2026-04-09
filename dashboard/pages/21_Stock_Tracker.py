@@ -16,92 +16,94 @@ render_sidebar()
 st.set_page_config(page_title="Stock Tracker", layout="wide")
 st.title("Stock Tracker")
 
-with st.expander("How it works"):
-    st.markdown("""
-    - **Data source:** fetches OHLCV (Open, High, Low, Close, Volume) data from yfinance
-    - **Candlestick chart:** each candle shows the open, high, low, and close for one trading day
-    - **Green candle:** close > open (price went up); **Red candle:** close < open (price went down)
-    - **Volume bars:** show how many shares traded each day, colored by price direction
-    """)
+tab_app, tab_tests = st.tabs(["App", "Tests"])
 
-with st.expander("What the outputs mean"):
-    st.markdown("""
-    - **Current Price:** the most recent closing price and daily change
-    - **52-Week High / Low:** the highest and lowest prices in the selected period
-    - **Volume:** number of shares traded on the most recent day
-    - **Candlestick chart:** visual price action -- long candles mean large price moves, wicks show intraday range
-    """)
+with tab_app:
+    with st.expander("How it works"):
+        st.markdown("""
+        - **Data source:** fetches OHLCV (Open, High, Low, Close, Volume) data from yfinance
+        - **Candlestick chart:** each candle shows the open, high, low, and close for one trading day
+        - **Green candle:** close > open (price went up); **Red candle:** close < open (price went down)
+        - **Volume bars:** show how many shares traded each day, colored by price direction
+        """)
 
-# -- Inputs (main area) ------------------------------------------------------
-col_in1, col_in2 = st.columns(2)
+    with st.expander("What the outputs mean"):
+        st.markdown("""
+        - **Current Price:** the most recent closing price and daily change
+        - **52-Week High / Low:** the highest and lowest prices in the selected period
+        - **Volume:** number of shares traded on the most recent day
+        - **Candlestick chart:** visual price action -- long candles mean large price moves, wicks show intraday range
+        """)
 
-with col_in1:
-    ticker = st.text_input("Ticker Symbol", value="AAPL").upper().strip()
+    # -- Inputs (main area) ------------------------------------------------------
+    col_in1, col_in2 = st.columns(2)
 
-with col_in2:
-    period = st.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=3)
+    with col_in1:
+        ticker = st.text_input("Ticker Symbol", value="AAPL").upper().strip()
 
-st.divider()
+    with col_in2:
+        period = st.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=3)
 
-if not ticker:
-    st.info("Enter a ticker symbol above.")
-    st.stop()
+    st.divider()
 
-# -- Fetch Data ---------------------------------------------------------------
-with st.spinner(f"Fetching {ticker} data..."):
-    df = fetch_stock_history(ticker, period)
+    if not ticker:
+        st.info("Enter a ticker symbol above.")
+        st.stop()
 
-if df.empty:
-    st.error(f"No data found for ticker **{ticker}**. Please check the symbol and try again.")
-    st.stop()
+    # -- Fetch Data ---------------------------------------------------------------
+    with st.spinner(f"Fetching {ticker} data..."):
+        df = fetch_stock_history(ticker, period)
 
-# -- Key Metrics --------------------------------------------------------------
-latest = df.iloc[-1]
-prev = df.iloc[-2] if len(df) > 1 else latest
+    if df.empty:
+        st.error(f"No data found for ticker **{ticker}**. Please check the symbol and try again.")
+        st.stop()
 
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Current Price", f"${latest['Close']:.2f}",
-            f"{latest['Close'] - prev['Close']:.2f}")
-col2.metric("52-Week High", f"${df['High'].max():.2f}")
-col3.metric("52-Week Low", f"${df['Low'].min():.2f}")
-col4.metric("Volume (latest)", f"{int(latest['Volume']):,}")
+    # -- Key Metrics --------------------------------------------------------------
+    latest = df.iloc[-1]
+    prev = df.iloc[-2] if len(df) > 1 else latest
 
-# -- Candlestick + Volume Chart -----------------------------------------------
-fig = make_subplots(
-    rows=2, cols=1, shared_xaxes=True,
-    vertical_spacing=0.03,
-    row_heights=[0.75, 0.25],
-    subplot_titles=("Price", "Volume"),
-)
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Current Price", f"${latest['Close']:.2f}",
+                f"{latest['Close'] - prev['Close']:.2f}")
+    col2.metric("52-Week High", f"${df['High'].max():.2f}")
+    col3.metric("52-Week Low", f"${df['Low'].min():.2f}")
+    col4.metric("Volume (latest)", f"{int(latest['Volume']):,}")
 
-fig.add_trace(
-    go.Candlestick(
-        x=df.index, open=df["Open"], high=df["High"],
-        low=df["Low"], close=df["Close"], name="OHLC",
-    ),
-    row=1, col=1,
-)
+    # -- Candlestick + Volume Chart -----------------------------------------------
+    fig = make_subplots(
+        rows=2, cols=1, shared_xaxes=True,
+        vertical_spacing=0.03,
+        row_heights=[0.75, 0.25],
+        subplot_titles=("Price", "Volume"),
+    )
 
-colors = ["green" if c >= o else "red" for c, o in zip(df["Close"], df["Open"])]
-fig.add_trace(
-    go.Bar(x=df.index, y=df["Volume"], marker_color=colors, name="Volume",
-           showlegend=False),
-    row=2, col=1,
-)
+    fig.add_trace(
+        go.Candlestick(
+            x=df.index, open=df["Open"], high=df["High"],
+            low=df["Low"], close=df["Close"], name="OHLC",
+        ),
+        row=1, col=1,
+    )
 
-fig.update_layout(
-    xaxis_rangeslider_visible=False,
-    height=600,
-    title_text=f"{ticker} -- {period}",
-    margin=dict(t=60, b=30),
-)
-fig.update_yaxes(title_text="Price ($)", row=1, col=1)
-fig.update_yaxes(title_text="Volume", row=2, col=1)
+    colors = ["green" if c >= o else "red" for c, o in zip(df["Close"], df["Open"])]
+    fig.add_trace(
+        go.Bar(x=df.index, y=df["Volume"], marker_color=colors, name="Volume",
+               showlegend=False),
+        row=2, col=1,
+    )
 
-st.plotly_chart(fig, use_container_width=True)
+    fig.update_layout(
+        xaxis_rangeslider_visible=False,
+        height=600,
+        title_text=f"{ticker} -- {period}",
+        margin=dict(t=60, b=30),
+    )
+    fig.update_yaxes(title_text="Price ($)", row=1, col=1)
+    fig.update_yaxes(title_text="Volume", row=2, col=1)
 
-# -- Tests ----------------------------------------------------------------
-with st.expander("Test Results"):
+    st.plotly_chart(fig, use_container_width=True)
+
+with tab_tests:
     render_test_tab("test_stock_tracker.py")
 
 # -- Tech stack ---------------------------------------------------------------
