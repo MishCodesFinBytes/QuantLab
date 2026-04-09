@@ -133,7 +133,7 @@ st.plotly_chart(fig, use_container_width=True)
 # -- Table ---------------------------------------------------------------------
 with st.expander("Headlines and Scores"):
     st.dataframe(
-        df.style.applymap(
+        df.style.map(
             lambda v: "color: green" if v == "Positive" else (
                 "color: red" if v == "Negative" else "color: gray"),
             subset=["Label"],

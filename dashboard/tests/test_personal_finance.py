@@ -25,7 +25,8 @@ class TestPersonalFinance:
     def test_has_data_editors(self):
         """Assets and liabilities editors should be present."""
         at = self._run()
-        editors = at.get("arrow_data_frame")
+        # data_editor renders as arrow_data_frame or data_frame depending on version
+        editors = at.get("arrow_data_frame") or at.get("data_frame") or []
         assert len(editors) >= 2, "Expected at least 2 data_editors (assets and liabilities)"
 
     def test_has_expected_tabs(self):

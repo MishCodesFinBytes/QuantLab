@@ -24,7 +24,8 @@ class TestCryptoPortfolio:
     def test_has_data_editor(self):
         """Holdings editor should be present for coin/quantity input."""
         at = self._run()
-        editors = at.get("arrow_data_frame")
+        # data_editor renders as arrow_data_frame or data_frame depending on version
+        editors = at.get("arrow_data_frame") or at.get("data_frame") or []
         assert len(editors) >= 1, "Expected at least one data_editor for holdings"
 
     def test_has_metrics(self):

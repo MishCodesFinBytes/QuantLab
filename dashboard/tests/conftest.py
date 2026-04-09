@@ -18,7 +18,7 @@ import numpy as np
 @pytest.fixture
 def sample_ohlcv_df():
     """252-row OHLCV DataFrame mimicking AAPL."""
-    dates = pd.bdate_range(end=pd.Timestamp.today(), periods=252)
+    dates = pd.bdate_range(end=pd.Timestamp.today(), periods=252, name="Date")
     np.random.seed(42)
     close = 150 + np.cumsum(np.random.randn(252) * 2)
     return pd.DataFrame(
