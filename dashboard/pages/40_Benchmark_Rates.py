@@ -125,7 +125,7 @@ with tab_app:
 
     col_r1, col_r2 = st.columns(2)
     with col_r1:
-        rate_choice = st.selectbox("Rate", ["SONIA", "€STR", "SOFR", "All three"])
+        rate_choice = st.selectbox("Rate", ["All three", "SONIA", "€STR", "SOFR"])
     with col_r2:
         period = st.selectbox("Period", ["1m", "3m", "6m", "1y", "2y"], index=2)
 
@@ -136,11 +136,11 @@ with tab_app:
     @st.cache_data(show_spinner=False, ttl=3600)
     def load_comparison(choice: str, start: str, end: str) -> dict:
         result = {}
-        if choice in ("SONIA", "All three"):
+        if choice in ("All three", "SONIA"):
             result["SONIA"] = fetch_sonia(start, end)
-        if choice in ("€STR", "All three"):
+        if choice in ("All three", "€STR"):
             result["€STR"] = fetch_estr(start, end)
-        if choice in ("SOFR", "All three"):
+        if choice in ("All three", "SOFR"):
             result["SOFR"] = fetch_sofr(start, end)
         return result
 
@@ -194,6 +194,39 @@ with tab_app:
             barmode="overlay", height=350,
         )
         st.plotly_chart(fig_dist, use_container_width=True)
+
+        # Spread chart (only when multiple rates available)
+        if len([r for r in rates.values() if not r.empty]) >= 2:
+            # Align all rates on a common date index
+            aligned = {}
+            for name, rdf in rates.items():
+                if not rdf.empty:
+                    s = rdf.set_index("date")["rate"]
+                    s.name = name
+                    aligned[name] = s
+            merged = pd.DataFrame(aligned).dropna()
+
+            if len(merged) > 0 and len(merged.columns) >= 2:
+                fig_spread = go.Figure()
+                spread_colors = ["#AB63FA", "#FFA15A", "#19D3F3"]
+                names = list(merged.columns)
+                ci = 0
+                for i in range(len(names)):
+                    for j in range(i + 1, len(names)):
+                        spread = merged[names[i]] - merged[names[j]]
+                        label = f"{names[i]} − {names[j]}"
+                        fig_spread.add_trace(go.Scatter(
+                            x=merged.index, y=spread, mode="lines",
+                            name=label, line=dict(color=spread_colors[ci % len(spread_colors)], width=2),
+                        ))
+                        ci += 1
+                fig_spread.add_hline(y=0, line_dash="dash", line_color="gray")
+                fig_spread.update_layout(
+                    title="Rate Spreads — Monetary Policy Divergence",
+                    xaxis_title="Date", yaxis_title="Spread (%)",
+                    hovermode="x unified", height=400,
+                )
+                st.plotly_chart(fig_spread, use_container_width=True)
 
 with tab_tests:
     render_test_tab("test_benchmark_rates.py")
