@@ -12,7 +12,7 @@ from nav import render_sidebar
 from test_tab import render_test_tab
 render_sidebar()
 
-st.set_page_config(page_title="Credit Card Calculator", layout="wide")
+st.set_page_config(page_title="Credit Card Calculator", page_icon="assets/logo.png", layout="wide")
 st.title("Credit Card Payoff Calculator")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])

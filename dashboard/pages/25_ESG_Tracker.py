@@ -15,7 +15,7 @@ from nav import render_sidebar
 from test_tab import render_test_tab
 render_sidebar()
 
-st.set_page_config(page_title="ESG Tracker", layout="wide")
+st.set_page_config(page_title="ESG Tracker", page_icon="assets/logo.png", layout="wide")
 st.title("ESG Score Tracker")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])

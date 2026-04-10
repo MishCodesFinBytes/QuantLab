@@ -12,6 +12,7 @@ GITHUB_REPO = "MishCodesFinBytes/QuantLab"
 
 st.set_page_config(
     page_title="FinBytes QuantLabs",
+    page_icon="assets/logo.png",
     layout="wide",
 )
 

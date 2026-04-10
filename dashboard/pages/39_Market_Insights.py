@@ -16,7 +16,7 @@ from nav import render_sidebar
 from test_tab import render_test_tab
 render_sidebar()
 
-st.set_page_config(page_title="Market Insights", layout="wide")
+st.set_page_config(page_title="Market Insights", page_icon="assets/logo.png", layout="wide")
 st.title("Market Insights -- Sentiment vs Price")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])

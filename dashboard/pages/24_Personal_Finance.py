@@ -13,7 +13,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Personal Finance", layout="wide")
+st.set_page_config(page_title="Personal Finance", page_icon="assets/logo.png", layout="wide")
 st.title("Personal Finance Dashboard")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])

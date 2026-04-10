@@ -14,7 +14,7 @@ import plotly.express as px
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans, DBSCAN
 
-st.set_page_config(page_title="Clustering", layout="wide")
+st.set_page_config(page_title="Clustering", page_icon="assets/logo.png", layout="wide")
 st.title("Customer Segmentation via Clustering")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])

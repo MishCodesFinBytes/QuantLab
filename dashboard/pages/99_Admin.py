@@ -24,7 +24,7 @@ from botocore.exceptions import ClientError
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from test_tab import render_test_tab
 
-st.set_page_config(page_title="Admin · RDS", page_icon="🔒", layout="centered")
+st.set_page_config(page_title="Admin · RDS", page_icon="assets/logo.png", layout="centered")
 st.title("RDS Admin")
 st.caption("Start / stop the QuantLab RDS instance to conserve free-tier hours.")
 
