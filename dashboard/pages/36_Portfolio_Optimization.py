@@ -14,7 +14,7 @@ from nav import render_sidebar
 from test_tab import render_test_tab
 render_sidebar()
 
-st.set_page_config(page_title="Portfolio Optimization", layout="wide")
+st.set_page_config(page_title="Portfolio Optimization", page_icon="assets/logo.png", layout="wide")
 st.title("Portfolio Optimization -- Efficient Frontier")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])

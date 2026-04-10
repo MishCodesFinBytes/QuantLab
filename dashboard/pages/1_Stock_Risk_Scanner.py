@@ -19,7 +19,7 @@ from lib.risk_colors import var_color, cvar_color, drawdown_color, volatility_co
 
 from pathlib import Path
 
-st.set_page_config(page_title="Stock Risk Scanner | FinBytes QuantLabs", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Stock Risk Scanner | FinBytes QuantLabs", page_icon="assets/logo.png", layout="wide")
 
 HERE = Path(__file__).parent.parent
 

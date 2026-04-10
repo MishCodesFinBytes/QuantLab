@@ -16,7 +16,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
 
-st.set_page_config(page_title="Loan Default", layout="wide")
+st.set_page_config(page_title="Loan Default", page_icon="assets/logo.png", layout="wide")
 st.title("Loan Default Prediction")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])

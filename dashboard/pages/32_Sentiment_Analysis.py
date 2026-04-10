@@ -10,7 +10,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Sentiment Analysis", layout="wide")
+st.set_page_config(page_title="Sentiment Analysis", page_icon="assets/logo.png", layout="wide")
 st.title("Headline Sentiment Analysis")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
