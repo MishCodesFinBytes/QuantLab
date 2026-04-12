@@ -89,3 +89,100 @@ def plotly_returns_histogram(df: pd.DataFrame):
     fig.update_layout(title="Daily Returns Distribution (Plotly)",
                       xaxis_title="Return", yaxis_title="Frequency")
     return fig
+
+
+# ── Matplotlib ──────────────────────────────────────────────────────
+
+def matplotlib_line_chart(df: pd.DataFrame):
+    """Close price line chart using Matplotlib."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(df.index, df["Close"], color="#2a7ae2", label="Close")
+    # Mark outliers
+    outliers = detect_outliers(df)
+    if outliers["Close"].any():
+        mask = outliers["Close"]
+        ax.scatter(df.index[mask], df["Close"][mask], color="red", marker="x",
+                   s=100, zorder=5, label="Outlier")
+        for idx in df.index[mask]:
+            ax.annotate("outlier", xy=(idx, df.loc[idx, "Close"]),
+                        xytext=(0, 15), textcoords="offset points",
+                        fontsize=8, color="red", ha="center",
+                        arrowprops=dict(arrowstyle="->", color="red"))
+    ax.set_title("Close Price (Matplotlib)")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Price")
+    ax.legend()
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    return fig
+
+
+def matplotlib_candlestick(df: pd.DataFrame):
+    """OHLC candlestick chart using Matplotlib (manual bars + wicks)."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import matplotlib.dates as mdates
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+    dates = mdates.date2num(df.index.to_pydatetime())
+    width = 0.6
+
+    up = df["Close"] >= df["Open"]
+    down = ~up
+
+    # Up candles (green)
+    ax.bar(dates[up], (df["Close"] - df["Open"])[up], width,
+           bottom=df["Open"][up], color="#2ea043", edgecolor="#2ea043")
+    ax.vlines(dates[up], df["Low"][up], df["High"][up], color="#2ea043", linewidth=0.8)
+
+    # Down candles (red)
+    ax.bar(dates[down], (df["Open"] - df["Close"])[down], width,
+           bottom=df["Close"][down], color="#e24a4a", edgecolor="#e24a4a")
+    ax.vlines(dates[down], df["Low"][down], df["High"][down], color="#e24a4a", linewidth=0.8)
+
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
+    ax.set_title("Candlestick (Matplotlib)")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Price")
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    return fig
+
+
+def matplotlib_volume_bar(df: pd.DataFrame):
+    """Volume bar chart using Matplotlib."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(10, 3))
+    colors = ["#2a7ae2" if c >= o else "#e24a4a"
+              for c, o in zip(df["Close"], df["Open"])]
+    ax.bar(df.index, df["Volume"], color=colors, width=0.8)
+    ax.set_title("Volume (Matplotlib)")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Volume")
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    return fig
+
+
+def matplotlib_returns_histogram(df: pd.DataFrame):
+    """Daily returns histogram using Matplotlib."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    returns = compute_daily_returns(df)
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.hist(returns, bins=40, color="#2a7ae2", alpha=0.75, edgecolor="white")
+    ax.set_title("Daily Returns Distribution (Matplotlib)")
+    ax.set_xlabel("Return")
+    ax.set_ylabel("Frequency")
+    fig.tight_layout()
+    return fig

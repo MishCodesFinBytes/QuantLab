@@ -51,3 +51,31 @@ class TestPlotlyCharts:
         fig = plotly_returns_histogram(sample_ohlcv)
         assert fig is not None
         assert len(fig.data) >= 1
+
+
+class TestMatplotlibCharts:
+    def test_line_chart_returns_figure(self, sample_ohlcv):
+        from lib.plotting import matplotlib_line_chart
+
+        fig = matplotlib_line_chart(sample_ohlcv)
+        assert fig is not None
+        assert len(fig.get_axes()) >= 1
+
+    def test_candlestick_returns_figure(self, sample_ohlcv):
+        from lib.plotting import matplotlib_candlestick
+
+        fig = matplotlib_candlestick(sample_ohlcv)
+        assert fig is not None
+        assert len(fig.get_axes()) >= 1
+
+    def test_volume_bar_returns_figure(self, sample_ohlcv):
+        from lib.plotting import matplotlib_volume_bar
+
+        fig = matplotlib_volume_bar(sample_ohlcv)
+        assert fig is not None
+
+    def test_returns_histogram_returns_figure(self, sample_ohlcv):
+        from lib.plotting import matplotlib_returns_histogram
+
+        fig = matplotlib_returns_histogram(sample_ohlcv)
+        assert fig is not None
