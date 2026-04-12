@@ -4,20 +4,29 @@ Things that need periodic attention to keep the live demo running.
 
 ---
 
-## Render PostgreSQL — Recreate Every 90 Days
+## Render PostgreSQL — Recreate Every 30 Days
 
-**Current DB:** `finbytes-scanner-db` — created 2026-04-03, expires ~2026-07-02
+> **Note:** Render's free Postgres expires **30 days** after creation (not 90 as the old plan assumed).
 
-**How to check:** Visit [finbytes.streamlit.app](https://finbytes.streamlit.app) → System Health → Database shows red.
+**Current DB:** `finbytes-scanner-db` — created 2026-04-03, expires **2026-05-03**, region `frankfurt`
 
-**How to fix:**
+**How to check:** Visit [finbytes.streamlit.app/Churros](https://finbytes.streamlit.app/Churros) → unlock → **Render DB** tab shows days-until-expiry with a colour badge.
+
+**How to fix (automated):**
+1. Unlock the Churros admin page
+2. Go to the **Render DB** tab
+3. Type `finbytes-scanner-db` to confirm and click **Recreate database now**
+4. Watch the 6-step progress — delete, create, rewire `DATABASE_URL`, redeploy
+5. **Update `render.postgres_id` in Streamlit secrets** to the new `dpg-...` id the tab shows you
+6. Done — tables auto-create on startup, seed data lost (fine for demo)
+
+**How to fix (manual fallback):**
 1. Go to [render.com](https://render.com) → delete the expired database
-2. New → PostgreSQL → name: `finbytes-scanner-db` → Free plan → Create
+2. New → PostgreSQL → name: `finbytes-scanner-db` → Free plan → region `Frankfurt` → Create
 3. Copy the **Internal Database URL**
 4. Go to web service `finbytes-scanner` → Environment → edit `DATABASE_URL`
 5. Replace `postgres://` with `postgresql+asyncpg://` in the URL
 6. Save — auto-redeploys, tables auto-created on startup
-7. Data is lost (empty DB) — fine for a demo
 
 ---
 
@@ -68,6 +77,6 @@ Currently set to `skip` (fallback mode). To enable AI narratives:
 
 | What | When | Action |
 |------|------|--------|
-| Renew scanner DB | ~2026-07-02 | Recreate on Render (see above) |
+| Renew scanner DB | 2026-05-03 | Use Churros → Render DB tab (1-click) |
 | Check CI minutes | Monthly | Should be well under 2000 min/month |
 | Check Anthropic credits | If API key is added | Set spending cap in Anthropic console |
