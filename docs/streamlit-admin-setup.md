@@ -1,6 +1,6 @@
 # Streamlit Admin Page — Setup
 
-The `dashboard/pages/99_Admin.py` page starts/stops the RDS instance to save
+The `dashboard/pages/99_Churros.py` page (obfuscated URL — formerly `99_Admin.py`) starts/stops the RDS instance to save
 free-tier hours. It needs a **scoped IAM user** (not `quant-lab-dev`) and
 **Streamlit Cloud secrets**.
 
