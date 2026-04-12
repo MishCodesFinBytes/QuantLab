@@ -95,6 +95,54 @@ with tab_app:
     )
 
     st.markdown("---")
+
+    st.markdown("### External APIs & Data Sources")
+    st.caption("Live checks — each API is pinged with a minimal request to verify availability.")
+
+    def check_api(name, url, timeout=8):
+        """Return 'ok', 'slow', or 'down' with response time."""
+        import time
+        try:
+            start = time.time()
+            r = requests.get(url, timeout=timeout)
+            elapsed = time.time() - start
+            if r.status_code == 200:
+                return ("ok", f"{elapsed:.1f}s") if elapsed < 3 else ("slow", f"{elapsed:.1f}s")
+            return ("down", f"HTTP {r.status_code}")
+        except requests.exceptions.Timeout:
+            return ("slow", "Timeout")
+        except Exception as e:
+            return ("down", str(e)[:40])
+
+    api_checks = {
+        "yfinance (Yahoo Finance)": "https://query1.finance.yahoo.com/v8/finance/chart/AAPL?interval=1d&range=1d",
+        "CoinGecko": "https://api.coingecko.com/api/v3/ping",
+        "Open Exchange Rates": "https://open.er-api.com/v6/latest/USD",
+        "Bank of England (SONIA)": "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&Datefrom=01/Jan/2025&Dateto=02/Jan/2025&SeriesCodes=IUDSNPY&CSVF=TN&UsingCodes=Y",
+        "ECB Data API (€STR)": "https://data-api.ecb.europa.eu/service/data/EST/B.EU000A2X2A25.WT?format=csvdata&startPeriod=2025-01-01&endPeriod=2025-01-02",
+        "New York Fed (SOFR)": "https://markets.newyorkfed.org/api/rates/secured/sofr/search.csv?startDate=2025-01-02&endDate=2025-01-02&type=rate",
+        "Land Registry PPD": "https://price-paid-data.publicdata.landregistry.gov.uk/pp-monthly-update-new-version.csv",
+        "OpenStreetMap Overpass": "https://overpass-api.de/api/status",
+        "GitHub API": f"https://api.github.com/repos/{GITHUB_REPO}",
+    }
+
+    cols = st.columns(3)
+    for i, (name, url) in enumerate(api_checks.items()):
+        with cols[i % 3]:
+            status, detail = check_api(name, url)
+            if status == "ok":
+                st.success(f"**{name}**  \n{detail}")
+            elif status == "slow":
+                st.warning(f"**{name}**  \n{detail}")
+            else:
+                st.error(f"**{name}**  \n{detail}")
+
+    st.caption(
+        "For full documentation on each API, see the "
+        "[APIs & Data Sources](https://mishcodesfinbytes.github.io/FinBytes/tech-stack/apis-data-sources/) reference."
+    )
+
+    st.markdown("---")
     st.markdown("### Per-Project Health")
     st.markdown("Each project has its own **System Health** tab with API, database, and test checks.")
     st.page_link("pages/1_Stock_Risk_Scanner.py", label="Stock Risk Scanner")

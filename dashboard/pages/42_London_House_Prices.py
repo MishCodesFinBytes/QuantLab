@@ -26,6 +26,13 @@ st.set_page_config(page_title="London House Prices", page_icon="assets/logo.png"
 render_sidebar()
 st.title("London House Prices")
 
+st.markdown("""
+<style>
+[data-testid="stMetricValue"] { font-size: 1.1rem !important; }
+[data-testid="stMetricLabel"] { font-size: 0.8rem !important; }
+</style>
+""", unsafe_allow_html=True)
+
 tab_growth, tab_compare, tab_brand, tab_tests = st.tabs(
     ["Postcode Growth", "Compare Postcodes", "Brand Effect", "Tests"]
 )
@@ -66,7 +73,7 @@ with tab_growth:
 
     with col2:
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Current Avg Price", f"\u00a3{growth['end_price']:,}")
+        c1.metric("Avg Price", f"\u00a3{growth['end_price'] / 1000:.0f}k")
         c2.metric("Growth", f"{growth['growth_pct']}%")
         c3.metric("Peak Year", str(growth["peak_year"]))
         c4.metric("Transactions", f"{agg['count'].sum():,}" if len(agg) > 0 else "0")
@@ -133,11 +140,11 @@ with tab_compare:
     mc1, mc2 = st.columns(2)
     with mc1:
         st.markdown(f"**{dist_a}**")
-        st.metric("Avg Price", f"\u00a3{growth_a['end_price']:,}")
+        st.metric("Avg Price", f"\u00a3{growth_a['end_price'] / 1000:.0f}k")
         st.metric("Growth", f"{growth_a['growth_pct']}%")
     with mc2:
         st.markdown(f"**{dist_b}**")
-        st.metric("Avg Price", f"\u00a3{growth_b['end_price']:,}")
+        st.metric("Avg Price", f"\u00a3{growth_b['end_price'] / 1000:.0f}k")
         st.metric("Growth", f"{growth_b['growth_pct']}%")
 
     fig_cmp = go.Figure()
@@ -191,8 +198,8 @@ with tab_brand:
             avg_far = far["avg_price"].mean() if len(far) > 0 else 0
 
             bc1, bc2, bc3 = st.columns(3)
-            bc1.metric(f"Near {brand}", f"\u00a3{avg_near:,.0f}")
-            bc2.metric(f"Away from {brand}", f"\u00a3{avg_far:,.0f}")
+            bc1.metric(f"Near {brand}", f"\u00a3{avg_near / 1000:.0f}k")
+            bc2.metric(f"Away from {brand}", f"\u00a3{avg_far / 1000:.0f}k")
             diff_pct = ((avg_near - avg_far) / avg_far * 100) if avg_far > 0 else 0
             bc3.metric("Premium", f"{diff_pct:+.1f}%")
 

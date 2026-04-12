@@ -73,22 +73,35 @@ def compute_growth(df: pd.DataFrame, district: str) -> dict:
 
 def query_brand_locations(brand: str) -> list[dict]:
     """Query OpenStreetMap Overpass API for brand locations in London."""
+    import time
     query = (
-        f'[out:json][timeout:25][bbox:{LONDON_BBOX}];'
-        f'(node["brand"~"{brand}",i];way["brand"~"{brand}",i];);'
+        f'[out:json][timeout:60][bbox:{LONDON_BBOX}];'
+        f'(node["brand"~"{brand}",i];way["brand"~"{brand}",i];'
+        f'node["name"~"{brand}",i]["shop"];way["name"~"{brand}",i]["shop"];);'
         f'out center;'
     )
-    resp = requests.get(OVERPASS_URL, params={"data": query}, timeout=30)
-    resp.raise_for_status()
-    elements = resp.json().get("elements", [])
-    locations = []
-    for el in elements:
-        lat = el.get("lat") or el.get("center", {}).get("lat")
-        lon = el.get("lon") or el.get("center", {}).get("lon")
-        name = el.get("tags", {}).get("name", brand)
-        if lat and lon:
-            locations.append({"lat": lat, "lon": lon, "name": name})
-    return locations
+    for attempt in range(3):
+        try:
+            resp = requests.get(OVERPASS_URL, params={"data": query}, timeout=60)
+            if resp.status_code == 429:
+                time.sleep(5 * (attempt + 1))
+                continue
+            resp.raise_for_status()
+            elements = resp.json().get("elements", [])
+            locations = []
+            for el in elements:
+                lat = el.get("lat") or el.get("center", {}).get("lat")
+                lon = el.get("lon") or el.get("center", {}).get("lon")
+                name = el.get("tags", {}).get("name", brand)
+                if lat and lon:
+                    locations.append({"lat": lat, "lon": lon, "name": name})
+            return locations
+        except requests.exceptions.Timeout:
+            if attempt < 2:
+                time.sleep(3)
+                continue
+            raise
+    return []
 
 
 def assign_brand_districts(locations: list[dict], geojson: dict) -> set:
