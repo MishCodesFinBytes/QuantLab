@@ -14,6 +14,7 @@ Required st.secrets keys:
 """
 
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from botocore.exceptions import ClientError
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from test_tab import render_test_tab
+from render_admin import RenderClient, RenderConfig, RenderError, rewrite_scheme
 
 st.set_page_config(page_title="Admin · RDS", page_icon="assets/logo.png", layout="centered")
 st.title("RDS Admin")
@@ -47,7 +49,7 @@ if not st.session_state.admin_authed:
 
 # --- Top-level tabs -------------------------------------------------------
 
-tab_app, tab_tests = st.tabs(["App", "Tests"])
+tab_app, tab_render, tab_tests = st.tabs(["App", "Render DB", "Tests"])
 
 with tab_app:
     # --- AWS client -----------------------------------------------------------
@@ -214,6 +216,147 @@ with tab_app:
     if st.button("Log out"):
         st.session_state.admin_authed = False
         st.rerun()
+
+with tab_render:
+    st.subheader("Render PostgreSQL")
+    st.caption(
+        "Free Render Postgres expires 90 days after creation. This tab "
+        "recreates the DB with the same name and rewires DATABASE_URL on "
+        "the connected web service in one click."
+    )
+
+    render_secrets = st.secrets.get("render", {})
+    missing = [k for k in ("api_key", "owner_id", "postgres_id", "service_id", "db_name")
+               if not render_secrets.get(k)]
+
+    if missing:
+        st.warning(
+            "Render tab not configured. Add the following keys to Streamlit "
+            f"secrets under `[render]`: {', '.join(missing)}"
+        )
+        with st.expander("Example secrets block"):
+            st.code(
+                "[render]\n"
+                'api_key = "rnd_..."\n'
+                'owner_id = "tea_..."       # or usr_...\n'
+                'postgres_id = "dpg-..."    # current DB\n'
+                'service_id = "srv-..."     # web service to rewire\n'
+                'db_name = "finbytes-scanner-db"\n'
+                'plan = "free"\n'
+                'region = "oregon"\n'
+                'env_var_key = "DATABASE_URL"\n'
+                'url_scheme = "postgresql+asyncpg"',
+                language="toml",
+            )
+        st.stop()
+
+    cfg = RenderConfig(
+        api_key=render_secrets["api_key"],
+        owner_id=render_secrets["owner_id"],
+        postgres_id=render_secrets["postgres_id"],
+        service_id=render_secrets["service_id"],
+        db_name=render_secrets["db_name"],
+        plan=render_secrets.get("plan", "free"),
+        region=render_secrets.get("region", "oregon"),
+        env_var_key=render_secrets.get("env_var_key", "DATABASE_URL"),
+        url_scheme=render_secrets.get("url_scheme", "postgresql+asyncpg"),
+    )
+    rc = RenderClient(cfg)
+
+    # --- Current status -------------------------------------------------
+
+    try:
+        info = rc.get_postgres(cfg.postgres_id)
+    except RenderError as exc:
+        st.error(f"Could not read Postgres status: {exc}")
+        info = None
+
+    if info:
+        rstatus = info.get("status", "?")
+        badge = {"available": "green", "creating": "blue", "suspended": "gray"}.get(rstatus, "red")
+        st.markdown(f"**DB id:** `{cfg.postgres_id}`")
+        st.markdown(f"**Name:** `{info.get('name', '?')}`")
+        st.markdown(f"**Status:** :{badge}[**{rstatus}**]")
+        st.markdown(f"**Plan:** `{info.get('plan', '?')}` · **Region:** `{info.get('region', '?')}`")
+
+        created_raw = info.get("createdAt")
+        if created_raw:
+            try:
+                created_dt = datetime.fromisoformat(created_raw.replace("Z", "+00:00"))
+                age_days = (datetime.now(timezone.utc) - created_dt).days
+                days_left = 90 - age_days
+                colour = "red" if days_left < 14 else "orange" if days_left < 30 else "green"
+                st.markdown(f"**Created:** {created_dt:%Y-%m-%d} ({age_days} days ago)")
+                st.markdown(f"**Days until 90-day expiry:** :{colour}[**{days_left}**]")
+            except ValueError:
+                st.caption(f"Created: {created_raw}")
+
+    st.markdown("---")
+
+    # --- Recreate flow --------------------------------------------------
+
+    st.markdown("### Recreate database")
+    st.warning(
+        "This will **delete the current Postgres and all its data**, then "
+        "create a fresh one with the same name. The connected web service "
+        "will redeploy automatically. Type the DB name to confirm."
+    )
+
+    confirm = st.text_input("Type the DB name to confirm", key="render_confirm")
+    do_recreate = st.button(
+        "Recreate database now",
+        disabled=(confirm != cfg.db_name),
+        type="primary",
+    )
+
+    if do_recreate:
+        with st.status("Recreating Render Postgres...", expanded=True) as status:
+            try:
+                st.write(f"1/6 Deleting old Postgres `{cfg.postgres_id}`...")
+                rc.delete_postgres(cfg.postgres_id)
+
+                st.write("2/6 Waiting 10s for deletion to propagate...")
+                time.sleep(10)
+
+                st.write(f"3/6 Creating new Postgres `{cfg.db_name}`...")
+                new_db = rc.create_postgres()
+                new_pid = new_db.get("id") or new_db.get("postgres", {}).get("id")
+                if not new_pid:
+                    raise RenderError(f"Create response missing id: {new_db}")
+                st.write(f"    → new id: `{new_pid}`")
+
+                st.write("4/6 Waiting for new DB to become available (up to 10 min)...")
+                rc.wait_postgres_available(new_pid, timeout=600, poll=10)
+
+                st.write("5/6 Fetching connection string and updating DATABASE_URL...")
+                internal = rc.internal_url(new_pid)
+                rewired = rewrite_scheme(internal, cfg.url_scheme)
+                rc.set_env_var(cfg.env_var_key, rewired)
+
+                st.write("6/6 Triggering service redeploy...")
+                rc.trigger_deploy()
+
+                status.update(
+                    label="Recreation complete — service redeploying.",
+                    state="complete",
+                    expanded=True,
+                )
+                st.success(
+                    f"New Postgres id: `{new_pid}`. **Update your Streamlit "
+                    f"secret `render.postgres_id` to this value** so the status "
+                    f"tab reads the correct DB next time."
+                )
+                st.info(
+                    "The backend will auto-create tables on startup. Seed data "
+                    "(if any) is lost — fine for the demo."
+                )
+            except (RenderError, ValueError) as exc:
+                status.update(label="Recreation failed.", state="error")
+                st.error(f"Failed: {exc}")
+                st.info(
+                    "Check the Render dashboard. You may need to manually "
+                    "complete the remaining steps from docs/MAINTENANCE.md."
+                )
 
 with tab_tests:
     render_test_tab("test_admin.py")
