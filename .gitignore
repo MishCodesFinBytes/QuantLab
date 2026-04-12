@@ -25,4 +25,4 @@ docs/Manisha_*.xlsx
 ~$*.docx
 
 # Scratch / manual test scripts
-try_it.pydashboard/data/london_ppd.parquet
+try_it.py
