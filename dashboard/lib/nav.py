@@ -20,7 +20,7 @@ def render_sidebar():
 def _render_sidebar_impl():
     st.sidebar.image(str(ASSETS / "logo.png"), width=180)
     st.sidebar.title("FinBytes QuantLabs")
-    st.sidebar.markdown("**Built by** [Manisha](https://mishcodesfinbytes.github.io/FinBytes/)")
+    st.sidebar.markdown("**Built by** [Manisha](https://mish-codes.github.io/FinBytes/)")
     st.sidebar.markdown("---")
 
     # Projects
@@ -66,6 +66,6 @@ def _render_sidebar_impl():
     st.sidebar.markdown("---")
     st.sidebar.page_link("app.py", label="System Health")
     st.sidebar.markdown(
-        "[GitHub](https://github.com/MishCodesFinBytes/QuantLab) · "
-        "[Blog](https://mishcodesfinbytes.github.io/FinBytes/)"
+        "[GitHub](https://github.com/mish-codes/QuantLab) · "
+        "[Blog](https://mish-codes.github.io/FinBytes/)"
     )

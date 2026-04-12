@@ -26,7 +26,7 @@ HERE = Path(__file__).parent.parent
 # Custom sidebar (auto-nav is hidden)
 st.sidebar.image(str(HERE / "assets" / "logo.png"), width=180)
 st.sidebar.title("FinBytes QuantLabs")
-st.sidebar.markdown("**Built by** [Manisha](https://mishcodesfinbytes.github.io/FinBytes/)")
+st.sidebar.markdown("**Built by** [Manisha](https://mish-codes.github.io/FinBytes/)")
 st.sidebar.markdown("---")
 st.sidebar.markdown("### Projects")
 try:
@@ -41,12 +41,12 @@ except Exception:
     st.sidebar.markdown("- System Health")
 st.sidebar.markdown("---")
 st.sidebar.markdown(
-    "[GitHub](https://github.com/MishCodesFinBytes/QuantLab) · "
-    "[Blog](https://mishcodesfinbytes.github.io/FinBytes/quant-lab/stock-risk-scanner/)"
+    "[GitHub](https://github.com/mish-codes/QuantLab) · "
+    "[Blog](https://mish-codes.github.io/FinBytes/quant-lab/stock-risk-scanner/)"
 )
 
 API_URL = st.secrets.get("API_URL", "http://localhost:8000")
-GITHUB_REPO = "MishCodesFinBytes/QuantLab"
+GITHUB_REPO = "mish-codes/QuantLab"
 
 # --- Rate limiting ---
 if "scan_count" not in st.session_state:
@@ -638,7 +638,7 @@ with tab_arch:
     st.markdown(
         "For the full architecture deep dive including tech decisions Q&A, "
         "read the [Architecture blog post]"
-        "(https://mishcodesfinbytes.github.io/FinBytes/2026/04/03/stock-risk-scanner-architecture/)."
+        "(https://mish-codes.github.io/FinBytes/2026/04/03/stock-risk-scanner-architecture/)."
     )
 
 # ============================================================

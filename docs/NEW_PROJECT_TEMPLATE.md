@@ -160,7 +160,7 @@ tests/
 
 ### Web Service
 1. Render dashboard → New → Web Service
-2. Connect GitHub repo: `MishCodesFinBytes/QuantLab`
+2. Connect GitHub repo: `mish-codes/QuantLab`
 3. Name: `finbytes-<project>`
 4. Root Directory / Project: `projects/<project-name>`
 5. Runtime: Docker

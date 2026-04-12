@@ -8,7 +8,7 @@ from nav import render_sidebar
 from test_tab import render_test_tab
 
 HERE = Path(__file__).parent
-GITHUB_REPO = "MishCodesFinBytes/QuantLab"
+GITHUB_REPO = "mish-codes/QuantLab"
 
 st.set_page_config(
     page_title="FinBytes QuantLabs",
@@ -56,7 +56,7 @@ with tab_app:
     with c1:
         st.markdown("**GitHub Repository**")
         st.success("Active")
-        st.caption(f"[MishCodesFinBytes/QuantLab](https://github.com/{GITHUB_REPO})")
+        st.caption(f"[mish-codes/QuantLab](https://github.com/{GITHUB_REPO})")
 
     with c2:
         st.markdown("**CI Pipeline**")
@@ -85,7 +85,7 @@ with tab_app:
 | Scanner API | [finbytes-scanner.onrender.com](https://finbytes-scanner.onrender.com) | Render Free Tier | Sleeps after 15min idle |
 | Scanner DB | Internal (Render) | Render PostgreSQL Free | **Expires 90 days after creation** |
 | CI | [GitHub Actions](https://github.com/{GITHUB_REPO}/actions) | GitHub Free | 2000 mins/month |
-| Blog | [FinBytes](https://mishcodesfinbytes.github.io/FinBytes/) | GitHub Pages | Free |
+| Blog | [FinBytes](https://mish-codes.github.io/FinBytes/) | GitHub Pages | Free |
 """)
 
     st.warning(
@@ -139,7 +139,7 @@ with tab_app:
 
     st.caption(
         "For full documentation on each API, see the "
-        "[APIs & Data Sources](https://mishcodesfinbytes.github.io/FinBytes/tech-stack/apis-data-sources/) reference."
+        "[APIs & Data Sources](https://mish-codes.github.io/FinBytes/tech-stack/apis-data-sources/) reference."
     )
 
     st.markdown("---")

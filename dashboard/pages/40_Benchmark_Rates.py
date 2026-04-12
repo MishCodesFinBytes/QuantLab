@@ -29,7 +29,7 @@ with tab_app:
         - **SOFR** (Secured Overnight Financing Rate) — NY Fed's repo-based overnight rate for USD
         - **Position calculator** computes daily accrued interest by compounding the overnight rate in arrears
         - For the full theory and LIBOR transition story, see the
-          [Benchmark Rates post](https://mishcodesfinbytes.github.io/FinBytes/math-finance/benchmark-rates-libor-transition/)
+          [Benchmark Rates post](https://mish-codes.github.io/FinBytes/math-finance/benchmark-rates-libor-transition/)
         """)
 
     with st.expander("What the outputs mean"):

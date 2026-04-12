@@ -39,7 +39,7 @@ Auto-deploys from `master` branch. No maintenance needed. If the app crashes, ch
 
 Free tier: 2000 minutes/month. Each run takes ~1 minute. At current usage, nowhere near the limit.
 
-**If CI stops running:** Check [github.com/MishCodesFinBytes/QuantLab/actions](https://github.com/MishCodesFinBytes/QuantLab/actions) for error details.
+**If CI stops running:** Check [github.com/mish-codes/QuantLab/actions](https://github.com/mish-codes/QuantLab/actions) for error details.
 
 ---
 
@@ -59,8 +59,8 @@ Currently set to `skip` (fallback mode). To enable AI narratives:
 |---------|-----|-------------------|
 | Dashboard | [finbytes.streamlit.app](https://finbytes.streamlit.app) | `master` branch |
 | Scanner API | [finbytes-scanner.onrender.com](https://finbytes-scanner.onrender.com) | `master` branch |
-| Blog | [mishcodesfinbytes.github.io/FinBytes](https://mishcodesfinbytes.github.io/FinBytes/) | `master` branch |
-| GitHub | [github.com/MishCodesFinBytes/QuantLab](https://github.com/MishCodesFinBytes/QuantLab) | — |
+| Blog | [mish-codes.github.io/FinBytes](https://mish-codes.github.io/FinBytes/) | `master` branch |
+| GitHub | [github.com/mish-codes/QuantLab](https://github.com/mish-codes/QuantLab) | — |
 
 ---
 

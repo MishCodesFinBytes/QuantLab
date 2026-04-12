@@ -1,0 +1,4 @@
+# Require owner approval for changes to protected data files
+dashboard/data/london_ppd.parquet @mish-codes
+dashboard/data/london_postcode_districts.geojson @mish-codes
+scripts/build_london_ppd.py @mish-codes

@@ -25,7 +25,7 @@ IAM → **Roles** → **Create role**
 - **Trusted entity type:** Web identity
 - **Identity provider:** `token.actions.githubusercontent.com`
 - **Audience:** `sts.amazonaws.com`
-- **GitHub organization:** `MishCodesFinBytes`
+- **GitHub organization:** `mish-codes`
 - **GitHub repository:** `QuantLab`
 - **GitHub branch:** leave blank (we'll edit the trust policy after)
 - **Next**
@@ -55,7 +55,7 @@ with:
                     "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
                 },
                 "StringLike": {
-                    "token.actions.githubusercontent.com:sub": "repo:MishCodesFinBytes/QuantLab:ref:refs/heads/master"
+                    "token.actions.githubusercontent.com:sub": "repo:mish-codes/QuantLab:ref:refs/heads/master"
                 }
             }
         }
@@ -98,7 +98,7 @@ Back on the role page, copy the **ARN** at the top:
 
 ## 6. Add as a GitHub secret
 
-GitHub → `MishCodesFinBytes/QuantLab` → **Settings** → **Secrets and
+GitHub → `mish-codes/QuantLab` → **Settings** → **Secrets and
 variables** → **Actions** → **New repository secret**
 
 - **Name:** `AWS_DEPLOY_ROLE_ARN`

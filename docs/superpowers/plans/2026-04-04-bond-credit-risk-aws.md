@@ -3803,7 +3803,7 @@ def create_app() -> FastAPI:
 
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=["https://mishcodesfinbytes.github.io", "https://finbytes.streamlit.app", "http://localhost:8501"],
+        allow_origins=["https://mish-codes.github.io", "https://finbytes.streamlit.app", "http://localhost:8501"],
         allow_methods=["*"], allow_headers=["*"],
     )
 

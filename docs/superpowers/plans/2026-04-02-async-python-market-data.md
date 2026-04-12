@@ -275,7 +275,7 @@ git checkout working
 
 - [ ] **Step 4: Verify blog post is live**
 
-Check: `https://mishcodesfinbytes.github.io/FinBytes/2026/04/02/async-python-for-market-data/`
+Check: `https://mish-codes.github.io/FinBytes/2026/04/02/async-python-for-market-data/`
 
 ---
 

@@ -1,0 +1,3 @@
+# Protect data files — mark as binary to prevent merge conflicts and text diffs
+dashboard/data/london_ppd.parquet binary
+dashboard/data/london_postcode_districts.geojson binary

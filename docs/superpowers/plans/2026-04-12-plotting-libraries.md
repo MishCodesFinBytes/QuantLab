@@ -829,7 +829,7 @@ with tab_app:
         - **Outlier detection:** rows with any value > 3 standard deviations from the
           column mean are flagged automatically
         - For the full comparison and outlier-handling guide, see the
-          [Plotting Libraries blog post](https://mishcodesfinbytes.github.io/FinBytes/tech-stack/plotting-libraries/)
+          [Plotting Libraries blog post](https://mish-codes.github.io/FinBytes/tech-stack/plotting-libraries/)
         """)
 
     # ── Sidebar inputs ──────────────────────────────────────────────

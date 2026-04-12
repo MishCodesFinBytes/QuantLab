@@ -80,15 +80,15 @@ st.set_page_config(
 
 # Sidebar — persistent across all pages
 st.sidebar.title("FinBytes Labs")
-st.sidebar.markdown("**Built by** [Manisha](https://mishcodesfinbytes.github.io/FinBytes/)")
+st.sidebar.markdown("**Built by** [Manisha](https://mish-codes.github.io/FinBytes/)")
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     "**Built with:** Python, FastAPI, SQLAlchemy, "
     "Docker, Claude API, Streamlit"
 )
 st.sidebar.markdown(
-    "[GitHub Repo](https://github.com/MishCodesFinBytes/QuantLab) · "
-    "[Blog Post](https://mishcodesfinbytes.github.io/FinBytes/quant-lab/stock-risk-scanner/)"
+    "[GitHub Repo](https://github.com/mish-codes/QuantLab) · "
+    "[Blog Post](https://mish-codes.github.io/FinBytes/quant-lab/stock-risk-scanner/)"
 )
 
 # Main landing page
@@ -683,7 +683,7 @@ This task is manual — done through the Render web UI, not code.
   - Note the internal database URL
 
 - [ ] **Step 3: Create a Web Service**
-  - Connect to GitHub repo `MishCodesFinBytes/QuantLab`
+  - Connect to GitHub repo `mish-codes/QuantLab`
   - Name: `finbytes-scanner`
   - Root directory: `projects/stock-risk-scanner`
   - Runtime: Docker
@@ -716,7 +716,7 @@ This task is manual — done through the Streamlit Cloud web UI.
 - [ ] **Step 1: Go to share.streamlit.io and sign in with GitHub**
 
 - [ ] **Step 2: Deploy new app**
-  - Repository: `MishCodesFinBytes/QuantLab`
+  - Repository: `mish-codes/QuantLab`
   - Branch: `master`
   - Main file path: `projects/stock-risk-scanner/dashboard/app.py`
   - App URL: `finbytes.streamlit.app`
