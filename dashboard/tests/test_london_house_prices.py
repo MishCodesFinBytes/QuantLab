@@ -3,6 +3,22 @@ import pytest
 import pandas as pd
 import numpy as np
 from unittest.mock import patch, MagicMock
+from streamlit.testing.v1 import AppTest
+
+
+class TestLondonHousePricesPage:
+    def _run(self):
+        at = AppTest.from_file("pages/42_London_House_Prices.py", default_timeout=30)
+        at.run()
+        return at
+
+    def test_loads_without_error(self):
+        at = self._run()
+        assert not at.exception, f"Page crashed: {at.exception}"
+
+    def test_shows_title(self):
+        at = self._run()
+        assert any("London House Prices" in t.value for t in at.title)
 
 
 @pytest.fixture
