@@ -3,6 +3,31 @@ import pytest
 import pandas as pd
 import numpy as np
 from unittest.mock import patch
+from streamlit.testing.v1 import AppTest
+
+
+class TestPlottingLibrariesPage:
+    def _run(self):
+        at = AppTest.from_file("pages/41_Plotting_Libraries.py", default_timeout=30)
+        at.run()
+        return at
+
+    def test_loads_without_error(self):
+        at = self._run()
+        assert not at.exception, f"Page crashed: {at.exception}"
+
+    def test_shows_title(self):
+        at = self._run()
+        assert any("Plotting Libraries" in t.value for t in at.title)
+
+    def test_has_ticker_input(self):
+        at = self._run()
+        ti = [w for w in at.text_input if w.value == "AAPL"]
+        assert ti, "Expected a ticker text_input defaulting to AAPL"
+
+    def test_has_period_selectbox(self):
+        at = self._run()
+        assert len(at.selectbox) >= 1, "Expected at least one selectbox (period)"
 
 
 @pytest.fixture

@@ -118,10 +118,14 @@ with tab_app:
         st.altair_chart(altair_returns_histogram(edited_df), use_container_width=True)
 
     with tab_bokeh:
-        st.bokeh_chart(bokeh_line_chart(edited_df), use_container_width=True)
-        st.bokeh_chart(bokeh_candlestick(edited_df), use_container_width=True)
-        st.bokeh_chart(bokeh_volume_bar(edited_df), use_container_width=True)
-        st.bokeh_chart(bokeh_returns_histogram(edited_df), use_container_width=True)
+        from bokeh.embed import file_html
+        from bokeh.resources import CDN
+        import streamlit.components.v1 as components
+
+        for chart_fn in [bokeh_line_chart, bokeh_candlestick, bokeh_volume_bar, bokeh_returns_histogram]:
+            fig = chart_fn(edited_df)
+            html = file_html(fig, CDN)
+            components.html(html, height=400)
 
 with tab_tests:
     render_test_tab("test_plotting_libraries.py")
