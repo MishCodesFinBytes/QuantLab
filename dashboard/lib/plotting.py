@@ -267,3 +267,88 @@ def altair_returns_histogram(df: pd.DataFrame):
         x=alt.X("Return:Q", bin=alt.Bin(maxbins=40), title="Return"),
         y=alt.Y("count()", title="Frequency"),
     ).properties(title="Daily Returns Distribution (Altair)", width="container")
+
+
+# ── Bokeh ───────────────────────────────────────────────────────────
+
+def bokeh_line_chart(df: pd.DataFrame):
+    """Close price line chart using Bokeh."""
+    from bokeh.plotting import figure
+    from bokeh.models import ColumnDataSource
+
+    source = ColumnDataSource(data=dict(
+        date=df.index, close=df["Close"],
+    ))
+    p = figure(title="Close Price (Bokeh)", x_axis_type="datetime",
+               x_axis_label="Date", y_axis_label="Price",
+               width=800, height=350)
+    p.line("date", "close", source=source, color="#2a7ae2", line_width=2)
+
+    # Mark outliers
+    outliers_mask = detect_outliers(df)["Close"]
+    if outliers_mask.any():
+        outlier_src = ColumnDataSource(data=dict(
+            date=df.index[outliers_mask],
+            close=df["Close"][outliers_mask],
+        ))
+        p.cross("date", "close", source=outlier_src, color="red",
+                size=12, line_width=2, legend_label="Outlier")
+
+    return p
+
+
+def bokeh_candlestick(df: pd.DataFrame):
+    """OHLC candlestick chart using Bokeh (segment + vbar)."""
+    from bokeh.plotting import figure
+
+    p = figure(title="Candlestick (Bokeh)", x_axis_type="datetime",
+               x_axis_label="Date", y_axis_label="Price",
+               width=800, height=350)
+
+    up = df[df["Close"] >= df["Open"]]
+    down = df[df["Close"] < df["Open"]]
+    w = 12 * 60 * 60 * 1000  # half-day in ms
+
+    # Wicks
+    p.segment(df.index, df["High"], df.index, df["Low"], color="black")
+
+    # Up candles
+    p.vbar(up.index, w, up["Open"], up["Close"], fill_color="#2ea043",
+           line_color="#2ea043")
+    # Down candles
+    p.vbar(down.index, w, down["Open"], down["Close"], fill_color="#e24a4a",
+           line_color="#e24a4a")
+
+    return p
+
+
+def bokeh_volume_bar(df: pd.DataFrame):
+    """Volume bar chart using Bokeh."""
+    from bokeh.plotting import figure
+
+    p = figure(title="Volume (Bokeh)", x_axis_type="datetime",
+               x_axis_label="Date", y_axis_label="Volume",
+               width=800, height=250)
+
+    colors = ["#2a7ae2" if c >= o else "#e24a4a"
+              for c, o in zip(df["Close"], df["Open"])]
+    w = 12 * 60 * 60 * 1000
+
+    p.vbar(x=df.index, top=df["Volume"], width=w, color=colors)
+    return p
+
+
+def bokeh_returns_histogram(df: pd.DataFrame):
+    """Daily returns histogram using Bokeh."""
+    from bokeh.plotting import figure
+
+    returns = compute_daily_returns(df)
+    hist, edges = np.histogram(returns, bins=40)
+
+    p = figure(title="Daily Returns Distribution (Bokeh)",
+               x_axis_label="Return", y_axis_label="Frequency",
+               width=800, height=350)
+    p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:],
+           fill_color="#2a7ae2", fill_alpha=0.75, line_color="white")
+
+    return p

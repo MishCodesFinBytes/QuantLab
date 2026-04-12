@@ -109,3 +109,29 @@ class TestAltairCharts:
 
         chart = altair_returns_histogram(sample_ohlcv)
         assert isinstance(chart, (alt.Chart, alt.LayerChart))
+
+
+class TestBokehCharts:
+    def test_line_chart_returns_figure(self, sample_ohlcv):
+        from lib.plotting import bokeh_line_chart
+
+        fig = bokeh_line_chart(sample_ohlcv)
+        assert fig is not None
+
+    def test_candlestick_returns_figure(self, sample_ohlcv):
+        from lib.plotting import bokeh_candlestick
+
+        fig = bokeh_candlestick(sample_ohlcv)
+        assert fig is not None
+
+    def test_volume_bar_returns_figure(self, sample_ohlcv):
+        from lib.plotting import bokeh_volume_bar
+
+        fig = bokeh_volume_bar(sample_ohlcv)
+        assert fig is not None
+
+    def test_returns_histogram_returns_figure(self, sample_ohlcv):
+        from lib.plotting import bokeh_returns_histogram
+
+        fig = bokeh_returns_histogram(sample_ohlcv)
+        assert fig is not None
