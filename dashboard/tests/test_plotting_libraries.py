@@ -135,3 +135,27 @@ class TestBokehCharts:
 
         fig = bokeh_returns_histogram(sample_ohlcv)
         assert fig is not None
+
+
+class TestOutlierDetection:
+    def test_no_outliers_in_clean_data(self, sample_ohlcv):
+        from lib.plotting import detect_outliers
+
+        result = detect_outliers(sample_ohlcv)
+        assert result.sum().sum() < 3
+
+    def test_detects_injected_outlier(self, sample_ohlcv):
+        from lib.plotting import detect_outliers
+
+        df = sample_ohlcv.copy()
+        # Spike one Close value to 10x the mean
+        df.iloc[15, df.columns.get_loc("Close")] = df["Close"].mean() * 10
+        result = detect_outliers(df)
+        assert result["Close"].iloc[15] == True
+
+    def test_compute_daily_returns(self, sample_ohlcv):
+        from lib.plotting import compute_daily_returns
+
+        returns = compute_daily_returns(sample_ohlcv)
+        assert len(returns) == len(sample_ohlcv) - 1
+        assert returns.dtype == float
