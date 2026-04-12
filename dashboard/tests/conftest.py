@@ -37,10 +37,11 @@ def sample_ohlcv_df():
 @pytest.fixture
 def sample_multi_stock_df(sample_ohlcv_df):
     """Close prices for 4 tickers."""
+    n = len(sample_ohlcv_df)
     df = pd.DataFrame(index=sample_ohlcv_df.index)
     np.random.seed(42)
     for ticker in ["AAPL", "MSFT", "GOOG", "AMZN"]:
-        df[ticker] = 150 + np.cumsum(np.random.randn(252) * 2)
+        df[ticker] = 150 + np.cumsum(np.random.randn(n) * 2)
     return df
 
 
