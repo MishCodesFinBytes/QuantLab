@@ -5,7 +5,7 @@ from streamlit.testing.v1 import AppTest
 
 class TestAdmin:
     def _run(self):
-        at = AppTest.from_file("pages/99_Admin.py", default_timeout=15)
+        at = AppTest.from_file("pages/99_Churros.py", default_timeout=15)
         at.run()
         return at
 
