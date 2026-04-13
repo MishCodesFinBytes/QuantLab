@@ -263,21 +263,30 @@ with tab_bench:
     else:
         preset_labels = {key: entry["label"] for key, entry in presets.items()}
         preset_keys = list(presets.keys())
-        col_sel, col_run = st.columns([3, 1])
-        with col_sel:
-            chosen_key = st.selectbox(
-                "Dataset",
-                options=preset_keys,
-                format_func=lambda k: preset_labels[k],
-                key="bench_preset_key",
-            )
-        with col_run:
-            st.write("")
+        if len(preset_keys) == 1:
+            # Only one preset available — skip the dropdown
+            chosen_key = preset_keys[0]
+            st.caption(f"**Dataset:** {preset_labels[chosen_key]}")
             run_clicked = st.button(
                 "\u25b6 Run Benchmark",
                 key="bench_run_btn",
-                use_container_width=True,
             )
+        else:
+            col_sel, col_run = st.columns([3, 1])
+            with col_sel:
+                chosen_key = st.selectbox(
+                    "Dataset",
+                    options=preset_keys,
+                    format_func=lambda k: preset_labels[k],
+                    key="bench_preset_key",
+                )
+            with col_run:
+                st.write("")
+                run_clicked = st.button(
+                    "\u25b6 Run Benchmark",
+                    key="bench_run_btn",
+                    use_container_width=True,
+                )
 
         st.caption(presets[chosen_key]["description"])
 
