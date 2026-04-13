@@ -21,7 +21,7 @@ st.markdown(
 )
 
 components.iframe(
-    "https://mish-codes.github.io/FinBytes/quant-lab/etymology/",
+    "https://mish-codes.github.io/FinBytes/quant-lab/etymology/embed/",
     height=900,
     scrolling=True,
 )
