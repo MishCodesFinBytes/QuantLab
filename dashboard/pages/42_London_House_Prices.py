@@ -22,6 +22,12 @@ from house_prices import (
 )
 from nav import render_sidebar
 from test_tab import render_test_tab
+from benchmark import (
+    run_benchmark,
+    get_available_presets,
+    build_overview_chart,
+    build_op_card,
+)
 
 st.set_page_config(page_title="London House Prices", page_icon="assets/logo.png", layout="wide")
 render_sidebar()
@@ -34,8 +40,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-tab_growth, tab_compare, tab_brand, tab_tests = st.tabs(
-    ["Postcode Growth", "Compare Postcodes", "Brand Effect", "Tests"]
+tab_growth, tab_compare, tab_brand, tab_bench, tab_tests = st.tabs(
+    ["Postcode Growth", "Compare Postcodes", "Brand Effect", "Benchmark Lab", "Tests"]
 )
 
 
@@ -239,8 +245,112 @@ with tab_brand:
             fig_bar.update_layout(title=f"The {brand} Effect", yaxis_title="Average Price (\u00a3)", barmode="group", height=350)
             st.plotly_chart(fig_bar, use_container_width=True)
 
+with tab_bench:
+    st.markdown("### Benchmark Lab — pandas vs polars")
+    st.caption(
+        "Runs 7 dataframe operations in both engines, shows each op's real "
+        "result alongside its wall-time, then lets you explore the dataset "
+        "in PyGWalker."
+    )
+
+    presets = get_available_presets()
+    if not presets:
+        st.error(
+            "No benchmark dataset bundled. Run "
+            "`python scripts/build_benchmark_parquet.py` to generate the "
+            "large file, or ensure `data/london_ppd.parquet` exists."
+        )
+    else:
+        preset_labels = {key: entry["label"] for key, entry in presets.items()}
+        preset_keys = list(presets.keys())
+        col_sel, col_run = st.columns([3, 1])
+        with col_sel:
+            chosen_key = st.selectbox(
+                "Dataset",
+                options=preset_keys,
+                format_func=lambda k: preset_labels[k],
+                key="bench_preset_key",
+            )
+        with col_run:
+            st.write("")
+            run_clicked = st.button(
+                "\u25b6 Run Benchmark",
+                key="bench_run_btn",
+                use_container_width=True,
+            )
+
+        st.caption(presets[chosen_key]["description"])
+
+        cache_key = f"bench_results_{chosen_key}"
+        if run_clicked:
+            with st.spinner(
+                f"Running 7 ops \u00d7 2 engines \u00d7 4 runs on {preset_labels[chosen_key]}..."
+            ):
+                st.session_state[cache_key] = run_benchmark(
+                    presets[chosen_key]["path"]
+                )
+
+        results = st.session_state.get(cache_key)
+        if results is None:
+            st.info("Click **Run Benchmark** to start.")
+        else:
+            st.plotly_chart(
+                build_overview_chart(results), use_container_width=True
+            )
+
+            st.markdown("#### Per-op detail")
+            for result in results:
+                card = build_op_card(result)
+                with st.expander(card["headline"]):
+                    if card["warning"]:
+                        st.warning(card["warning"])
+                    kind = card["preview_kind"]
+                    preview = card["preview"]
+                    if kind == "dataframe":
+                        st.dataframe(preview, use_container_width=True)
+                    elif kind == "scalar":
+                        st.metric("Row count", f"{preview:,}")
+                    elif kind == "write":
+                        st.caption(
+                            f"Wrote {preview.get('bytes_written', 0):,} bytes "
+                            f"to `{preview.get('path')}`"
+                        )
+                    else:
+                        st.write(preview)
+
+            st.markdown("---")
+            st.markdown("#### Explore the dataset yourself")
+            try:
+                from pygwalker.api.streamlit import StreamlitRenderer
+
+                pyg_cache_key = f"pyg_renderer_{chosen_key}"
+                if pyg_cache_key not in st.session_state:
+                    df_for_pyg = pd.read_parquet(presets[chosen_key]["path"])
+                    st.session_state[pyg_cache_key] = StreamlitRenderer(
+                        df_for_pyg, kernel_computation=True
+                    )
+                st.session_state[pyg_cache_key].explorer()
+            except ImportError:
+                st.info(
+                    "PyGWalker not installed \u2014 run "
+                    "`pip install pygwalker` to enable the interactive explorer."
+                )
+                st.dataframe(
+                    pd.read_parquet(presets[chosen_key]["path"]).head(100),
+                    use_container_width=True,
+                )
+            except Exception as exc:
+                st.warning(f"PyGWalker render error: {exc}")
+                st.dataframe(
+                    pd.read_parquet(presets[chosen_key]["path"]).head(1000),
+                    use_container_width=True,
+                )
+
 with tab_tests:
     render_test_tab("test_london_house_prices.py")
 
 # -- Tech stack ---------------------------------------------------------------
-render_tech_footer(["Python", "Plotly", "GeoPandas", "OpenStreetMap", "Streamlit"])
+render_tech_footer([
+    "Python", "pandas", "polars", "PyGWalker", "Plotly",
+    "GeoPandas", "OpenStreetMap", "Streamlit",
+])

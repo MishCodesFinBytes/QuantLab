@@ -219,3 +219,20 @@ def mock_empty_data():
     empty_df = pd.DataFrame()
     with patch("yfinance.download", return_value=empty_df):
         yield
+
+
+# ── Benchmark Lab fixtures ──────────────────────────────────────────
+
+from pathlib import Path
+
+
+@pytest.fixture
+def tiny_ppd_path():
+    """Path to the 100-row Price Paid parquet fixture."""
+    return Path(__file__).parent / "fixtures" / "tiny_ppd.parquet"
+
+
+@pytest.fixture
+def tiny_ppd_df(tiny_ppd_path):
+    """The 100-row Price Paid DataFrame, loaded fresh per test."""
+    return pd.read_parquet(tiny_ppd_path)

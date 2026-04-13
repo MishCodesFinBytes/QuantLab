@@ -14,3 +14,5 @@ vaderSentiment>=3.3.2
 statsmodels>=0.14.0
 geopandas>=0.14.0
 pytest-json-report>=1.5.0
+polars>=1.0
+pygwalker>=0.4
