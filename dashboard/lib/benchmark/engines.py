@@ -30,11 +30,22 @@ OPS = [
 
 
 def _is_string_like(series: pd.Series) -> bool:
-    """True for both legacy object dtype and new pd.StringDtype columns."""
-    return (
-        pd.api.types.is_object_dtype(series)
-        or pd.api.types.is_string_dtype(series)
-    )
+    """True for any non-numeric, non-datetime, non-bool column.
+
+    Covers legacy object dtype, pd.StringDtype, and pyarrow-backed string
+    extension arrays. Using a negative match is the only reliable way
+    across pandas versions where is_object_dtype / is_string_dtype
+    disagree on extension dtypes.
+    """
+    if pd.api.types.is_numeric_dtype(series):
+        return False
+    if pd.api.types.is_datetime64_any_dtype(series):
+        return False
+    if pd.api.types.is_bool_dtype(series):
+        return False
+    if pd.api.types.is_timedelta64_dtype(series):
+        return False
+    return True
 
 
 def default_column_config(df: pd.DataFrame) -> dict:
