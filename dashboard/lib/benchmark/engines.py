@@ -29,18 +29,30 @@ OPS = [
 ]
 
 
+def _is_string_like(series: pd.Series) -> bool:
+    """True for both legacy object dtype and new pd.StringDtype columns."""
+    return (
+        pd.api.types.is_object_dtype(series)
+        or pd.api.types.is_string_dtype(series)
+    )
+
+
 def default_column_config(df: pd.DataFrame) -> dict:
     """Pick sensible numeric/string/groupby columns from the schema.
 
     - numeric: first numeric dtype column
-    - string:  first object/string dtype column
+    - string:  first object or string dtype column
     - groupby: first string column whose nunique is less than the row count
     """
-    numeric = next((c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])), None)
-    string = next((c for c in df.columns if pd.api.types.is_object_dtype(df[c])), None)
+    numeric = next(
+        (c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])), None
+    )
+    string = next(
+        (c for c in df.columns if _is_string_like(df[c])), None
+    )
     groupby = next(
         (c for c in df.columns
-         if pd.api.types.is_object_dtype(df[c]) and df[c].nunique() < len(df)),
+         if _is_string_like(df[c]) and df[c].nunique() < len(df)),
         string,
     )
     if numeric is None or string is None or groupby is None:
