@@ -3,7 +3,6 @@
 import logging
 from pathlib import Path
 import streamlit as st
-import streamlit.components.v1 as _components
 
 
 # Silence Streamlit deprecation noise that spams Cloud logs every page render.
@@ -27,36 +26,6 @@ for _logger_name in ("streamlit", "streamlit.runtime", "streamlit.elements"):
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
-
-_FONT_LOADER_SCRIPT = """
-<script>
-(function() {
-    var parent = window.parent && window.parent.document ? window.parent.document : document;
-    if (parent.getElementById('ql-google-fonts')) return;
-    var urls = [
-        'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap',
-        'https://fonts.googleapis.com/icon?family=Material+Icons',
-        'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded'
-    ];
-    var preconnect1 = parent.createElement('link');
-    preconnect1.rel = 'preconnect';
-    preconnect1.href = 'https://fonts.googleapis.com';
-    parent.head.appendChild(preconnect1);
-    var preconnect2 = parent.createElement('link');
-    preconnect2.rel = 'preconnect';
-    preconnect2.href = 'https://fonts.gstatic.com';
-    preconnect2.crossOrigin = 'anonymous';
-    parent.head.appendChild(preconnect2);
-    urls.forEach(function(href, i) {
-        var link = parent.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = href;
-        if (i === 0) link.id = 'ql-google-fonts';
-        parent.head.appendChild(link);
-    });
-})();
-</script>
-"""
 
 _GLOBAL_STYLES = """
 <style>
@@ -353,15 +322,9 @@ def render_sidebar():
 
     Wrapped in try/except because st.page_link fails in AppTest (testing mode).
     """
-    # Font loader: runs inside a sandboxed components iframe so its
-    # <script> actually executes, then reaches into window.parent.document
-    # to append <link rel="stylesheet"> tags to the real Streamlit <head>.
-    # Google Fonts serves the correct current WOFF2 URLs — we don't have
-    # to guess at versioned gstatic paths.
-    try:
-        _components.html(_FONT_LOADER_SCRIPT, height=0)
-    except Exception:
-        pass
+    # Fonts are loaded via [[theme.fontFaces]] in .streamlit/config.toml,
+    # which is the only reliable way to get custom fonts into the real
+    # Streamlit <head> on Cloud (cross-origin iframes block parent access).
     # Use st.html instead of st.markdown so the CSS isn't run through the
     # markdown processor — otherwise `*` characters inside the <style> block
     # (universal selector, comments, attribute selectors like [class*=...])
