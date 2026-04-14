@@ -22,6 +22,7 @@ from rentbuy import (
     lookup_boe_rate,
     build_cost_over_time_chart,
 )
+from rentbuy.finance import SDLT_RULES_AS_OF, SDLT_SOURCE_URL
 
 st.set_page_config(page_title="Rent vs Buy London", page_icon="assets/logo.png", layout="wide")
 render_sidebar()
@@ -42,6 +43,40 @@ data from HM Land Registry and ONS. Default numbers come from bundled
 data; edit any field to see how the answer changes.
 """
 )
+
+with st.expander(f"About the SDLT (Stamp Duty) rules — effective from {SDLT_RULES_AS_OF}"):
+    st.markdown(f"""
+UK Stamp Duty Land Tax rates **reverted to the pre-September-2022 schedule**
+on 1 April 2025, after the temporary higher thresholds expired. This
+calculator uses the current post-April-2025 rates.
+
+**Standard residential rates (non-first-time-buyer):**
+
+| Portion of price | Rate |
+|---|---|
+| Up to £125,000 | 0% |
+| £125,001 – £250,000 | 2% |
+| £250,001 – £925,000 | 5% |
+| £925,001 – £1,500,000 | 10% |
+| Above £1,500,000 | 12% |
+
+**First-time buyer relief:**
+
+| Portion of price | Rate |
+|---|---|
+| Up to £300,000 | 0% |
+| £300,001 – £500,000 | 5% |
+
+⚠ First-time buyer relief is **only available on purchases up to £500,000**.
+Above £500,000, first-time buyers pay the full standard rates (no relief).
+
+**How SDLT works:** the rate on each band applies *only* to the slice of
+the price within that band — a £400k purchase by a non-FTB pays 0% on the
+first £125k, 2% on the next £125k, and 5% on the remaining £150k, for a
+total of £10,000 (not 5% on the whole £400k).
+
+Source: [{SDLT_SOURCE_URL}]({SDLT_SOURCE_URL})
+""")
 
 
 _PPD_PATH = Path(__file__).resolve().parent.parent / "data" / "london_ppd.parquet"

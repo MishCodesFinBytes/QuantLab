@@ -11,21 +11,33 @@ from typing import Iterable
 
 
 # ──────────────────────────────────────────────────────────────
-# SDLT (Stamp Duty Land Tax) — UK 2024/25 rules
+# SDLT (Stamp Duty Land Tax) — UK rules effective from 1 April 2025
+#
+# On 1 April 2025 the UK reverted to the pre-September-2022 schedule
+# after the temporary higher thresholds expired. The 0% band for
+# standard buyers dropped from £250k to £125k (with a new 2% band
+# £125k-£250k), and the first-time buyer relief cap dropped from
+# £625k to £500k with the FTB nil-rate band cut from £425k to £300k.
+#
+# Source: https://www.gov.uk/stamp-duty-land-tax/residential-property-rates
 # ──────────────────────────────────────────────────────────────
 
+SDLT_RULES_AS_OF = "2025-04-01"
+SDLT_SOURCE_URL = "https://www.gov.uk/stamp-duty-land-tax/residential-property-rates"
+
 STANDARD_BANDS: list[tuple[float, float]] = [
-    (  250_000,      0.00),
+    (  125_000,      0.00),
+    (  250_000,      0.02),
     (  925_000,      0.05),
     (1_500_000,      0.10),
     (float("inf"),   0.12),
 ]
 
 FTB_BANDS: list[tuple[float, float]] = [
-    (  425_000,      0.00),
-    (  625_000,      0.05),
+    (  300_000,      0.00),
+    (  500_000,      0.05),
 ]
-FTB_CAP = 625_000
+FTB_CAP = 500_000
 
 
 def _tiered_tax(price: float, bands: Iterable[tuple[float, float]]) -> float:

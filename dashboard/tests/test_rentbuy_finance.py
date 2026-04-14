@@ -13,16 +13,20 @@ from lib.rentbuy.finance import (
 
 
 # ── SDLT — Standard bands (non-first-time-buyer) ────────────────────
+# Rules effective from 1 April 2025 (post-temporary-threshold reversion).
+# Expected values computed by hand against the published HMRC schedule:
+#   0% up to £125k, 2% £125k-£250k, 5% £250k-£925k,
+#   10% £925k-£1.5M, 12% above £1.5M.
 
 SDLT_STANDARD = [
     (   125_000,       0),
-    (   250_000,       0),
-    (   400_000,    7_500),
-    (   500_000,   12_500),
-    (   925_000,   33_750),
-    ( 1_000_000,   41_250),
-    ( 1_500_000,   91_250),
-    ( 2_000_000,  151_250),
+    (   250_000,    2_500),   # 125k * 2%
+    (   400_000,   10_000),   # 2_500 + 150k * 5%
+    (   500_000,   15_000),   # 2_500 + 250k * 5%
+    (   925_000,   36_250),   # 2_500 + 675k * 5%
+    ( 1_000_000,   43_750),   # 36_250 + 75k * 10%
+    ( 1_500_000,   93_750),   # 36_250 + 575k * 10%
+    ( 2_000_000,  153_750),   # 93_750 + 500k * 12%
 ]
 
 
@@ -31,13 +35,13 @@ def test_sdlt_standard(price, expected):
     assert calculate_sdlt(price, first_time_buyer=False) == pytest.approx(expected, abs=1)
 
 
-# ── SDLT — First-time buyer relief ──────────────────────────────────
+# ── SDLT — First-time buyer relief (post-1-April-2025) ──────────────
+# FTB: 0% up to £300k, 5% £300k-£500k. Above £500k → full standard bands.
 
 SDLT_FTB = [
-    (   400_000,      0),
-    (   425_000,      0),
-    (   500_000,  3_750),
-    (   625_000, 10_000),
+    (   300_000,      0),
+    (   400_000,  5_000),    # 100k * 5%
+    (   500_000, 10_000),    # 200k * 5%
 ]
 
 
@@ -47,7 +51,7 @@ def test_sdlt_first_time_buyer(price, expected):
 
 
 def test_sdlt_ftb_above_cap_uses_standard():
-    """Above £625k, first-time buyers pay the same as non-FTB."""
+    """Above £500k, first-time buyers pay the same as non-FTB."""
     standard = calculate_sdlt(700_000, first_time_buyer=False)
     ftb = calculate_sdlt(700_000, first_time_buyer=True)
     assert standard == ftb
@@ -196,7 +200,8 @@ def test_total_cost_of_buying_upfront_includes_all_components(boe_rates):
                               legal_survey=2_500, moving_cost=500,
                               first_time_buyer=False)
     result = total_cost_of_buying(scenario, boe_rates)
-    expected_upfront = 97_500 + 20_000 + 2_500 + 500  # deposit + SDLT + legal + moving
+    # SDLT on £650k (post-1-April-2025 standard): 2_500 + 400_000 * 5% = 22_500
+    expected_upfront = 97_500 + 22_500 + 2_500 + 500  # deposit + SDLT + legal + moving
     assert result["upfront"] == pytest.approx(expected_upfront, abs=1)
 
 
