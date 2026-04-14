@@ -3,6 +3,45 @@ primaryColor = "#d97706"
 backgroundColor = "#ffffff"
 secondaryBackgroundColor = "#fafafa"
 textColor = "#1a1a1a"
+font = "Inter"
+headingFont = "Fraunces"
+codeFont = "JetBrains Mono"
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2"
+weight = 400
+style = "normal"
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa25L7.woff2"
+weight = 500
+style = "normal"
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1pL7.woff2"
+weight = 600
+style = "normal"
+
+[[theme.fontFaces]]
+family = "Fraunces"
+url = "https://fonts.gstatic.com/s/fraunces/v31/6NUh8FyLNQOQZAnv9ZwNjucMHVn85Ni7emAc9Wc1ahHa8g.woff2"
+weight = 400
+style = "normal"
+
+[[theme.fontFaces]]
+family = "Fraunces"
+url = "https://fonts.gstatic.com/s/fraunces/v31/6NUh8FyLNQOQZAnv9ZwNjucMHVn85Ni7emAc9Wc1ahHa8g.woff2"
+weight = 600
+style = "normal"
+
+[[theme.fontFaces]]
+family = "JetBrains Mono"
+url = "https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPVmUsaaDhw.woff2"
+weight = 400
+style = "normal"
 
 [client]
 showSidebarNavigation = false
