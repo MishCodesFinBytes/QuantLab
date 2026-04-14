@@ -410,6 +410,38 @@ Manual checklist for Pass B:
 | Pages migrating to `render_page_header` accidentally lose existing intro markdown | Migration is done one page at a time, with manual spot-check before commit. The helper only replaces the title call; subsequent `st.markdown(...)` blocks are untouched. |
 | The new landing page slows app cold-start (font CDN fetch, more markdown) | Negligible. Streamlit caches per-session, fonts load once. |
 
+## Additions after first review
+
+After the initial spec was approved, four enhancements were added:
+
+### 1. Force-directed project graph
+
+A D3 v7 force simulation embedded via `st.components.v1.html(html_string, height=420)` on the Welcome tab, between the hero and the Featured section. Each node is a project; nodes are coloured by category. Edges connect projects that share a tech tag (e.g., everything using Plotly clusters together). Click a node to navigate to that page. Same JSON-as-script-tag pattern the etymology page uses, embedded inline rather than via iframe.
+
+If Streamlit Cloud's CSP blocks the inline `<script>`, fall back to `streamlit-agraph` (existing PyPI library, optional install).
+
+### 2. Stats bar under the hero
+
+A single monospace line directly under the hero subtitle: `30 projects · 4 categories · 6 featured · open source`. Uses Inter Mono via Google Fonts (already loaded). Subtle, sub-second to add, says "this is a real product" without competing with the hero typography.
+
+### 3. Search box
+
+A custom-styled text input directly under the stats bar. Live-filters the categorised grids only (featured + graph remain stable as anchors). As the user types, only project cards whose title or description contain the query are rendered. Empty input shows everything. Implementation uses a Streamlit `st.text_input` styled via CSS to match the chic palette — not a custom HTML input, since Streamlit's input is already the right shape and the value reactively re-renders the page.
+
+### 4. New "All projects" tab
+
+Tab structure becomes **Welcome / All projects / System Health** (3 tabs). The new "All projects" tab shows a sortable `st.dataframe` with columns: Name, Category, Tech, Page link. Defaults to alphabetical sort by name. Provides an exhaustive directory view for visitors who want to scan everything in one place rather than scroll through the categorised grids.
+
+### 5. Churros admin page exclusion
+
+`pages/99_Churros.py` is the existing password-gated admin page (RDS lifecycle + Render DB renewal). It's:
+- **Removed from `lib/projects.py`** entirely → won't appear in featured, categorised grids, search, graph, or the All projects table
+- **Skipped in Pass B page-header migration** — its existing layout is preserved
+- **Still URL-accessible** at `/Churros`
+- **Still hidden from the sidebar** — the custom sidebar in `nav.py` doesn't list it, and `[client] showSidebarNavigation = false` blocks Streamlit's auto-discovery
+
+Net effect: Churros is reachable for admins who know the URL, invisible to everyone else.
+
 ## Open questions
 
 None. All design decisions locked.

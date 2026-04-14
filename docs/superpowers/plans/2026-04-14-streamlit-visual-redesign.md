@@ -971,6 +971,460 @@ git commit -m "feat(landing): rewrite app.py with Welcome (portfolio) and System
 
 ---
 
+## Task 5b: Extend the landing page with stats bar, search, graph, and All projects tab
+
+This task layers four enhancements onto the rewritten `app.py` from Task 5. Done as a single task because they all touch the same file and share the same imports.
+
+**Files:**
+- Modify: `dashboard/app.py`
+- Modify: `dashboard/lib/nav.py` (small CSS additions for the new components)
+- Modify: `dashboard/lib/projects.py` (verify Churros exclusion)
+
+### Step 1: Confirm Churros is NOT in the project registry
+
+Read `dashboard/lib/projects.py` and verify `99_Churros.py` does not appear in any category. The plan's Task 2 already excludes it (no entry for Churros in any category list). If it somehow ended up there, remove it.
+
+### Step 2: Add CSS for the new components to nav.py
+
+Open `dashboard/lib/nav.py`. Find the closing `</style>` tag inside `_GLOBAL_STYLES`. Just BEFORE that closing tag, insert:
+
+```css
+/* Stats bar under hero */
+.ql-stats-bar {
+    text-align: center;
+    font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    color: var(--ql-muted);
+    letter-spacing: 0.04em;
+    margin: -2.5rem 0 3rem;
+}
+
+/* Search box wrapper (styles Streamlit's default text_input to match palette) */
+.ql-search-wrap {
+    max-width: 480px;
+    margin: 0 auto 2rem;
+}
+.ql-search-wrap input[type="text"] {
+    font-family: var(--ql-font-body) !important;
+    border-color: var(--ql-border) !important;
+    background: var(--ql-bg) !important;
+    color: var(--ql-text) !important;
+}
+.ql-search-wrap label { display: none !important; }
+
+/* Project graph container */
+.ql-graph-container {
+    background: var(--ql-bg2);
+    border: 1px solid var(--ql-border);
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-bottom: 3rem;
+}
+```
+
+Also load the JetBrains Mono font — find the existing `<link>` line at the top of `_GLOBAL_STYLES` that loads Fraunces and Inter, and update it to:
+
+```html
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+```
+
+(Adds `JetBrains+Mono:wght@400` to the family= parameter.)
+
+### Step 3: Update app.py to include the four additions
+
+Open `dashboard/app.py`. Replace the entire file with the extended version. The structure is the same as Task 5 but with:
+
+- Stats bar after the hero
+- Search box after the stats bar
+- D3 force-directed graph between search and Featured
+- New "All projects" tab as the second tab
+- Categorised grid loop now filters by the search query
+
+```python
+"""QuantLab landing page — Welcome (portfolio) + All projects + System Health."""
+
+from pathlib import Path
+import sys
+
+import pandas as pd
+import streamlit as st
+import streamlit.components.v1 as components
+import requests
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+
+from nav import render_sidebar
+from test_tab import render_test_tab
+from projects import (
+    PROJECTS_BY_CATEGORY,
+    all_projects,
+    featured,
+    category_with_capstones_last,
+)
+
+HERE = Path(__file__).parent
+GITHUB_REPO = "mish-codes/QuantLab"
+
+st.set_page_config(
+    page_title="QuantLab",
+    page_icon="assets/logo.png",
+    layout="wide",
+)
+
+render_sidebar()
+
+
+# ─────────────────────────────────────────────────────────────
+# HTML rendering helpers
+# ─────────────────────────────────────────────────────────────
+
+def _escape(s: str) -> str:
+    return (
+        str(s)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
+
+
+def _featured_card_html(p) -> str:
+    tech = " · ".join(_escape(t) for t in p.tech)
+    return (
+        f'<a class="ql-featured-card" href="{_escape(p.page_link)}" target="_self">'
+        f'<div class="ql-featured-card-title">{_escape(p.label)}</div>'
+        f'<div class="ql-featured-card-desc">{_escape(p.description)}</div>'
+        f'<div class="ql-featured-card-tech">{tech}</div>'
+        f'</a>'
+    )
+
+
+def _cat_card_html(p) -> str:
+    tech = " · ".join(_escape(t) for t in p.tech)
+    capstone = (
+        '<span class="ql-capstone-tag">Capstone</span>' if p.is_capstone else ""
+    )
+    return (
+        f'<a class="ql-cat-card" href="{_escape(p.page_link)}" target="_self">'
+        f'<div class="ql-cat-card-title">{_escape(p.label)}{capstone}</div>'
+        f'<div class="ql-cat-card-desc">{_escape(p.description)}</div>'
+        f'<div class="ql-cat-card-tech">{tech}</div>'
+        f'</a>'
+    )
+
+
+def _matches_query(p, query: str) -> bool:
+    if not query:
+        return True
+    q = query.lower()
+    if q in p.label.lower():
+        return True
+    if q in p.description.lower():
+        return True
+    if any(q in t.lower() for t in p.tech):
+        return True
+    return False
+
+
+# ─────────────────────────────────────────────────────────────
+# D3 Force-directed graph builder
+# ─────────────────────────────────────────────────────────────
+
+def _build_project_graph_html() -> str:
+    """Return a self-contained HTML+JS string for the project graph.
+
+    Nodes: every project. Edges: connect projects that share at least
+    2 tech tags. Coloured by category. Click → navigate.
+    """
+    import json
+
+    category_colors = {
+        "Personal finance & property": "#d97706",
+        "Stocks & markets": "#2563eb",
+        "Analytics & Fintech": "#059669",
+        "Tech demos & references": "#7c3aed",
+    }
+
+    projs = all_projects()
+    nodes = []
+    for p in projs:
+        # find the project's category
+        cat = next(
+            (c for c, lst in PROJECTS_BY_CATEGORY.items() if p in lst),
+            "Tech demos & references",
+        )
+        nodes.append({
+            "id": p.key,
+            "label": p.label,
+            "color": category_colors.get(cat, "#888"),
+            "url": p.page_link,
+        })
+
+    # Build edges: connect any two projects sharing >=2 tech tags
+    edges = []
+    for i, a in enumerate(projs):
+        a_tech = set(t.lower() for t in a.tech)
+        for b in projs[i + 1:]:
+            b_tech = set(t.lower() for t in b.tech)
+            if len(a_tech & b_tech) >= 2:
+                edges.append({"source": a.key, "target": b.key})
+
+    nodes_json = json.dumps(nodes)
+    edges_json = json.dumps(edges)
+
+    return f"""
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  body {{ margin: 0; font-family: 'Inter', sans-serif; background: #fafafa; }}
+  #graph {{ width: 100%; height: 400px; }}
+  text {{ font-size: 11px; fill: #1a1a1a; pointer-events: none; }}
+  .node {{ cursor: pointer; }}
+  .node:hover circle {{ stroke: #d97706; stroke-width: 2; }}
+</style></head>
+<body>
+<div id="graph"></div>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const nodes = {nodes_json};
+const links = {edges_json};
+const W = document.getElementById('graph').clientWidth || 800;
+const H = 400;
+
+const svg = d3.select('#graph').append('svg')
+  .attr('viewBox', [0, 0, W, H]);
+const g = svg.append('g');
+
+const sim = d3.forceSimulation(nodes)
+  .force('link', d3.forceLink(links).id(d => d.id).distance(60))
+  .force('charge', d3.forceManyBody().strength(-180))
+  .force('center', d3.forceCenter(W / 2, H / 2))
+  .force('collide', d3.forceCollide().radius(22));
+
+const link = g.append('g').attr('stroke', '#cccccc').attr('stroke-opacity', 0.5)
+  .selectAll('line').data(links).enter().append('line').attr('stroke-width', 1);
+
+const node = g.append('g').selectAll('g').data(nodes).enter().append('g')
+  .attr('class', 'node')
+  .on('click', (ev, d) => {{ window.parent.location.href = d.url; }});
+
+node.append('circle').attr('r', 10).attr('fill', d => d.color)
+  .attr('stroke', '#ffffff').attr('stroke-width', 1.5);
+node.append('text').attr('dy', 22).attr('text-anchor', 'middle')
+  .text(d => d.label.length > 16 ? d.label.slice(0,15)+'…' : d.label);
+
+sim.on('tick', () => {{
+  link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+  node.attr('transform', d => `translate(${{d.x}},${{d.y}})`);
+}});
+</script>
+</body></html>
+"""
+
+
+# ─────────────────────────────────────────────────────────────
+# Tabs
+# ─────────────────────────────────────────────────────────────
+
+tab_welcome, tab_all, tab_health = st.tabs(["Welcome", "All projects", "System Health"])
+
+# ─────────────────────────────────────────────────────────────
+# Welcome — landing portfolio view
+# ─────────────────────────────────────────────────────────────
+
+with tab_welcome:
+    # Hero
+    st.markdown(
+        '<div class="ql-hero">'
+        '<h1 class="ql-hero-title">QuantLab</h1>'
+        '<p class="ql-hero-subtitle">Interactive finance and data experiments in Python</p>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Stats bar
+    total = len(all_projects())
+    n_cats = len(PROJECTS_BY_CATEGORY)
+    n_featured = len(featured())
+    st.markdown(
+        f'<div class="ql-stats-bar">{total} projects · {n_cats} categories · '
+        f'{n_featured} featured · open source</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Search box (Streamlit input wrapped in a styled div)
+    st.markdown('<div class="ql-search-wrap">', unsafe_allow_html=True)
+    search_query = st.text_input(
+        "Search",
+        value="",
+        placeholder="Search projects by name, description, or tech…",
+        label_visibility="collapsed",
+        key="ql_landing_search",
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Force-directed graph
+    st.markdown('<div class="ql-graph-container">', unsafe_allow_html=True)
+    try:
+        components.html(_build_project_graph_html(), height=420, scrolling=False)
+    except Exception as exc:
+        st.info(f"Graph unavailable: {exc}")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Featured grid (always renders, not filtered by search)
+    st.markdown('<h2 class="ql-section-heading">Featured</h2>', unsafe_allow_html=True)
+    featured_html = '<div class="ql-featured-grid">'
+    for p in featured():
+        featured_html += _featured_card_html(p)
+    featured_html += '</div>'
+    st.markdown(featured_html, unsafe_allow_html=True)
+
+    # Categorised grids (filtered by search query)
+    for category in PROJECTS_BY_CATEGORY.keys():
+        matching = [
+            p for p in category_with_capstones_last(category)
+            if _matches_query(p, search_query)
+        ]
+        if not matching:
+            continue
+        st.markdown(
+            f'<h2 class="ql-section-heading">{_escape(category)}</h2>',
+            unsafe_allow_html=True,
+        )
+        grid_html = '<div class="ql-cat-grid">'
+        for p in matching:
+            grid_html += _cat_card_html(p)
+        grid_html += '</div>'
+        st.markdown(grid_html, unsafe_allow_html=True)
+
+    if search_query and not any(
+        _matches_query(p, search_query) for p in all_projects()
+    ):
+        st.markdown(
+            f'<p style="text-align:center;color:#6b6b6b;margin-top:2rem;">'
+            f'No projects match "{_escape(search_query)}".</p>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown('<div style="height: 4rem;"></div>', unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────────────────────
+# All projects — sortable table view
+# ─────────────────────────────────────────────────────────────
+
+with tab_all:
+    st.markdown(
+        '<h1 class="ql-page-title">All projects</h1>'
+        '<p class="ql-page-subtitle">Sortable directory of every QuantLab project</p>',
+        unsafe_allow_html=True,
+    )
+
+    rows = []
+    for category, projs in PROJECTS_BY_CATEGORY.items():
+        for p in projs:
+            rows.append({
+                "Name": p.label,
+                "Category": category,
+                "Tech": " · ".join(p.tech),
+                "Capstone": "✓" if p.is_capstone else "",
+                "Link": p.page_link,
+            })
+    df = pd.DataFrame(rows).sort_values("Name").reset_index(drop=True)
+    st.dataframe(
+        df,
+        hide_index=True,
+        use_container_width=True,
+        column_config={
+            "Link": st.column_config.LinkColumn(
+                "Open",
+                display_text="open →",
+            ),
+        },
+    )
+
+# ─────────────────────────────────────────────────────────────
+# System Health — preserved
+# ─────────────────────────────────────────────────────────────
+
+with tab_health:
+    st.markdown("### Shared Infrastructure")
+
+    ci_status = {"status": "unknown", "detail": ""}
+    try:
+        r = requests.get(
+            f"https://api.github.com/repos/{GITHUB_REPO}/actions/runs",
+            params={"per_page": 3},
+            timeout=10,
+        )
+        if r.status_code == 200:
+            runs = r.json().get("workflow_runs", [])
+            if runs:
+                latest = runs[0]
+                ci_status = {
+                    "status": latest.get("conclusion") or latest.get("status"),
+                    "detail": f"Run #{latest.get('run_number')} on {latest.get('head_branch')}",
+                }
+    except Exception as exc:
+        ci_status = {"status": "error", "detail": str(exc)}
+
+    cols = st.columns(3)
+    with cols[0]:
+        st.metric("CI status", ci_status["status"], ci_status["detail"])
+    with cols[1]:
+        st.metric("Streamlit Cloud", "live", "auto-deploys from master")
+    with cols[2]:
+        st.metric("Repo", GITHUB_REPO, "")
+
+    st.markdown("---")
+    render_test_tab("test_app.py")
+```
+
+### Step 4: Verify the page parses
+
+```bash
+cd dashboard && python -c "
+with open('app.py', encoding='utf-8') as f:
+    compile(f.read(), 'app.py', 'exec')
+print('syntax ok')
+"
+```
+
+Expected: `syntax ok`
+
+### Step 5: Manual verification
+
+```bash
+cd dashboard && streamlit run app.py
+```
+
+Confirm:
+- [ ] 3 tabs visible: Welcome / All projects / System Health
+- [ ] Welcome tab: hero → stats bar → search box → graph → featured → categorised grids
+- [ ] Stats bar shows "30 projects · 4 categories · 6 featured · open source" in monospace
+- [ ] Search box renders with placeholder "Search projects by name, description, or tech…"
+- [ ] Typing "plotly" filters the categorised grids in real time
+- [ ] Empty search shows everything
+- [ ] Force-directed graph renders below search, ~400px tall
+- [ ] Graph nodes are coloured by category
+- [ ] Click a graph node → navigates to that project's page
+- [ ] All projects tab shows a sortable dataframe with all 30 projects
+- [ ] Click Name column header to sort
+- [ ] "Open →" column links navigate
+- [ ] System Health tab still works
+- [ ] Churros does NOT appear anywhere on the landing page or the All projects table
+
+Stop the server when verified.
+
+### Step 6: Commit
+
+```bash
+git add dashboard/app.py dashboard/lib/nav.py
+git status --short
+git commit -m "feat(landing): add stats bar, search, force-directed graph, and All projects tab"
+```
+
+---
+
 ## Task 6: PR for Pass A
 
 - [ ] **Step 1: Push the working branch**
