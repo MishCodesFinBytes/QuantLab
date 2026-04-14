@@ -67,6 +67,10 @@ def _render_sidebar_impl():
     st.sidebar.caption("Word Tools")
     st.sidebar.page_link("pages/50_Etymology.py", label="Etymology")
 
+    # Tech Understanding
+    st.sidebar.caption("Tech Understanding")
+    st.sidebar.page_link("pages/60_Big_O.py", label="Big O Notation")
+
     st.sidebar.markdown("---")
     st.sidebar.page_link("app.py", label="System Health")
     st.sidebar.markdown(
