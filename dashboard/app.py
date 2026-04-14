@@ -37,6 +37,9 @@ render_sidebar()
 # HTML rendering helpers
 # ─────────────────────────────────────────────────────────────
 
+import re as _re
+
+
 def _escape(s: str) -> str:
     return (
         str(s)
@@ -47,10 +50,18 @@ def _escape(s: str) -> str:
     )
 
 
+def _page_url(page_link: str) -> str:
+    """Convert a page_link like 'pages/16_Rent_vs_Buy.py' to the Streamlit
+    URL slug '/Rent_vs_Buy' that an <a href="..."> can navigate to."""
+    name = page_link.replace("pages/", "").replace(".py", "")
+    name = _re.sub(r"^\d+_", "", name)
+    return "/" + name
+
+
 def _featured_card_html(p) -> str:
     tech = " · ".join(_escape(t) for t in p.tech)
     return (
-        f'<a class="ql-featured-card" href="{_escape(p.page_link)}" target="_self">'
+        f'<a class="ql-featured-card" href="{_escape(_page_url(p.page_link))}" target="_self">'
         f'<div class="ql-featured-card-title">{_escape(p.label)}</div>'
         f'<div class="ql-featured-card-desc">{_escape(p.description)}</div>'
         f'<div class="ql-featured-card-tech">{tech}</div>'
@@ -64,7 +75,7 @@ def _cat_card_html(p) -> str:
         '<span class="ql-capstone-tag">Capstone</span>' if p.is_capstone else ""
     )
     return (
-        f'<a class="ql-cat-card" href="{_escape(p.page_link)}" target="_self">'
+        f'<a class="ql-cat-card" href="{_escape(_page_url(p.page_link))}" target="_self">'
         f'<div class="ql-cat-card-title">{_escape(p.label)}{capstone}</div>'
         f'<div class="ql-cat-card-desc">{_escape(p.description)}</div>'
         f'<div class="ql-cat-card-tech">{tech}</div>'
@@ -109,15 +120,21 @@ def _build_project_graph_html() -> str:
             "id": p.key,
             "label": p.label,
             "color": category_colors.get(cat, "#888"),
-            "url": p.page_link,
+            "url": _page_url(p.page_link),
         })
+
+    # Edges only between projects in the SAME category — gives 4 clean
+    # clusters instead of a tech-stack hairball where everything connects
+    # to everything via Python/Plotly/yfinance.
+    project_to_cat = {}
+    for cat, lst in PROJECTS_BY_CATEGORY.items():
+        for p in lst:
+            project_to_cat[p.key] = cat
 
     edges = []
     for i, a in enumerate(projs):
-        a_tech = set(t.lower() for t in a.tech)
         for b in projs[i + 1:]:
-            b_tech = set(t.lower() for t in b.tech)
-            if len(a_tech & b_tech) >= 2:
+            if project_to_cat[a.key] == project_to_cat[b.key]:
                 edges.append({"source": a.key, "target": b.key})
 
     nodes_json = json.dumps(nodes)
@@ -127,8 +144,9 @@ def _build_project_graph_html() -> str:
 <!doctype html>
 <html><head><meta charset="utf-8"><style>
   body {{ margin: 0; font-family: 'Inter', sans-serif; background: #fafafa; }}
-  #graph {{ width: 100%; height: 400px; }}
+  #graph {{ width: 100%; height: 540px; }}
   text {{ font-size: 11px; fill: #1a1a1a; pointer-events: none; }}
+  a {{ text-decoration: none; }}
   .node {{ cursor: pointer; }}
   .node:hover circle {{ stroke: #d97706; stroke-width: 2; }}
 </style></head>
@@ -139,29 +157,42 @@ def _build_project_graph_html() -> str:
 const nodes = {nodes_json};
 const links = {edges_json};
 const W = document.getElementById('graph').clientWidth || 800;
-const H = 400;
+const H = 540;
 
 const svg = d3.select('#graph').append('svg')
-  .attr('viewBox', [0, 0, W, H]);
+  .attr('viewBox', [0, 0, W, H])
+  .attr('preserveAspectRatio', 'xMidYMid meet');
+
+// Zoom + pan layer
 const g = svg.append('g');
+svg.call(d3.zoom()
+  .scaleExtent([0.4, 4])
+  .on('zoom', (ev) => g.attr('transform', ev.transform))
+);
 
 const sim = d3.forceSimulation(nodes)
-  .force('link', d3.forceLink(links).id(d => d.id).distance(60))
-  .force('charge', d3.forceManyBody().strength(-180))
+  .force('link', d3.forceLink(links).id(d => d.id).distance(70).strength(0.4))
+  .force('charge', d3.forceManyBody().strength(-220))
   .force('center', d3.forceCenter(W / 2, H / 2))
-  .force('collide', d3.forceCollide().radius(22));
+  .force('collide', d3.forceCollide().radius(26));
 
-const link = g.append('g').attr('stroke', '#cccccc').attr('stroke-opacity', 0.5)
+const link = g.append('g').attr('stroke', '#d4d4d4').attr('stroke-opacity', 0.45)
   .selectAll('line').data(links).enter().append('line').attr('stroke-width', 1);
 
-const node = g.append('g').selectAll('g').data(nodes).enter().append('g')
-  .attr('class', 'node')
-  .on('click', (ev, d) => {{ window.parent.location.href = d.url; }});
+// Each node is wrapped in an SVG <a target="_blank"> — Streamlit's
+// components iframe is sandboxed without allow-top-navigation, so
+// _top/_parent throw SecurityError. _blank is the only target the
+// sandbox allows. Opens the project page in a new tab.
+const node = g.append('g').selectAll('a').data(nodes).enter().append('a')
+  .attr('href', d => d.url)
+  .attr('target', '_blank')
+  .attr('rel', 'noopener')
+  .attr('class', 'node');
 
-node.append('circle').attr('r', 10).attr('fill', d => d.color)
+node.append('circle').attr('r', 11).attr('fill', d => d.color)
   .attr('stroke', '#ffffff').attr('stroke-width', 1.5);
-node.append('text').attr('dy', 22).attr('text-anchor', 'middle')
-  .text(d => d.label.length > 16 ? d.label.slice(0,15)+'…' : d.label);
+node.append('text').attr('dy', 24).attr('text-anchor', 'middle')
+  .text(d => d.label.length > 18 ? d.label.slice(0,17)+'…' : d.label);
 
 sim.on('tick', () => {{
   link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
@@ -217,7 +248,7 @@ with tab_welcome:
     # Force-directed graph
     st.markdown('<div class="ql-graph-container">', unsafe_allow_html=True)
     try:
-        components.html(_build_project_graph_html(), height=420, scrolling=False)
+        components.html(_build_project_graph_html(), height=560, scrolling=False)
     except Exception as exc:
         st.info(f"Graph unavailable: {exc}")
     st.markdown('</div>', unsafe_allow_html=True)

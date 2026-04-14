@@ -1,7 +1,28 @@
 """Shared sidebar navigation for all dashboard pages."""
 
+import logging
 from pathlib import Path
 import streamlit as st
+
+
+# Silence Streamlit deprecation noise that spams Cloud logs every page render.
+# We can't migrate yet — local Streamlit is older than Cloud and the
+# replacements (width="stretch", st.iframe) either don't exist locally or
+# don't have a drop-in equivalent for inline HTML. Revisit when Streamlit
+# ships stable replacements that work across versions.
+class _DeprecationNoiseFilter(logging.Filter):
+    _NOISY_SUBSTRINGS = (
+        "use_container_width",
+        "st.components.v1.html",
+    )
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = record.getMessage()
+        return not any(s in msg for s in self._NOISY_SUBSTRINGS)
+
+
+for _logger_name in ("streamlit", "streamlit.runtime", "streamlit.elements"):
+    logging.getLogger(_logger_name).addFilter(_DeprecationNoiseFilter())
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
@@ -20,15 +41,20 @@ _GLOBAL_STYLES = """
     --ql-font-body: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* Body font override */
-html, body, [class*="st-"], [data-testid="stAppViewContainer"] {
-    font-family: var(--ql-font-body);
+/* Body font override — !important needed to beat Streamlit's emotion CSS */
+html, body, [class*="st-"], [class*="css-"], [class*="emotion-"],
+[data-testid="stAppViewContainer"], [data-testid="stMarkdown"],
+[data-testid="stMarkdownContainer"], .stTextInput, .stButton, .stSelectbox,
+.stTabs, .stExpander, .stSidebar, p, div, span, label, button, input, textarea {
+    font-family: var(--ql-font-body) !important;
     color: var(--ql-text);
 }
 
 /* Streamlit headings → Fraunces */
-h1, h2, h3, h4, h5, h6 {
-    font-family: var(--ql-font-display);
+h1, h2, h3, h4, h5, h6,
+[data-testid="stMarkdown"] h1, [data-testid="stMarkdown"] h2,
+[data-testid="stMarkdown"] h3, [data-testid="stMarkdown"] h4 {
+    font-family: var(--ql-font-display) !important;
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--ql-text);
