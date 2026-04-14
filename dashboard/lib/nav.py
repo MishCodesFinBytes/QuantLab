@@ -325,8 +325,16 @@ def render_sidebar():
 
     Wrapped in try/except because st.page_link fails in AppTest (testing mode).
     """
+    # Use st.html instead of st.markdown so the CSS isn't run through the
+    # markdown processor — otherwise `*` characters inside the <style> block
+    # (universal selector, comments, attribute selectors like [class*=...])
+    # get interpreted as emphasis/list markers and the stylesheet renders as
+    # raw text on the page. st.html passes HTML straight through.
     try:
-        st.markdown(_GLOBAL_STYLES, unsafe_allow_html=True)
+        if hasattr(st, "html"):
+            st.html(_GLOBAL_STYLES)
+        else:
+            st.markdown(_GLOBAL_STYLES, unsafe_allow_html=True)
     except Exception:
         pass
     try:
