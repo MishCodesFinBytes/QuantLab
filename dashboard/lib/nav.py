@@ -36,6 +36,7 @@ def _render_sidebar_impl():
     st.sidebar.page_link("pages/13_Retirement_Calculator.py", label="Retirement Calculator")
     st.sidebar.page_link("pages/14_Investment_Planner.py", label="Investment Planner")
     st.sidebar.page_link("pages/15_Budget_Tracker.py", label="Budget Tracker")
+    st.sidebar.page_link("pages/16_Rent_vs_Buy.py", label="Rent vs Buy London")
 
     # Mini Projects — Dashboards
     st.sidebar.caption("Dashboards")
