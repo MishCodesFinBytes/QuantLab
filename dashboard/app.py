@@ -97,135 +97,63 @@ def _matches_query(p, query: str) -> bool:
 
 
 # ─────────────────────────────────────────────────────────────
-# D3 force-directed project graph
+# Animated stats counter (replaces the graph)
 # ─────────────────────────────────────────────────────────────
 
-def _build_project_graph_html() -> str:
-    """Return a self-contained HTML+JS string for the project graph."""
-    category_colors = {
-        "Personal finance & property": "#d97706",
-        "Stocks & markets": "#2563eb",
-        "Analytics & Fintech": "#059669",
-        "Tech demos & references": "#7c3aed",
-    }
-
-    projs = all_projects()
-    nodes = []
-    for p in projs:
-        cat = next(
-            (c for c, lst in PROJECTS_BY_CATEGORY.items() if p in lst),
-            "Tech demos & references",
-        )
-        nodes.append({
-            "id": p.key,
-            "label": p.label,
-            "color": category_colors.get(cat, "#888"),
-            "url": _page_url(p.page_link),
-        })
-
-    # Connect projects that share at least one specific (non-ubiquitous)
-    # tech. Excluding Python/Plotly/Streamlit/etc keeps the graph from
-    # becoming a hairball while still showing real cross-project links
-    # (e.g. yfinance projects clustering, scikit-learn projects clustering).
-    UBIQUITOUS_TECH = {
-        "python", "streamlit", "plotly", "numpy", "pandas", "scipy",
-        "matplotlib", "altair", "bokeh",
-    }
-
-    def _specific(tech_set):
-        return tech_set - UBIQUITOUS_TECH
-
-    edges = []
-    for i, a in enumerate(projs):
-        a_tech = _specific(set(t.lower() for t in a.tech))
-        for b in projs[i + 1:]:
-            b_tech = _specific(set(t.lower() for t in b.tech))
-            if len(a_tech & b_tech) >= 1:
-                edges.append({"source": a.key, "target": b.key})
-
-    nodes_json = json.dumps(nodes)
-    edges_json = json.dumps(edges)
-
+def _build_stats_counter_html(total: int, n_cats: int, n_featured: int) -> str:
+    """Self-contained HTML+JS that animates three counters from 0 to target."""
     return f"""
 <!doctype html>
 <html><head><meta charset="utf-8"><style>
-  body {{ margin: 0; font-family: 'Inter', sans-serif; background: #fafafa; }}
-  #graph {{ width: 100%; height: 540px; }}
-  text {{ font-size: 11px; fill: #1a1a1a; pointer-events: none; }}
-  a {{ text-decoration: none; }}
-  .node {{ cursor: pointer; }}
-  .node:hover circle {{ stroke: #d97706; stroke-width: 2; }}
+  body {{ margin: 0; font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+          background: transparent; color: #6b6b6b; }}
+  .stats {{ display: flex; justify-content: center; gap: 2.2rem;
+            font-size: 0.86rem; letter-spacing: 0.05em; padding-top: 4px; }}
+  .stat {{ display: inline-flex; gap: 0.4em; align-items: baseline; }}
+  .num {{ color: #1a1a1a; font-weight: 600; font-size: 1.05rem; }}
+  .sep {{ color: #cccccc; }}
 </style></head>
 <body>
-<div id="graph"></div>
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<div class="stats">
+  <span class="stat"><span class="num" data-target="{total}">0</span> projects</span>
+  <span class="sep">·</span>
+  <span class="stat"><span class="num" data-target="{n_cats}">0</span> categories</span>
+  <span class="sep">·</span>
+  <span class="stat"><span class="num" data-target="{n_featured}">0</span> featured</span>
+  <span class="sep">·</span>
+  <span class="stat">open source</span>
+</div>
 <script>
-const nodes = {nodes_json};
-const links = {edges_json};
-const W = document.getElementById('graph').clientWidth || 800;
-const H = 540;
-
-const svg = d3.select('#graph').append('svg')
-  .attr('viewBox', [0, 0, W, H])
-  .attr('preserveAspectRatio', 'xMidYMid meet');
-
-// Zoom + pan layer
-const g = svg.append('g');
-svg.call(d3.zoom()
-  .scaleExtent([0.4, 4])
-  .on('zoom', (ev) => g.attr('transform', ev.transform))
-);
-
-// Spread nodes across 80% of the canvas before the simulation starts,
-// so the first frame doesn't show everything clumped at (0,0).
-nodes.forEach(n => {{
-  n.x = W * (0.1 + Math.random() * 0.8);
-  n.y = H * (0.1 + Math.random() * 0.8);
-}});
-
-const sim = d3.forceSimulation(nodes)
-  .alpha(0.5)
-  .force('link', d3.forceLink(links).id(d => d.id).distance(55).strength(0.5))
-  .force('charge', d3.forceManyBody().strength(-140))
-  .force('center', d3.forceCenter(W / 2, H / 2))
-  .force('x', d3.forceX(W / 2).strength(0.06))
-  .force('y', d3.forceY(H / 2).strength(0.06))
-  .force('collide', d3.forceCollide().radius(24));
-
-// Padding inside the viewBox so labels don't get clipped at the edges.
-const PAD = 30;
-
-const link = g.append('g').attr('stroke', '#d4d4d4').attr('stroke-opacity', 0.45)
-  .selectAll('line').data(links).enter().append('line').attr('stroke-width', 1);
-
-// Each node is wrapped in an SVG <a target="_blank"> — Streamlit's
-// components iframe is sandboxed without allow-top-navigation, so
-// _top/_parent throw SecurityError. _blank is the only target the
-// sandbox allows. Opens the project page in a new tab.
-const node = g.append('g').selectAll('a').data(nodes).enter().append('a')
-  .attr('href', d => d.url)
-  .attr('target', '_blank')
-  .attr('rel', 'noopener')
-  .attr('class', 'node');
-
-node.append('circle').attr('r', 11).attr('fill', d => d.color)
-  .attr('stroke', '#ffffff').attr('stroke-width', 1.5);
-node.append('text').attr('dy', 24).attr('text-anchor', 'middle')
-  .text(d => d.label.length > 18 ? d.label.slice(0,17)+'…' : d.label);
-
-sim.on('tick', () => {{
-  // Clamp every node inside the padded viewBox so nothing drifts off-canvas.
-  nodes.forEach(d => {{
-    d.x = Math.max(PAD, Math.min(W - PAD, d.x));
-    d.y = Math.max(PAD, Math.min(H - PAD, d.y));
-  }});
-  link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
-      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
-  node.attr('transform', d => `translate(${{d.x}},${{d.y}})`);
+document.querySelectorAll('.num').forEach(el => {{
+  const target = parseInt(el.dataset.target, 10);
+  const duration = 900;
+  const start = performance.now();
+  function tick(now) {{
+    const t = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(target * eased);
+    if (t < 1) requestAnimationFrame(tick);
+  }}
+  requestAnimationFrame(tick);
 }});
 </script>
 </body></html>
 """
+
+
+def _build_marquee_html() -> str:
+    """Horizontal infinite-scroll marquee of tech badges."""
+    techs = sorted({t for p in all_projects() for t in p.tech})
+    items = " &nbsp;·&nbsp; ".join(_escape(t) for t in techs)
+    # Repeat content twice so the seamless loop has no gap
+    return (
+        '<div class="ql-marquee-wrap">'
+        f'<div class="ql-marquee-track">'
+        f'<span class="ql-marquee-content">{items}</span>'
+        f'<span class="ql-marquee-content" aria-hidden="true">{items}</span>'
+        '</div>'
+        '</div>'
+    )
 
 
 # ─────────────────────────────────────────────────────────────
@@ -248,15 +176,9 @@ with tab_welcome:
         unsafe_allow_html=True,
     )
 
-    # Stats bar
     total = len(all_projects())
     n_cats = len(PROJECTS_BY_CATEGORY)
     n_featured = len(featured())
-    st.markdown(
-        f'<div class="ql-stats-bar">{total} projects · {n_cats} categories · '
-        f'{n_featured} featured · open source</div>',
-        unsafe_allow_html=True,
-    )
 
     # Search box
     st.markdown('<div class="ql-search-wrap">', unsafe_allow_html=True)
@@ -269,13 +191,15 @@ with tab_welcome:
     )
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Force-directed graph
-    st.markdown('<div class="ql-graph-container">', unsafe_allow_html=True)
-    try:
-        components.html(_build_project_graph_html(), height=560, scrolling=False)
-    except Exception as exc:
-        st.info(f"Graph unavailable: {exc}")
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Animated stats counter
+    components.html(
+        _build_stats_counter_html(total, n_cats, n_featured),
+        height=60,
+        scrolling=False,
+    )
+
+    # Tech marquee
+    st.markdown(_build_marquee_html(), unsafe_allow_html=True)
 
     # Featured grid
     st.markdown('<h2 class="ql-section-heading">Featured</h2>', unsafe_allow_html=True)

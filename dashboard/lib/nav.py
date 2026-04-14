@@ -28,7 +28,56 @@ ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
 
 _GLOBAL_STYLES = """
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
 <style>
+/* Inlined @font-face fallback in case Streamlit's sanitizer strips <link> tags.
+   Points directly at Google's hosted WOFF2 files. */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2) format('woff2');
+}
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url(https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa25L7.woff2) format('woff2');
+}
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url(https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1pL7.woff2) format('woff2');
+}
+@font-face {
+    font-family: 'Fraunces';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(https://fonts.gstatic.com/s/fraunces/v31/6NUh8FyLNQOQZAnv9ZwNjucMHVn85Ni7emAc9Wc1ahHa8g.woff2) format('woff2');
+}
+@font-face {
+    font-family: 'Fraunces';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url(https://fonts.gstatic.com/s/fraunces/v31/6NUh8FyLNQOQZAnv9ZwNjucMHVn85Ni7emAc9Wc1ahHa8g.woff2) format('woff2');
+}
+@font-face {
+    font-family: 'JetBrains Mono';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPVmUsaaDhw.woff2) format('woff2');
+}
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap');
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded');
@@ -119,7 +168,10 @@ h1, h2, h3, h4, h5, h6,
     text-align: center;
     padding: 4rem 0 3rem;
     border-bottom: 1px solid var(--ql-border);
-    margin-bottom: 3.5rem;
+    margin-bottom: 2rem;
+    background-image: radial-gradient(circle, #e8e8e8 1px, transparent 1.5px);
+    background-size: 22px 22px;
+    background-position: center top;
 }
 .ql-hero-title {
     font-family: var(--ql-font-display);
@@ -267,13 +319,33 @@ h1, h2, h3, h4, h5, h6,
 }
 .ql-search-wrap label { display: none !important; }
 
-/* Project graph container */
-.ql-graph-container {
+/* Tech marquee — horizontal infinite scroll */
+.ql-marquee-wrap {
+    overflow: hidden;
+    border-top: 1px solid var(--ql-border);
+    border-bottom: 1px solid var(--ql-border);
+    padding: 0.85rem 0;
+    margin: 1.5rem 0 3rem;
     background: var(--ql-bg2);
-    border: 1px solid var(--ql-border);
-    border-radius: 6px;
-    padding: 0.5rem;
-    margin-bottom: 3rem;
+    mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+.ql-marquee-track {
+    display: flex;
+    width: max-content;
+    animation: ql-marquee-scroll 55s linear infinite;
+}
+.ql-marquee-content {
+    font-family: 'JetBrains Mono', Menlo, Consolas, monospace !important;
+    font-size: 0.82rem;
+    color: var(--ql-muted);
+    letter-spacing: 0.04em;
+    padding-right: 2.5rem;
+    white-space: nowrap;
+}
+@keyframes ql-marquee-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
 }
 
 /* Smaller, greyer text inside expanders */
