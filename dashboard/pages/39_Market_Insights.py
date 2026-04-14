@@ -14,11 +14,12 @@ from plotly.subplots import make_subplots
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from data import fetch_stock_history
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Market Insights", page_icon="assets/logo.png", layout="wide")
-st.title("Market Insights -- Sentiment vs Price")
+render_page_header("Market Insights", "Sentiment-price correlation dashboard")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 
