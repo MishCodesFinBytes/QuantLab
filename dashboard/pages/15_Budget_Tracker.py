@@ -11,11 +11,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from finance import budget_summary
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Budget Tracker", page_icon="assets/logo.png", layout="wide")
-st.title("Budget Tracker")
+render_page_header("Budget Tracker", "Income vs expenses, spending breakdown, surplus or deficit")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 
