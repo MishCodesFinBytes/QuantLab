@@ -27,7 +27,7 @@ class TestSentimentAnalysis:
         at = self._run()
         self._skip_if_known_error(at)
         markdown_blobs = " ".join(m.value for m in at.markdown)
-        assert "Headline Sentiment Analysis" in markdown_blobs
+        assert "ql-page-title" in markdown_blobs, "render_page_header was not called"
 
     def test_has_analyzer_radio(self):
         at = self._run()
