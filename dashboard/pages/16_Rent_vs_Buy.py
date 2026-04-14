@@ -44,9 +44,12 @@ data; edit any field to see how the answer changes.
 )
 
 
+_PPD_PATH = Path(__file__).resolve().parent.parent / "data" / "london_ppd.parquet"
+
+
 @st.cache_data(show_spinner="Loading London property data...")
 def _load_all_data():
-    ppd = pd.read_parquet("data/london_ppd.parquet")
+    ppd = pd.read_parquet(_PPD_PATH)
     return {
         "ppd": ppd,
         "district_to_borough": load_district_to_borough(),
