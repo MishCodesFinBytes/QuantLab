@@ -58,13 +58,59 @@ def _page_url(page_link: str) -> str:
     return "/" + name
 
 
+_FEATURED_CARD_STYLE = (
+    "display:block;text-decoration:none;color:#1a1a1a;"
+    "background:#ffffff;border:1px solid #e5e5e5;border-radius:4px;"
+    "padding:1.6rem 1.5rem;transition:border-color 0.15s;"
+)
+_FEATURED_TITLE_STYLE = (
+    "font-family:'Fraunces',Georgia,serif;font-size:1.3rem;font-weight:600;"
+    "color:#d97706;margin:0 0 0.5rem;line-height:1.2;letter-spacing:-0.01em;"
+)
+_FEATURED_DESC_STYLE = (
+    "font-family:'Inter',system-ui,sans-serif;font-size:0.92rem;line-height:1.5;"
+    "color:#1a1a1a;margin:0 0 0.9rem;"
+)
+_FEATURED_TECH_STYLE = (
+    "font-family:'Inter',system-ui,sans-serif;font-size:0.74rem;color:#6b6b6b;"
+    "letter-spacing:0.01em;"
+)
+_CAT_CARD_STYLE = (
+    "display:block;text-decoration:none;color:#1a1a1a;"
+    "background:#ffffff;border:1px solid #e5e5e5;border-radius:4px;"
+    "padding:0.9rem 1rem;transition:border-color 0.15s;"
+)
+_CAT_TITLE_STYLE = (
+    "font-family:'Inter',system-ui,sans-serif;font-size:0.95rem;font-weight:600;"
+    "color:#d97706;margin:0 0 0.25rem;"
+)
+_CAT_DESC_STYLE = (
+    "font-family:'Inter',system-ui,sans-serif;font-size:0.78rem;color:#1a1a1a;"
+    "margin:0 0 0.5rem;line-height:1.4;"
+)
+_CAT_TECH_STYLE = (
+    "font-family:'Inter',system-ui,sans-serif;font-size:0.68rem;color:#6b6b6b;"
+)
+_CAPSTONE_STYLE = (
+    "display:inline-block;font-size:0.62rem;font-weight:500;text-transform:uppercase;"
+    "letter-spacing:0.05em;color:#d97706;border:1px solid #d97706;padding:1px 5px;"
+    "border-radius:2px;margin-left:0.4rem;vertical-align:middle;"
+)
+_FEATURED_GRID_STYLE = (
+    "display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:1rem;"
+)
+_CAT_GRID_STYLE = (
+    "display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:0.5rem;"
+)
+
+
 def _featured_card_html(p) -> str:
     tech = " · ".join(_escape(t) for t in p.tech)
     return (
-        f'<a class="ql-featured-card" href="{_escape(_page_url(p.page_link))}" target="_self">'
-        f'<div class="ql-featured-card-title">{_escape(p.label)}</div>'
-        f'<div class="ql-featured-card-desc">{_escape(p.description)}</div>'
-        f'<div class="ql-featured-card-tech">{tech}</div>'
+        f'<a style="{_FEATURED_CARD_STYLE}" href="{_escape(_page_url(p.page_link))}" target="_self">'
+        f'<div style="{_FEATURED_TITLE_STYLE}">{_escape(p.label)}</div>'
+        f'<div style="{_FEATURED_DESC_STYLE}">{_escape(p.description)}</div>'
+        f'<div style="{_FEATURED_TECH_STYLE}">{tech}</div>'
         f'</a>'
     )
 
@@ -72,13 +118,13 @@ def _featured_card_html(p) -> str:
 def _cat_card_html(p) -> str:
     tech = " · ".join(_escape(t) for t in p.tech)
     capstone = (
-        '<span class="ql-capstone-tag">Capstone</span>' if p.is_capstone else ""
+        f'<span style="{_CAPSTONE_STYLE}">Capstone</span>' if p.is_capstone else ""
     )
     return (
-        f'<a class="ql-cat-card" href="{_escape(_page_url(p.page_link))}" target="_self">'
-        f'<div class="ql-cat-card-title">{_escape(p.label)}{capstone}</div>'
-        f'<div class="ql-cat-card-desc">{_escape(p.description)}</div>'
-        f'<div class="ql-cat-card-tech">{tech}</div>'
+        f'<a style="{_CAT_CARD_STYLE}" href="{_escape(_page_url(p.page_link))}" target="_self">'
+        f'<div style="{_CAT_TITLE_STYLE}">{_escape(p.label)}{capstone}</div>'
+        f'<div style="{_CAT_DESC_STYLE}">{_escape(p.description)}</div>'
+        f'<div style="{_CAT_TECH_STYLE}">{tech}</div>'
         f'</a>'
     )
 
@@ -214,7 +260,7 @@ with tab_welcome:
 
     # Featured grid
     st.markdown('<h2 class="ql-section-heading">Featured</h2>', unsafe_allow_html=True)
-    featured_html = '<div class="ql-featured-grid">'
+    featured_html = f'<div style="{_FEATURED_GRID_STYLE}">'
     for p in featured():
         featured_html += _featured_card_html(p)
     featured_html += '</div>'
@@ -232,7 +278,7 @@ with tab_welcome:
             f'<h2 class="ql-section-heading">{_escape(category)}</h2>',
             unsafe_allow_html=True,
         )
-        grid_html = '<div class="ql-cat-grid">'
+        grid_html = f'<div style="{_CAT_GRID_STYLE}">'
         for p in matching:
             grid_html += _cat_card_html(p)
         grid_html += '</div>'
