@@ -28,6 +28,29 @@ st.set_page_config(page_title="Rent vs Buy London", page_icon="assets/logo.png",
 render_sidebar()
 st.title("Rent vs Buy — London")
 
+# Make explanatory text inside expanders smaller and greyer so the
+# headline numbers stay the visual focus.
+st.markdown(
+    """
+<style>
+[data-testid="stExpander"] details > div p,
+[data-testid="stExpander"] details > div li,
+[data-testid="stExpander"] details > div td,
+[data-testid="stExpander"] details > div th {
+    font-size: 0.86rem;
+    color: var(--text-muted-color, #888);
+}
+[data-testid="stExpander"] details > div strong {
+    color: var(--text-color, #555);
+}
+[data-testid="stExpander"] details > div table {
+    font-size: 0.86rem;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
 st.markdown(
     """
 Should you rent or buy a London home? This calculator estimates the
