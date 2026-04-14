@@ -188,18 +188,51 @@ document.querySelectorAll('.num').forEach(el => {{
 
 
 def _build_marquee_html() -> str:
-    """Horizontal infinite-scroll marquee of tech badges."""
+    """Horizontal infinite-scroll marquee of tech badges, rendered inside
+    a components iframe so the @keyframes animation survives Streamlit's
+    HTML sanitizer."""
     techs = sorted({t for p in all_projects() for t in p.tech})
     items = " &nbsp;·&nbsp; ".join(_escape(t) for t in techs)
-    # Repeat content twice so the seamless loop has no gap
-    return (
-        '<div class="ql-marquee-wrap">'
-        f'<div class="ql-marquee-track">'
-        f'<span class="ql-marquee-content">{items}</span>'
-        f'<span class="ql-marquee-content" aria-hidden="true">{items}</span>'
-        '</div>'
-        '</div>'
-    )
+    return f"""
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  html, body {{ margin: 0; background: transparent; }}
+  .wrap {{
+    overflow: hidden;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 0.85rem 0;
+    background: #fafafa;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  }}
+  .track {{
+    display: flex;
+    width: max-content;
+    animation: ql-scroll 55s linear infinite;
+  }}
+  .content {{
+    font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    color: #6b6b6b;
+    letter-spacing: 0.04em;
+    padding-right: 2.5rem;
+    white-space: nowrap;
+  }}
+  @keyframes ql-scroll {{
+    from {{ transform: translateX(0); }}
+    to   {{ transform: translateX(-50%); }}
+  }}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="track">
+    <span class="content">{items}</span>
+    <span class="content" aria-hidden="true">{items}</span>
+  </div>
+</div>
+</body></html>
+"""
 
 
 # ─────────────────────────────────────────────────────────────
@@ -255,8 +288,8 @@ with tab_welcome:
         scrolling=False,
     )
 
-    # Tech marquee
-    _ql_html(_build_marquee_html())
+    # Tech marquee — rendered via components.html so @keyframes survives
+    components.html(_build_marquee_html(), height=60, scrolling=False)
 
     # Featured grid
     st.markdown('<h2 class="ql-section-heading">Featured</h2>', unsafe_allow_html=True)
