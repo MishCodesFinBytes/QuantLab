@@ -15,11 +15,12 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from data import fetch_stock_history
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Stock Prediction", page_icon="assets/logo.png", layout="wide")
-st.title("Stock Return Prediction (ML)")
+render_page_header("Stock Prediction", "Feature engineering and regression for price forecasting")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 
