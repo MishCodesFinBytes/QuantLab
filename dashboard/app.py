@@ -177,12 +177,14 @@ def _ql_html(html: str) -> None:
 
 
 with tab_welcome:
-    # Hero
-    _ql_html(
+    # Hero — use st.markdown so Streamlit wraps the heading with its action
+    # elements, which plays with our .ql-hero-title * descendant selector.
+    st.markdown(
         '<div class="ql-hero">'
         '<h1 class="ql-hero-title">QuantLab</h1>'
         '<p class="ql-hero-subtitle">Interactive finance and data experiments in Python</p>'
-        '</div>'
+        '</div>',
+        unsafe_allow_html=True,
     )
 
     total = len(all_projects())
@@ -211,7 +213,7 @@ with tab_welcome:
     _ql_html(_build_marquee_html())
 
     # Featured grid
-    _ql_html('<h2 class="ql-section-heading">Featured</h2>')
+    st.markdown('<h2 class="ql-section-heading">Featured</h2>', unsafe_allow_html=True)
     featured_html = '<div class="ql-featured-grid">'
     for p in featured():
         featured_html += _featured_card_html(p)
@@ -226,7 +228,10 @@ with tab_welcome:
         ]
         if not matching:
             continue
-        _ql_html(f'<h2 class="ql-section-heading">{_escape(category)}</h2>')
+        st.markdown(
+            f'<h2 class="ql-section-heading">{_escape(category)}</h2>',
+            unsafe_allow_html=True,
+        )
         grid_html = '<div class="ql-cat-grid">'
         for p in matching:
             grid_html += _cat_card_html(p)
