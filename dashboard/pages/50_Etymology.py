@@ -9,10 +9,11 @@ import streamlit as st
 from tech_footer import render_tech_footer
 import streamlit.components.v1 as components
 from nav import render_sidebar
+from page_header import render_page_header
 
 st.set_page_config(page_title="Etymology", page_icon="assets/logo.png", layout="wide")
 render_sidebar()
-st.title("Etymology")
+render_page_header("Etymology", "Force-directed graph of English word roots")
 
 st.markdown(
     "Word roots from Greek, Latin, and Proto-Indo-European — click a featured "
