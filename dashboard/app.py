@@ -176,7 +176,15 @@ svg.call(d3.zoom()
   .on('zoom', (ev) => g.attr('transform', ev.transform))
 );
 
+// Spread nodes across 80% of the canvas before the simulation starts,
+// so the first frame doesn't show everything clumped at (0,0).
+nodes.forEach(n => {{
+  n.x = W * (0.1 + Math.random() * 0.8);
+  n.y = H * (0.1 + Math.random() * 0.8);
+}});
+
 const sim = d3.forceSimulation(nodes)
+  .alpha(0.5)  // lower starting energy so they settle gently, not explode
   .force('link', d3.forceLink(links).id(d => d.id).distance(70).strength(0.4))
   .force('charge', d3.forceManyBody().strength(-220))
   .force('center', d3.forceCenter(W / 2, H / 2))
