@@ -7,8 +7,8 @@ ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
 
 _GLOBAL_STYLES = """
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap');
 :root {
     --ql-accent: #d97706;
     --ql-text: #1a1a1a;
