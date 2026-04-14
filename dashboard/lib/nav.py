@@ -351,13 +351,23 @@ def render_sidebar():
 
 
 def _render_sidebar_impl():
+    brand_style = "padding:0.5rem 0 0.25rem;margin-bottom:0.5rem;"
+    title_style = (
+        "font-family:'Fraunces',Georgia,serif;font-size:1.6rem;font-weight:600;"
+        "color:#1a1a1a;letter-spacing:-0.01em;line-height:1.1;"
+    )
+    byline_style = (
+        "font-family:'Inter',system-ui,sans-serif;font-size:0.78rem;"
+        "color:#6b6b6b;margin-top:0.2rem;"
+    )
+    link_style = "color:#d97706;text-decoration:none;"
     st.sidebar.markdown(
-        '<div class="ql-sidebar-brand">'
-        '<div class="ql-sidebar-title">QuantLab</div>'
-        '<div class="ql-sidebar-byline">Built by '
-        '<a href="https://mish-codes.github.io/FinBytes/">Manisha</a>'
-        '</div>'
-        '</div>',
+        f'<div style="{brand_style}">'
+        f'<div style="{title_style}">QuantLab</div>'
+        f'<div style="{byline_style}">Built by '
+        f'<a style="{link_style}" href="https://mish-codes.github.io/FinBytes/">Manisha</a>'
+        f'</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
     st.sidebar.markdown("---")
