@@ -56,9 +56,16 @@ _GLOBAL_STYLES = """
     font-family: 'Material Icons', 'Material Symbols Rounded' !important;
 }
 
-h1, h2, h3, h4, h5, h6,
-.ql-page-title, .ql-hero-title, .ql-section-heading,
-.ql-featured-card-title, .ql-sidebar-title {
+/* Target the heading elements AND any descendants (spans, etc.) because
+   Streamlit wraps heading text in an inner <span> that the universal
+   * { !important } rule catches directly — inheritance doesn't help when
+   the override is set directly on the child. */
+h1, h1 *, h2, h2 *, h3, h3 *, h4, h4 *, h5, h5 *, h6, h6 *,
+.ql-page-title, .ql-page-title *,
+.ql-hero-title, .ql-hero-title *,
+.ql-section-heading, .ql-section-heading *,
+.ql-featured-card-title, .ql-featured-card-title *,
+.ql-sidebar-title, .ql-sidebar-title * {
     font-family: var(--ql-font-display) !important;
     font-weight: 600;
     letter-spacing: -0.01em;
