@@ -41,23 +41,25 @@ _GLOBAL_STYLES = """
     --ql-font-body: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* Body font override — !important needed to beat Streamlit's emotion CSS */
-html, body, [class*="st-"], [class*="css-"], [class*="emotion-"],
-[data-testid="stAppViewContainer"], [data-testid="stMarkdown"],
-[data-testid="stMarkdownContainer"], .stTextInput, .stButton, .stSelectbox,
-.stTabs, .stExpander, .stSidebar, p, div, span, label, button, input, textarea {
+/* Body font override — universal selector with !important.
+   Streamlit's emotion CSS injects font-family on every wrapper class,
+   so the only reliable override is to bomb everything with * !important
+   and then re-set headings to the display font afterwards. */
+* {
     font-family: var(--ql-font-body) !important;
-    color: var(--ql-text);
 }
 
-/* Streamlit headings → Fraunces */
 h1, h2, h3, h4, h5, h6,
-[data-testid="stMarkdown"] h1, [data-testid="stMarkdown"] h2,
-[data-testid="stMarkdown"] h3, [data-testid="stMarkdown"] h4 {
+.ql-page-title, .ql-hero-title, .ql-section-heading,
+.ql-featured-card-title, .ql-sidebar-title {
     font-family: var(--ql-font-display) !important;
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--ql-text);
+}
+
+.ql-stats-bar {
+    font-family: 'JetBrains Mono', Menlo, Consolas, monospace !important;
 }
 
 /* Page header helper classes */
