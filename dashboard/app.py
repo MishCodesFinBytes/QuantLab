@@ -166,14 +166,23 @@ tab_welcome, tab_all, tab_health = st.tabs(["Welcome", "All projects", "System H
 # Welcome — landing portfolio view
 # ─────────────────────────────────────────────────────────────
 
+def _ql_html(html: str) -> None:
+    """Render raw HTML without Streamlit's markdown processor eating class
+    attributes on <a>/<div> elements. Falls back to st.markdown on older
+    Streamlit versions."""
+    if hasattr(st, "html"):
+        st.html(html)
+    else:
+        st.markdown(html, unsafe_allow_html=True)
+
+
 with tab_welcome:
     # Hero
-    st.markdown(
+    _ql_html(
         '<div class="ql-hero">'
         '<h1 class="ql-hero-title">QuantLab</h1>'
         '<p class="ql-hero-subtitle">Interactive finance and data experiments in Python</p>'
-        '</div>',
-        unsafe_allow_html=True,
+        '</div>'
     )
 
     total = len(all_projects())
@@ -181,7 +190,7 @@ with tab_welcome:
     n_featured = len(featured())
 
     # Search box
-    st.markdown('<div class="ql-search-wrap">', unsafe_allow_html=True)
+    _ql_html('<div class="ql-search-wrap">')
     search_query = st.text_input(
         "Search",
         value="",
@@ -189,7 +198,7 @@ with tab_welcome:
         label_visibility="collapsed",
         key="ql_landing_search",
     )
-    st.markdown('</div>', unsafe_allow_html=True)
+    _ql_html('</div>')
 
     # Animated stats counter
     components.html(
@@ -199,15 +208,15 @@ with tab_welcome:
     )
 
     # Tech marquee
-    st.markdown(_build_marquee_html(), unsafe_allow_html=True)
+    _ql_html(_build_marquee_html())
 
     # Featured grid
-    st.markdown('<h2 class="ql-section-heading">Featured</h2>', unsafe_allow_html=True)
+    _ql_html('<h2 class="ql-section-heading">Featured</h2>')
     featured_html = '<div class="ql-featured-grid">'
     for p in featured():
         featured_html += _featured_card_html(p)
     featured_html += '</div>'
-    st.markdown(featured_html, unsafe_allow_html=True)
+    _ql_html(featured_html)
 
     # Categorised grids (filtered by search)
     for category in PROJECTS_BY_CATEGORY.keys():
@@ -217,26 +226,22 @@ with tab_welcome:
         ]
         if not matching:
             continue
-        st.markdown(
-            f'<h2 class="ql-section-heading">{_escape(category)}</h2>',
-            unsafe_allow_html=True,
-        )
+        _ql_html(f'<h2 class="ql-section-heading">{_escape(category)}</h2>')
         grid_html = '<div class="ql-cat-grid">'
         for p in matching:
             grid_html += _cat_card_html(p)
         grid_html += '</div>'
-        st.markdown(grid_html, unsafe_allow_html=True)
+        _ql_html(grid_html)
 
     if search_query and not any(
         _matches_query(p, search_query) for p in all_projects()
     ):
-        st.markdown(
+        _ql_html(
             f'<p style="text-align:center;color:#6b6b6b;margin-top:2rem;">'
-            f'No projects match "{_escape(search_query)}".</p>',
-            unsafe_allow_html=True,
+            f'No projects match "{_escape(search_query)}".</p>'
         )
 
-    st.markdown('<div style="height: 4rem;"></div>', unsafe_allow_html=True)
+    _ql_html('<div style="height: 4rem;"></div>')
 
 # ─────────────────────────────────────────────────────────────
 # All projects — sortable table view
