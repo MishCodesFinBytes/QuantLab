@@ -15,7 +15,8 @@ class TestStockPrediction:
 
     def test_shows_title(self):
         at = self._run()
-        assert any("Stock Return Prediction" in t.value for t in at.title)
+        markdown_blobs = " ".join(m.value for m in at.markdown)
+        assert "ql-page-title" in markdown_blobs, "render_page_header was not called"
 
     def test_has_two_tabs(self):
         at = self._run()

@@ -5,6 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
@@ -15,7 +16,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 st.set_page_config(page_title="Personal Finance", page_icon="assets/logo.png", layout="wide")
-st.title("Personal Finance Dashboard")
+render_page_header("Personal Finance", "Net worth, savings rate, debt-to-income ratio")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

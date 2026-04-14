@@ -15,7 +15,8 @@ class TestVaRCVaR:
 
     def test_shows_title(self):
         at = self._run()
-        assert any("Value at Risk" in t.value for t in at.title)
+        markdown_blobs = " ".join(m.value for m in at.markdown)
+        assert "Value at Risk" in markdown_blobs
 
     def test_has_ticker_input(self):
         at = self._run()

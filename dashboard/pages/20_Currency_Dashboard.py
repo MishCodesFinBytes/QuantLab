@@ -11,11 +11,12 @@ import pandas as pd
 import plotly.express as px
 from data import fetch_exchange_rates
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Currency Dashboard", page_icon="assets/logo.png", layout="wide")
-st.title("Currency Dashboard")
+render_page_header("Currency Dashboard", "Live exchange rates, currency converter, rate comparison")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

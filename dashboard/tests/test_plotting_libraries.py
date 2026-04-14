@@ -18,7 +18,8 @@ class TestPlottingLibrariesPage:
 
     def test_shows_title(self):
         at = self._run()
-        assert any("Plotting Libraries" in t.value for t in at.title)
+        markdown_blobs = " ".join(m.value for m in at.markdown)
+        assert "Plotting Libraries" in markdown_blobs
 
     def test_has_ticker_input(self):
         at = self._run()

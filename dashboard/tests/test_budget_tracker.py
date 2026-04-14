@@ -15,7 +15,8 @@ class TestBudgetTracker:
 
     def test_shows_title(self):
         at = self._run()
-        assert any("Budget Tracker" in t.value for t in at.title)
+        markdown_blobs = " ".join(m.value for m in at.markdown)
+        assert "Budget Tracker" in markdown_blobs
 
     def test_has_expected_tabs(self):
         at = self._run()

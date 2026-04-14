@@ -15,7 +15,8 @@ class TestPortfolioOptimization:
 
     def test_shows_title(self):
         at = self._run()
-        assert any("Portfolio Optimization" in t.value for t in at.title)
+        markdown_blobs = " ".join(m.value for m in at.markdown)
+        assert "Portfolio Optimization" in markdown_blobs
 
     def test_has_multiselect_tickers(self):
         at = self._run()

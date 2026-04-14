@@ -9,6 +9,7 @@ import pandas as pd
 import streamlit as st
 from tech_footer import render_tech_footer
 from nav import render_sidebar
+from page_header import render_page_header
 from rentbuy import (
     Scenario,
     run_scenario,
@@ -26,7 +27,7 @@ from rentbuy.finance import SDLT_RULES_AS_OF, SDLT_SOURCE_URL
 
 st.set_page_config(page_title="Rent vs Buy London", page_icon="assets/logo.png", layout="wide")
 render_sidebar()
-st.title("Rent vs Buy — London")
+render_page_header("Rent vs Buy — London", "Data-driven calculator using HM Land Registry, ONS, and BoE")
 
 st.markdown(
     """

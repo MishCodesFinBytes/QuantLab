@@ -26,7 +26,8 @@ class TestSentimentAnalysis:
     def test_shows_title(self):
         at = self._run()
         self._skip_if_known_error(at)
-        assert any("Headline Sentiment Analysis" in t.value for t in at.title)
+        markdown_blobs = " ".join(m.value for m in at.markdown)
+        assert "Headline Sentiment Analysis" in markdown_blobs
 
     def test_has_analyzer_radio(self):
         at = self._run()

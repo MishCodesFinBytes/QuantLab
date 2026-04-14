@@ -21,6 +21,7 @@ from house_prices import (
     assign_brand_districts,
 )
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 from benchmark import (
     run_benchmark,
@@ -31,7 +32,7 @@ from benchmark import (
 
 st.set_page_config(page_title="London House Prices", page_icon="assets/logo.png", layout="wide")
 render_sidebar()
-st.title("London House Prices")
+render_page_header("London House Prices", "Postcode growth, comparison, brand effect, and benchmark lab")
 
 st.markdown("""
 <style>

@@ -7,18 +7,247 @@ ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
 
 _GLOBAL_STYLES = """
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
-/* Smaller, greyer text inside expanders so explanatory content stays
-   visually subordinate to headline numbers. Bold labels stay readable. */
+:root {
+    --ql-accent: #d97706;
+    --ql-text: #1a1a1a;
+    --ql-muted: #6b6b6b;
+    --ql-bg: #ffffff;
+    --ql-bg2: #fafafa;
+    --ql-border: #e5e5e5;
+    --ql-font-display: 'Fraunces', Georgia, serif;
+    --ql-font-body: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Body font override */
+html, body, [class*="st-"], [data-testid="stAppViewContainer"] {
+    font-family: var(--ql-font-body);
+    color: var(--ql-text);
+}
+
+/* Streamlit headings → Fraunces */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--ql-font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ql-text);
+}
+
+/* Page header helper classes */
+.ql-page-title {
+    font-family: var(--ql-font-display);
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0.5rem 0 0.25rem;
+    color: var(--ql-text);
+}
+.ql-page-subtitle {
+    font-family: var(--ql-font-body);
+    font-size: 1rem;
+    color: var(--ql-muted);
+    margin: 0 0 1.5rem;
+    font-weight: 400;
+}
+
+/* Sidebar branding */
+.ql-sidebar-brand {
+    padding: 0.5rem 0 0.25rem;
+    margin-bottom: 0.5rem;
+}
+.ql-sidebar-title {
+    font-family: var(--ql-font-display);
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--ql-text);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+}
+.ql-sidebar-byline {
+    font-family: var(--ql-font-body);
+    font-size: 0.78rem;
+    color: var(--ql-muted);
+    margin-top: 0.2rem;
+}
+.ql-sidebar-byline a {
+    color: var(--ql-accent);
+    text-decoration: none;
+}
+.ql-sidebar-byline a:hover { text-decoration: underline; }
+
+/* Landing page hero */
+.ql-hero {
+    text-align: center;
+    padding: 4rem 0 3rem;
+    border-bottom: 1px solid var(--ql-border);
+    margin-bottom: 3.5rem;
+}
+.ql-hero-title {
+    font-family: var(--ql-font-display);
+    font-size: 4.5rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    margin: 0 0 1rem;
+    color: var(--ql-text);
+    font-variation-settings: "opsz" 144;
+}
+.ql-hero-subtitle {
+    font-family: var(--ql-font-body);
+    font-size: 1.15rem;
+    color: var(--ql-muted);
+    font-weight: 400;
+    margin: 0;
+}
+
+/* Section headings on the landing page */
+.ql-section-heading {
+    font-family: var(--ql-font-display);
+    font-size: 1.75rem;
+    font-weight: 500;
+    color: var(--ql-text);
+    margin: 3rem 0 1.25rem;
+    letter-spacing: -0.01em;
+}
+
+/* Featured grid */
+.ql-featured-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1rem;
+}
+.ql-featured-card {
+    background: var(--ql-bg);
+    border: 1px solid var(--ql-border);
+    border-radius: 4px;
+    padding: 1.6rem 1.5rem;
+    transition: border-color 0.15s;
+    text-decoration: none !important;
+    color: inherit !important;
+    display: block;
+}
+.ql-featured-card:hover { border-color: var(--ql-accent); }
+.ql-featured-card-title {
+    font-family: var(--ql-font-display);
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--ql-accent);
+    margin: 0 0 0.5rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+.ql-featured-card-desc {
+    font-family: var(--ql-font-body);
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: var(--ql-text);
+    margin: 0 0 0.9rem;
+}
+.ql-featured-card-tech {
+    font-family: var(--ql-font-body);
+    font-size: 0.74rem;
+    color: var(--ql-muted);
+    letter-spacing: 0.01em;
+}
+
+/* Categorised grid */
+.ql-cat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+@media (max-width: 768px) {
+    .ql-featured-grid { grid-template-columns: 1fr; }
+    .ql-cat-grid { grid-template-columns: 1fr; }
+}
+.ql-cat-card {
+    background: var(--ql-bg);
+    border: 1px solid var(--ql-border);
+    border-radius: 4px;
+    padding: 0.9rem 1rem;
+    transition: border-color 0.15s;
+    text-decoration: none !important;
+    color: inherit !important;
+    display: block;
+}
+.ql-cat-card:hover { border-color: var(--ql-accent); }
+.ql-cat-card-title {
+    font-family: var(--ql-font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ql-accent);
+    margin: 0 0 0.25rem;
+}
+.ql-cat-card-desc {
+    font-family: var(--ql-font-body);
+    font-size: 0.78rem;
+    color: var(--ql-text);
+    margin: 0 0 0.5rem;
+    line-height: 1.4;
+}
+.ql-cat-card-tech {
+    font-family: var(--ql-font-body);
+    font-size: 0.68rem;
+    color: var(--ql-muted);
+}
+.ql-capstone-tag {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ql-accent);
+    border: 1px solid var(--ql-accent);
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+}
+
+/* Stats bar under hero */
+.ql-stats-bar {
+    text-align: center;
+    font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    color: var(--ql-muted);
+    letter-spacing: 0.04em;
+    margin: -2.5rem 0 3rem;
+}
+
+/* Search box wrapper */
+.ql-search-wrap {
+    max-width: 480px;
+    margin: 0 auto 2rem;
+}
+.ql-search-wrap input[type="text"] {
+    font-family: var(--ql-font-body) !important;
+    border-color: var(--ql-border) !important;
+    background: var(--ql-bg) !important;
+    color: var(--ql-text) !important;
+}
+.ql-search-wrap label { display: none !important; }
+
+/* Project graph container */
+.ql-graph-container {
+    background: var(--ql-bg2);
+    border: 1px solid var(--ql-border);
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-bottom: 3rem;
+}
+
+/* Smaller, greyer text inside expanders */
 [data-testid="stExpander"] details > div p,
 [data-testid="stExpander"] details > div li,
 [data-testid="stExpander"] details > div td,
 [data-testid="stExpander"] details > div th {
     font-size: 0.86rem;
-    color: var(--text-muted-color, #888);
+    color: var(--ql-muted);
 }
 [data-testid="stExpander"] details > div strong {
-    color: var(--text-color, #555);
+    color: var(--ql-text);
 }
 [data-testid="stExpander"] details > div table {
     font-size: 0.86rem;
@@ -46,9 +275,15 @@ def render_sidebar():
 
 
 def _render_sidebar_impl():
-    st.sidebar.image(str(ASSETS / "logo.png"), width=180)
-    st.sidebar.title("FinBytes QuantLabs")
-    st.sidebar.markdown("**Built by** [Manisha](https://mish-codes.github.io/FinBytes/)")
+    st.sidebar.markdown(
+        '<div class="ql-sidebar-brand">'
+        '<div class="ql-sidebar-title">QuantLab</div>'
+        '<div class="ql-sidebar-byline">Built by '
+        '<a href="https://mish-codes.github.io/FinBytes/">Manisha</a>'
+        '</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
     st.sidebar.markdown("---")
 
     # Projects

@@ -11,11 +11,12 @@ import pandas as pd
 import plotly.express as px
 from data import fetch_crypto_prices
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Crypto Portfolio", page_icon="assets/logo.png", layout="wide")
-st.title("Crypto Portfolio Tracker")
+render_page_header("Crypto Portfolio", "Live crypto valuation, allocation pie, 24-hour change")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

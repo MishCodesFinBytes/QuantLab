@@ -26,7 +26,8 @@ class TestMarketInsights:
     def test_shows_title(self):
         at = self._run()
         self._skip_if_known_error(at)
-        assert any("Market Insights" in t.value for t in at.title)
+        markdown_blobs = " ".join(m.value for m in at.markdown)
+        assert "Market Insights" in markdown_blobs
 
     def test_has_two_tabs(self):
         at = self._run()

@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 import yfinance as yf
@@ -85,7 +86,7 @@ SAMPLE_RESULT = {
 }
 
 # ============================================================
-st.title("Stock Risk Scanner")
+render_page_header("Stock Risk Scanner", "Full-stack portfolio risk analysis with FastAPI, Postgres, and Claude")
 
 tab_app, tab_health, tab_arch, tab_tests = st.tabs(["App", "System Health", "Architecture", "Tests"])
 

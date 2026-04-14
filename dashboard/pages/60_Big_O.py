@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 import streamlit as st
 from tech_footer import render_tech_footer
 from nav import render_sidebar
+from page_header import render_page_header
 from bigo import (
     PROBLEMS,
     run_problem,
@@ -17,8 +18,7 @@ from bigo import (
 
 st.set_page_config(page_title="Big O Notation", page_icon="assets/logo.png", layout="wide")
 render_sidebar()
-st.title("Big O Notation")
-st.caption("Same problem, different complexities — watch the curves diverge.")
+render_page_header("Big O Notation", "Same problem, different complexities — see the gap")
 
 # Problem selector
 problem_keys = list(PROBLEMS.keys())

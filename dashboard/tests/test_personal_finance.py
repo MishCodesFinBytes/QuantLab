@@ -15,7 +15,8 @@ class TestPersonalFinance:
 
     def test_shows_title(self):
         at = self._run()
-        assert any("Personal Finance Dashboard" in t.value for t in at.title)
+        markdown_blobs = " ".join(m.value for m in at.markdown)
+        assert "ql-page-title" in markdown_blobs, "render_page_header was not called"
 
     def test_has_income_number_input(self):
         at = self._run()

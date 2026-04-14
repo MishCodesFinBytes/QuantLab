@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
@@ -16,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans, DBSCAN
 
 st.set_page_config(page_title="Clustering", page_icon="assets/logo.png", layout="wide")
-st.title("Customer Segmentation via Clustering")
+render_page_header("Customer Clustering", "K-Means and DBSCAN segmentation with editable data")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

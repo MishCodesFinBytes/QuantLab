@@ -13,11 +13,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 import yfinance as yf
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="ESG Tracker", page_icon="assets/logo.png", layout="wide")
-st.title("ESG Score Tracker")
+render_page_header("ESG Tracker", "ESG score comparison, radar chart, sector averages")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

@@ -11,11 +11,12 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from data import fetch_stock_history, compute_technical_indicators
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Stock Analysis", page_icon="assets/logo.png", layout="wide")
-st.title("Technical Analysis")
+render_page_header("Stock Analysis", "SMA, EMA, RSI, MACD, and Bollinger Bands overlays")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

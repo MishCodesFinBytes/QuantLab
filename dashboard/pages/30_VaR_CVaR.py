@@ -13,11 +13,12 @@ import plotly.graph_objects as go
 from scipy import stats as sp_stats
 from data import fetch_stock_history
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="VaR & CVaR", page_icon="assets/logo.png", layout="wide")
-st.title("Value at Risk & Conditional VaR")
+render_page_header("VaR & CVaR", "Historical and parametric Value at Risk, Conditional VaR")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

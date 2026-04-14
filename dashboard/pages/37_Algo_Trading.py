@@ -12,11 +12,12 @@ import pandas as pd
 import plotly.graph_objects as go
 from data import fetch_stock_history
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Algo Trading", page_icon="assets/logo.png", layout="wide")
-st.title("Algorithmic Trading Backtest")
+render_page_header("Algo Trading Backtest", "SMA crossover and momentum strategies with equity curves")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

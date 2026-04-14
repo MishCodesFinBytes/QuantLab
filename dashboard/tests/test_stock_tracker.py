@@ -15,7 +15,8 @@ class TestStockTracker:
 
     def test_shows_title(self):
         at = self._run()
-        assert any("Stock Tracker" in t.value for t in at.title)
+        markdown_blobs = " ".join(m.value for m in at.markdown)
+        assert "Stock Tracker" in markdown_blobs
 
     def test_has_top_level_tabs(self):
         at = self._run()

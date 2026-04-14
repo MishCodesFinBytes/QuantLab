@@ -13,11 +13,12 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from data import fetch_stock_history
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Financial Reporting", page_icon="assets/logo.png", layout="wide")
-st.title("Financial Reporting")
+render_page_header("Financial Reporting", "Auto-generated stats, charts, and CSV export")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

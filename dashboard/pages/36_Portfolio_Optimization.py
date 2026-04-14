@@ -12,11 +12,12 @@ import pandas as pd
 import plotly.graph_objects as go
 from data import fetch_multiple_stocks
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Portfolio Optimization", page_icon="assets/logo.png", layout="wide")
-st.title("Portfolio Optimization -- Efficient Frontier")
+render_page_header("Portfolio Optimization", "Efficient frontier, max Sharpe and min volatility portfolios")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

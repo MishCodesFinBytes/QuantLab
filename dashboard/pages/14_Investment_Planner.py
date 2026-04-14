@@ -10,11 +10,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from finance import compound_growth
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Investment Planner", page_icon="assets/logo.png", layout="wide")
-st.title("Investment Growth Planner")
+render_page_header("Investment Planner", "Compound growth with contributions and what-if scenarios")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

@@ -14,11 +14,12 @@ import plotly.graph_objects as go
 import plotly.express as px
 from data import fetch_sonia, fetch_estr, fetch_sofr
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 
 render_sidebar()
 st.set_page_config(page_title="Benchmark Rates", page_icon="assets/logo.png", layout="wide")
-st.title("Benchmark Rates Dashboard")
+render_page_header("Benchmark Rates", "SOFR, SONIA, and ESTR — fixed vs floating rate swap value")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

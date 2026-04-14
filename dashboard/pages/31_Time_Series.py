@@ -15,11 +15,12 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import acf
 from data import fetch_stock_history
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 render_sidebar()
 
 st.set_page_config(page_title="Time Series", page_icon="assets/logo.png", layout="wide")
-st.title("Time Series Decomposition")
+render_page_header("Time Series", "Trend, seasonal, and residual decomposition with ACF")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

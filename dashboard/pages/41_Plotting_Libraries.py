@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 from data import fetch_stock_history
 from nav import render_sidebar
+from page_header import render_page_header
 from test_tab import render_test_tab
 from plotting import (
     compute_daily_returns,
@@ -35,7 +36,7 @@ from plotting import (
 
 st.set_page_config(page_title="Plotting Libraries", page_icon="assets/logo.png", layout="wide")
 render_sidebar()
-st.title("Plotting Libraries Compared")
+render_page_header("Plotting Libraries Compared", "Plotly, Matplotlib, Altair, and Bokeh side-by-side")
 
 tab_app, tab_tests = st.tabs(["App", "Tests"])
 

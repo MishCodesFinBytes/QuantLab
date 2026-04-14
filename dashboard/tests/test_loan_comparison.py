@@ -15,7 +15,8 @@ class TestLoanComparison:
 
     def test_shows_title(self):
         at = self._run()
-        assert any("Loan Comparison" in t.value for t in at.title)
+        markdown_blobs = " ".join(m.value for m in at.markdown)
+        assert "Loan Comparison" in markdown_blobs
 
     def test_has_expected_tabs(self):
         at = self._run()
