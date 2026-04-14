@@ -6,11 +6,39 @@ import streamlit as st
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
 
+_GLOBAL_STYLES = """
+<style>
+/* Smaller, greyer text inside expanders so explanatory content stays
+   visually subordinate to headline numbers. Bold labels stay readable. */
+[data-testid="stExpander"] details > div p,
+[data-testid="stExpander"] details > div li,
+[data-testid="stExpander"] details > div td,
+[data-testid="stExpander"] details > div th {
+    font-size: 0.86rem;
+    color: var(--text-muted-color, #888);
+}
+[data-testid="stExpander"] details > div strong {
+    color: var(--text-color, #555);
+}
+[data-testid="stExpander"] details > div table {
+    font-size: 0.86rem;
+}
+</style>
+"""
+
+
 def render_sidebar():
     """Render the shared sidebar navigation. Call this at the top of every page.
 
+    Also injects global CSS that applies to all dashboard pages — currently
+    just the smaller/greyer expander-content styling.
+
     Wrapped in try/except because st.page_link fails in AppTest (testing mode).
     """
+    try:
+        st.markdown(_GLOBAL_STYLES, unsafe_allow_html=True)
+    except Exception:
+        pass
     try:
         _render_sidebar_impl()
     except Exception:
