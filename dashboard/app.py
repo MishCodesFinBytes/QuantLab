@@ -184,11 +184,16 @@ nodes.forEach(n => {{
 }});
 
 const sim = d3.forceSimulation(nodes)
-  .alpha(0.5)  // lower starting energy so they settle gently, not explode
-  .force('link', d3.forceLink(links).id(d => d.id).distance(70).strength(0.4))
-  .force('charge', d3.forceManyBody().strength(-220))
+  .alpha(0.5)
+  .force('link', d3.forceLink(links).id(d => d.id).distance(55).strength(0.5))
+  .force('charge', d3.forceManyBody().strength(-140))
   .force('center', d3.forceCenter(W / 2, H / 2))
-  .force('collide', d3.forceCollide().radius(26));
+  .force('x', d3.forceX(W / 2).strength(0.06))
+  .force('y', d3.forceY(H / 2).strength(0.06))
+  .force('collide', d3.forceCollide().radius(24));
+
+// Padding inside the viewBox so labels don't get clipped at the edges.
+const PAD = 30;
 
 const link = g.append('g').attr('stroke', '#d4d4d4').attr('stroke-opacity', 0.45)
   .selectAll('line').data(links).enter().append('line').attr('stroke-width', 1);
@@ -209,6 +214,11 @@ node.append('text').attr('dy', 24).attr('text-anchor', 'middle')
   .text(d => d.label.length > 18 ? d.label.slice(0,17)+'…' : d.label);
 
 sim.on('tick', () => {{
+  // Clamp every node inside the padded viewBox so nothing drifts off-canvas.
+  nodes.forEach(d => {{
+    d.x = Math.max(PAD, Math.min(W - PAD, d.x));
+    d.y = Math.max(PAD, Math.min(H - PAD, d.y));
+  }});
   link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
       .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
   node.attr('transform', d => `translate(${{d.x}},${{d.y}})`);

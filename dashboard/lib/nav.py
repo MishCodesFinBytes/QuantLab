@@ -30,6 +30,8 @@ ASSETS = Path(__file__).resolve().parent.parent / "assets"
 _GLOBAL_STYLES = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded');
 :root {
     --ql-accent: #d97706;
     --ql-text: #1a1a1a;
@@ -44,9 +46,17 @@ _GLOBAL_STYLES = """
 /* Body font override — universal selector with !important.
    Streamlit's emotion CSS injects font-family on every wrapper class,
    so the only reliable override is to bomb everything with * !important
-   and then re-set headings to the display font afterwards. */
+   and then re-set headings + icons to their proper fonts. */
 * {
     font-family: var(--ql-font-body) !important;
+}
+
+/* Restore Material Icons fonts so Streamlit's sidebar collapse arrow
+   and other icon-based UI elements still render as glyphs, not text. */
+.material-icons, [class*="material-icons"],
+.material-symbols-rounded, .material-symbols-outlined,
+[data-testid="stIconMaterial"], [data-testid*="Icon"] i {
+    font-family: 'Material Icons', 'Material Symbols Rounded' !important;
 }
 
 h1, h2, h3, h4, h5, h6,
