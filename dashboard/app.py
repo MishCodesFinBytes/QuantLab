@@ -188,11 +188,11 @@ document.querySelectorAll('.num').forEach(el => {{
 
 
 def _build_marquee_html() -> str:
-    """Horizontal infinite-scroll marquee of tech badges, rendered inside
+    """Horizontal infinite-scroll marquee of project names, rendered inside
     a components iframe so the @keyframes animation survives Streamlit's
     HTML sanitizer."""
-    techs = sorted({t for p in all_projects() for t in p.tech})
-    items = " &nbsp;·&nbsp; ".join(_escape(t) for t in techs)
+    names = [p.label for p in all_projects()]
+    items = " &nbsp;·&nbsp; ".join(_escape(n) for n in names)
     return f"""
 <!doctype html>
 <html><head><meta charset="utf-8"><style>
