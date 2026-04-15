@@ -258,10 +258,10 @@ PROJECTS_BY_CATEGORY: dict = {
 
 
 FEATURED_KEYS = [
+    "rent_vs_buy",
     "london_house_prices",
     "etymology",
     "big_o",
-    "rent_vs_buy",
     "portfolio_optimization",
     "plotting_libraries",
 ]
