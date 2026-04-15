@@ -27,6 +27,16 @@ def test_load_borough_rents_schema():
     assert len(df) > 30
 
 
+def test_load_borough_rents_by_bedroom_schema():
+    from lib.rentbuy.inputs import load_borough_rents_by_bedroom
+    df = load_borough_rents_by_bedroom()
+    assert {
+        "borough", "beds_studio", "beds_1", "beds_2", "beds_3", "beds_4plus",
+        "source_year", "source_url",
+    }.issubset(df.columns)
+    assert len(df) == 33
+
+
 def test_load_council_tax_schema():
     df = load_council_tax()
     assert {"borough", "band_a", "band_b", "band_c", "band_d", "band_e",

@@ -17,6 +17,15 @@ def load_borough_rents() -> pd.DataFrame:
     return pd.read_csv(DATA_DIR / "london_borough_rents.csv")
 
 
+def load_borough_rents_by_bedroom() -> pd.DataFrame:
+    """Load the ONS bedroom-segmented borough rent table.
+
+    Schema: borough, beds_studio, beds_1, beds_2, beds_3, beds_4plus,
+            source_year, source_url
+    """
+    return pd.read_csv(DATA_DIR / "london_borough_rents_by_bedroom.csv")
+
+
 def load_council_tax() -> pd.DataFrame:
     return pd.read_csv(DATA_DIR / "london_council_tax.csv")
 
