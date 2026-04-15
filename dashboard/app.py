@@ -346,7 +346,11 @@ with tab_all:
                 "Category": category,
                 "Tech": " · ".join(p.tech),
                 "Capstone": "✓" if p.is_capstone else "",
-                "Link": p.page_link,
+                # LinkColumn needs a real navigable URL — stuffing the raw
+                # pages/...py path makes Streamlit serve it as ~/+/pages/...
+                # which 404s. Convert to the slug form the rest of the app
+                # uses for the cards.
+                "Link": _page_url(p.page_link),
             })
     df = pd.DataFrame(rows).sort_values("Name").reset_index(drop=True)
     st.dataframe(
