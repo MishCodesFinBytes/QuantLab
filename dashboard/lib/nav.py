@@ -99,12 +99,17 @@ h1, h1 *, h2, h2 *, h3, h3 *, h4, h4 *, h5, h5 *, h6, h6 *,
     margin-bottom: 0.5rem;
 }
 .ql-sidebar-title {
-    font-family: var(--ql-font-display);
-    font-size: 1.6rem;
-    font-weight: 600;
+    font-family: var(--ql-font-display) !important;
+    font-size: 1.6rem !important;
+    font-weight: 600 !important;
     color: var(--ql-text);
     letter-spacing: -0.01em;
-    line-height: 1.1;
+    line-height: 1.1 !important;
+    margin: 0.5rem 0 0.2rem !important;
+    padding: 0 !important;
+}
+.ql-sidebar-title * {
+    font-size: 1.6rem !important;
 }
 .ql-sidebar-byline {
     font-family: var(--ql-font-body);
@@ -389,22 +394,22 @@ def _render_sidebar_impl():
     # registry, nav.py is imported from many places.
     from projects import PROJECTS_BY_CATEGORY, category_with_capstones_last
 
-    brand_style = "padding:0.5rem 0 0.25rem;margin-bottom:0.5rem;"
-    title_style = (
-        "font-family:'Fraunces',Georgia,serif !important;font-size:1.6rem;font-weight:600;"
-        "color:#1a1a1a;letter-spacing:-0.01em;line-height:1.1;"
+    # Render the brand as an <h2> with a class so the descendant
+    # selector .ql-sidebar-title * in _GLOBAL_STYLES forces Fraunces
+    # onto the inner span Streamlit wraps the heading text in.
+    # (Same pattern as .ql-hero-title *.)
+    st.sidebar.markdown(
+        '<h2 class="ql-sidebar-title">QuantLabs</h2>',
+        unsafe_allow_html=True,
     )
     byline_style = (
         "font-family:'Inter',system-ui,sans-serif !important;font-size:0.78rem;"
-        "color:#6b6b6b;margin-top:0.2rem;"
+        "color:#6b6b6b;margin:-0.6rem 0 0.5rem;"
     )
     link_style = "color:#d97706;text-decoration:none;"
     st.sidebar.markdown(
-        f'<div style="{brand_style}">'
-        f'<div style="{title_style}">QuantLabs</div>'
         f'<div style="{byline_style}">Built by '
         f'<a style="{link_style}" href="https://mish-codes.github.io/FinBytes/">Manisha</a>'
-        f'</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
