@@ -99,17 +99,30 @@ h1, h1 *, h2, h2 *, h3, h3 *, h4, h4 *, h5, h5 *, h6, h6 *,
     margin-bottom: 0.5rem;
 }
 .ql-sidebar-title {
-    font-family: var(--ql-font-display) !important;
+    font-family: 'Fraunces', Georgia, serif !important;
     font-size: 1.6rem !important;
     font-weight: 600 !important;
-    color: var(--ql-text);
-    letter-spacing: -0.01em;
+    color: #1a1a1a !important;
+    letter-spacing: -0.01em !important;
     line-height: 1.1 !important;
     margin: 0.5rem 0 0.2rem !important;
     padding: 0 !important;
 }
 .ql-sidebar-title * {
+    font-family: 'Fraunces', Georgia, serif !important;
     font-size: 1.6rem !important;
+    font-weight: 600 !important;
+}
+/* Higher-specificity selectors that pierce Streamlit's emotion CSS
+   for the sidebar brand specifically. The brand is the only h2 inside
+   the sidebar's stMarkdownContainer, so this is unambiguous. */
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2,
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2 *,
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2 span {
+    font-family: 'Fraunces', Georgia, serif !important;
+    font-size: 1.6rem !important;
+    font-weight: 600 !important;
+    color: #1a1a1a !important;
 }
 .ql-sidebar-byline {
     font-family: var(--ql-font-body);
