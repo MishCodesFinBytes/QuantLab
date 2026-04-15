@@ -341,11 +341,11 @@ h1, h1 *, h2, h2 *, h3, h3 *, h4, h4 *, h5, h5 *, h6, h6 *,
    > <p>label</p>. Every layer can contribute spacing, so we flatten
    them all. */
 [data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] {
-    padding: 0.18rem 0.5rem !important;
+    padding: 0.1rem 0.4rem !important;
     margin: 0 !important;
     min-height: 0 !important;
-    line-height: 1.3 !important;
-    font-size: 0.82rem !important;
+    line-height: 1.2 !important;
+    font-size: 0.74rem !important;
     display: block !important;
 }
 [data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] span,
@@ -355,8 +355,8 @@ h1, h1 *, h2, h2 *, h3, h3 *, h4, h4 *, h5, h5 *, h6, h6 *,
     padding: 0 !important;
     margin: 0 !important;
     min-height: 0 !important;
-    line-height: 1.3 !important;
-    font-size: 0.82rem !important;
+    line-height: 1.2 !important;
+    font-size: 0.74rem !important;
 }
 </style>
 """
@@ -392,9 +392,9 @@ def render_sidebar():
 
 
 _SIDEBAR_LABEL_STYLE = (
-    "font-family:'Inter',system-ui,sans-serif !important;font-size:0.7rem;"
+    "font-family:'Inter',system-ui,sans-serif !important;font-size:0.62rem;"
     "text-transform:uppercase;letter-spacing:0.08em;color:#6b6b6b;"
-    "margin:0.8rem 0 0.4rem;font-weight:500;"
+    "margin:0.6rem 0 0.25rem;font-weight:500;"
 )
 
 
