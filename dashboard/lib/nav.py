@@ -366,19 +366,18 @@ def render_sidebar():
 
     Wrapped in try/except because st.page_link fails in AppTest (testing mode).
     """
-    # Fonts are loaded via [[theme.fontFaces]] in .streamlit/config.toml,
-    # which is the only reliable way to get custom fonts into the real
-    # Streamlit <head> on Cloud (cross-origin iframes block parent access).
-    # Use st.html instead of st.markdown so the CSS isn't run through the
-    # markdown processor — otherwise `*` characters inside the <style> block
-    # (universal selector, comments, attribute selectors like [class*=...])
-    # get interpreted as emphasis/list markers and the stylesheet renders as
-    # raw text on the page. st.html passes HTML straight through.
+    # Inject the global stylesheet via BOTH st.html (which avoids the
+    # markdown processor eating * characters) AND st.markdown (which
+    # historically lands in the main DOM with full reach into sidebar
+    # elements). One of the two will win; doubling up is cheap and
+    # ensures the CSS reaches every Streamlit container.
     try:
         if hasattr(st, "html"):
             st.html(_GLOBAL_STYLES)
-        else:
-            st.markdown(_GLOBAL_STYLES, unsafe_allow_html=True)
+    except Exception:
+        pass
+    try:
+        st.markdown(_GLOBAL_STYLES, unsafe_allow_html=True)
     except Exception:
         pass
     try:
