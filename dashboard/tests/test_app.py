@@ -11,7 +11,7 @@ class TestLandingPage:
         assert not at.exception, f"App crashed: {at.exception}"
 
     def test_shows_title(self):
-        """The new landing page renders QuantLab via HTML markdown, not st.title.
+        """The new landing page renders QuantLabs via HTML markdown, not st.title.
 
         Verify the hero title appears in the rendered markdown output instead
         of via at.title (which only catches st.title() calls).
@@ -19,7 +19,7 @@ class TestLandingPage:
         at = AppTest.from_file("app.py", default_timeout=10)
         at.run()
         markdown_blobs = " ".join(m.value for m in at.markdown)
-        assert "QuantLab" in markdown_blobs, "QuantLab hero not found in markdown output"
+        assert "QuantLabs" in markdown_blobs, "QuantLabs hero not found in markdown output"
 
 
 class TestScannerPage:

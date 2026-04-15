@@ -25,7 +25,7 @@ HERE = Path(__file__).parent
 GITHUB_REPO = "mish-codes/QuantLab"
 
 st.set_page_config(
-    page_title="QuantLab",
+    page_title="QuantLabs",
     page_icon="assets/logo.png",
     layout="wide",
 )
@@ -260,7 +260,7 @@ with tab_welcome:
     # elements, which plays with our .ql-hero-title * descendant selector.
     st.markdown(
         '<div class="ql-hero">'
-        '<h1 class="ql-hero-title">QuantLab</h1>'
+        '<h1 class="ql-hero-title">QuantLabs</h1>'
         '<p class="ql-hero-subtitle">Interactive finance and data experiments in Python</p>'
         '</div>',
         unsafe_allow_html=True,
@@ -334,7 +334,7 @@ with tab_welcome:
 with tab_all:
     st.markdown(
         '<h1 class="ql-page-title">All projects</h1>'
-        '<p class="ql-page-subtitle">Sortable directory of every QuantLab project</p>',
+        '<p class="ql-page-subtitle">Sortable directory of every QuantLabs project</p>',
         unsafe_allow_html=True,
     )
 

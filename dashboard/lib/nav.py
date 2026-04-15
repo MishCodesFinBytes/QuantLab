@@ -398,7 +398,7 @@ def _render_sidebar_impl():
     link_style = "color:#d97706;text-decoration:none;"
     st.sidebar.markdown(
         f'<div style="{brand_style}">'
-        f'<div style="{title_style}">QuantLab</div>'
+        f'<div style="{title_style}">QuantLabs</div>'
         f'<div style="{byline_style}">Built by '
         f'<a style="{link_style}" href="https://mish-codes.github.io/FinBytes/">Manisha</a>'
         f'</div>'
