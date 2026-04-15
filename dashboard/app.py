@@ -468,6 +468,8 @@ with tab_health:
             "ECB Data API (€STR)": "https://data-api.ecb.europa.eu/service/data/EST/B.EU000A2X2A25.WT?format=csvdata&startPeriod=2025-01-01&endPeriod=2025-01-02",
             "New York Fed (SOFR)": "https://markets.newyorkfed.org/api/rates/secured/sofr/search.csv?startDate=2025-01-02&endDate=2025-01-02&type=rate",
             "Land Registry PPD": "https://price-paid-data.publicdata.landregistry.gov.uk/pp-monthly-update-new-version.csv",
+            "EPC Open Data": "https://epc.opendatacommunities.org/",
+            "ONS (Rentals)": "https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland",
             "OpenStreetMap Overpass": "https://overpass-api.de/api/status",
             "GitHub API": f"https://api.github.com/repos/{GITHUB_REPO}",
         }
