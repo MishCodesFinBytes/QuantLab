@@ -64,15 +64,15 @@ _FEATURED_CARD_STYLE = (
     "padding:1.6rem 1.5rem;transition:border-color 0.15s;"
 )
 _FEATURED_TITLE_STYLE = (
-    "font-family:'Fraunces',Georgia,serif;font-size:1.3rem;font-weight:600;"
+    "font-family:'Fraunces',Georgia,serif !important;font-size:1.3rem;font-weight:600;"
     "color:#d97706;margin:0 0 0.5rem;line-height:1.2;letter-spacing:-0.01em;"
 )
 _FEATURED_DESC_STYLE = (
-    "font-family:'Inter',system-ui,sans-serif;font-size:0.92rem;line-height:1.5;"
+    "font-family:'Inter',system-ui,sans-serif !important;font-size:0.92rem;line-height:1.5;"
     "color:#1a1a1a;margin:0 0 0.9rem;"
 )
 _FEATURED_TECH_STYLE = (
-    "font-family:'Inter',system-ui,sans-serif;font-size:0.74rem;color:#6b6b6b;"
+    "font-family:'Inter',system-ui,sans-serif !important;font-size:0.74rem;color:#6b6b6b;"
     "letter-spacing:0.01em;"
 )
 _CAT_CARD_STYLE = (
@@ -81,15 +81,15 @@ _CAT_CARD_STYLE = (
     "padding:0.9rem 1rem;transition:border-color 0.15s;"
 )
 _CAT_TITLE_STYLE = (
-    "font-family:'Inter',system-ui,sans-serif;font-size:0.95rem;font-weight:600;"
+    "font-family:'Inter',system-ui,sans-serif !important;font-size:0.95rem;font-weight:600;"
     "color:#d97706;margin:0 0 0.25rem;"
 )
 _CAT_DESC_STYLE = (
-    "font-family:'Inter',system-ui,sans-serif;font-size:0.78rem;color:#1a1a1a;"
+    "font-family:'Inter',system-ui,sans-serif !important;font-size:0.78rem;color:#1a1a1a;"
     "margin:0 0 0.5rem;line-height:1.4;"
 )
 _CAT_TECH_STYLE = (
-    "font-family:'Inter',system-ui,sans-serif;font-size:0.68rem;color:#6b6b6b;"
+    "font-family:'Inter',system-ui,sans-serif !important;font-size:0.68rem;color:#6b6b6b;"
 )
 _CAPSTONE_STYLE = (
     "display:inline-block;font-size:0.62rem;font-weight:500;text-transform:uppercase;"
@@ -289,7 +289,7 @@ with tab_welcome:
     )
 
     # Tech marquee — rendered via components.html so @keyframes survives
-    components.html(_build_marquee_html(), height=60, scrolling=False)
+    components.html(_build_marquee_html(), height=90, scrolling=False)
 
     # Featured grid
     st.markdown('<h2 class="ql-section-heading">Featured</h2>', unsafe_allow_html=True)

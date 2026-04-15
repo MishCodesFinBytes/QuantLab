@@ -353,11 +353,11 @@ def render_sidebar():
 def _render_sidebar_impl():
     brand_style = "padding:0.5rem 0 0.25rem;margin-bottom:0.5rem;"
     title_style = (
-        "font-family:'Fraunces',Georgia,serif;font-size:1.6rem;font-weight:600;"
+        "font-family:'Fraunces',Georgia,serif !important;font-size:1.6rem;font-weight:600;"
         "color:#1a1a1a;letter-spacing:-0.01em;line-height:1.1;"
     )
     byline_style = (
-        "font-family:'Inter',system-ui,sans-serif;font-size:0.78rem;"
+        "font-family:'Inter',system-ui,sans-serif !important;font-size:0.78rem;"
         "color:#6b6b6b;margin-top:0.2rem;"
     )
     link_style = "color:#d97706;text-decoration:none;"
