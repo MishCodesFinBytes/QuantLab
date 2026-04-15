@@ -6,6 +6,7 @@ import pytest
 from lib.rentbuy.inputs import (
     load_district_to_borough,
     load_borough_rents,
+    load_borough_rents_by_bedroom,
     load_council_tax,
     load_boe_rates,
     default_home_price,
@@ -52,13 +53,56 @@ def test_load_boe_rates_schema():
 
 def test_default_monthly_rent_known_borough():
     rents = load_borough_rents()
-    rent = default_monthly_rent(rents, "Camden")
-    assert 1_500 < rent < 5_000
+    rents_bb = load_borough_rents_by_bedroom()
+    rent = default_monthly_rent(rents, rents_bb, borough="Camden", bedrooms="2")
+    assert 1_500 < rent < 6_000
 
 
 def test_default_monthly_rent_missing_borough_returns_fallback():
     rents = load_borough_rents()
-    rent = default_monthly_rent(rents, "NONEXISTENT")
+    rents_bb = load_borough_rents_by_bedroom()
+    rent = default_monthly_rent(
+        rents, rents_bb, borough="NONEXISTENT", bedrooms="2",
+    )
+    assert rent == 2_000
+
+
+def test_default_monthly_rent_with_bedroom_known_borough():
+    from lib.rentbuy.inputs import (
+        load_borough_rents,
+        load_borough_rents_by_bedroom,
+        default_monthly_rent,
+    )
+    rents = load_borough_rents()
+    rents_bb = load_borough_rents_by_bedroom()
+    rent = default_monthly_rent(rents, rents_bb, borough="Camden", bedrooms="2")
+    assert 2_000 < rent < 6_000
+
+
+def test_default_monthly_rent_with_bedroom_studio_smaller_than_2bed():
+    from lib.rentbuy.inputs import (
+        load_borough_rents,
+        load_borough_rents_by_bedroom,
+        default_monthly_rent,
+    )
+    rents = load_borough_rents()
+    rents_bb = load_borough_rents_by_bedroom()
+    studio = default_monthly_rent(rents, rents_bb, borough="Camden", bedrooms="studio")
+    two_bed = default_monthly_rent(rents, rents_bb, borough="Camden", bedrooms="2")
+    assert studio < two_bed
+
+
+def test_default_monthly_rent_falls_back_to_single_median_when_borough_missing():
+    from lib.rentbuy.inputs import (
+        load_borough_rents,
+        load_borough_rents_by_bedroom,
+        default_monthly_rent,
+    )
+    rents = load_borough_rents()
+    rents_bb = load_borough_rents_by_bedroom()
+    rent = default_monthly_rent(
+        rents, rents_bb, borough="NONEXISTENT", bedrooms="2",
+    )
     assert rent == 2_000
 
 

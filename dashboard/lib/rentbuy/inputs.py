@@ -76,7 +76,35 @@ def default_home_price(
     return 500_000
 
 
-def default_monthly_rent(rents_df: pd.DataFrame, borough: str) -> int:
+_BEDROOM_COLUMN_MAP = {
+    "studio": "beds_studio",
+    "1": "beds_1",
+    "2": "beds_2",
+    "3": "beds_3",
+    "4+": "beds_4plus",
+}
+
+
+def default_monthly_rent(
+    rents_df: pd.DataFrame,
+    rents_by_bedroom_df: pd.DataFrame,
+    borough: str,
+    bedrooms: str,
+) -> int:
+    """Return median monthly rent for the chosen borough + bedroom band.
+
+    Falls back to the single-median rents_df row when the bedroom band
+    is missing for the borough, and to a hardcoded £2000 when the borough
+    is unknown to both files.
+    """
+    bedroom_col = _BEDROOM_COLUMN_MAP.get(bedrooms)
+    if bedroom_col is not None:
+        row = rents_by_bedroom_df[rents_by_bedroom_df["borough"] == borough]
+        if len(row) > 0 and bedroom_col in row.columns:
+            value = row[bedroom_col].iloc[0]
+            if pd.notna(value):
+                return int(value)
+
     row = rents_df[rents_df["borough"] == borough]
     if len(row) == 0:
         return 2_000
