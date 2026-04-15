@@ -239,7 +239,7 @@ def _build_marquee_html() -> str:
 # Tabs
 # ─────────────────────────────────────────────────────────────
 
-tab_welcome, tab_all, tab_health = st.tabs(["Welcome", "All projects", "System Health"])
+tab_all, tab_welcome, tab_health = st.tabs(["All projects", "Welcome", "System Health"])
 
 # ─────────────────────────────────────────────────────────────
 # Welcome — landing portfolio view

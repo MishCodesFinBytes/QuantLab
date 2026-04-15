@@ -410,12 +410,13 @@ def _render_sidebar_impl():
     # registry, nav.py is imported from many places.
     from projects import PROJECTS_BY_CATEGORY, category_with_capstones_last
 
-    # Render the brand as an <h2> with a class so the descendant
-    # selector .ql-sidebar-title * in _GLOBAL_STYLES forces Fraunces
-    # onto the inner span Streamlit wraps the heading text in.
-    # (Same pattern as .ql-hero-title *.)
+    # Render the brand as an <h2> wrapping a link to the landing page
+    # (root '/' on Streamlit Cloud). The class lets the descendant
+    # selector .ql-sidebar-title * force Fraunces onto the inner span.
     st.sidebar.markdown(
-        '<h2 class="ql-sidebar-title">QuantLabs</h2>',
+        '<h2 class="ql-sidebar-title">'
+        '<a href="/" target="_self" style="color:inherit;text-decoration:none;">QuantLabs</a>'
+        '</h2>',
         unsafe_allow_html=True,
     )
     byline_style = (
