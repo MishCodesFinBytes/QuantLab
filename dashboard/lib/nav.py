@@ -350,7 +350,25 @@ def render_sidebar():
         pass  # graceful fallback in test mode
 
 
+_SIDEBAR_LABEL_STYLE = (
+    "font-family:'Inter',system-ui,sans-serif !important;font-size:0.7rem;"
+    "text-transform:uppercase;letter-spacing:0.08em;color:#6b6b6b;"
+    "margin:1.2rem 0 0.4rem;font-weight:500;"
+)
+
+
+def _sidebar_section_label(text: str) -> None:
+    st.sidebar.markdown(
+        f'<div style="{_SIDEBAR_LABEL_STYLE}">{text}</div>',
+        unsafe_allow_html=True,
+    )
+
+
 def _render_sidebar_impl():
+    # Local import to avoid a circular dependency: projects.py is a leaf
+    # registry, nav.py is imported from many places.
+    from projects import PROJECTS_BY_CATEGORY, category_with_capstones_last
+
     brand_style = "padding:0.5rem 0 0.25rem;margin-bottom:0.5rem;"
     title_style = (
         "font-family:'Fraunces',Georgia,serif !important;font-size:1.6rem;font-weight:600;"
@@ -372,58 +390,21 @@ def _render_sidebar_impl():
     )
     st.sidebar.markdown("---")
 
-    # Projects
-    st.sidebar.markdown("### Projects")
-    st.sidebar.page_link("pages/1_Stock_Risk_Scanner.py", label="Stock Risk Scanner")
-
-    # Mini Projects — Calculators
-    st.sidebar.markdown("### Mini Projects")
-    st.sidebar.caption("Calculators")
-    st.sidebar.page_link("pages/10_Credit_Card_Calculator.py", label="Credit Card Calculator")
-    st.sidebar.page_link("pages/11_Loan_Amortization.py", label="Loan Amortization")
-    st.sidebar.page_link("pages/12_Loan_Comparison.py", label="Loan Comparison")
-    st.sidebar.page_link("pages/13_Retirement_Calculator.py", label="Retirement Calculator")
-    st.sidebar.page_link("pages/14_Investment_Planner.py", label="Investment Planner")
-    st.sidebar.page_link("pages/15_Budget_Tracker.py", label="Budget Tracker")
-    st.sidebar.page_link("pages/16_Rent_vs_Buy.py", label="Rent vs Buy London")
-
-    # Mini Projects — Dashboards
-    st.sidebar.caption("Dashboards")
-    st.sidebar.page_link("pages/20_Currency_Dashboard.py", label="Currency Dashboard")
-    st.sidebar.page_link("pages/21_Stock_Tracker.py", label="Stock Tracker")
-    st.sidebar.page_link("pages/22_Stock_Analysis.py", label="Stock Analysis")
-    st.sidebar.page_link("pages/23_Crypto_Portfolio.py", label="Crypto Portfolio")
-    st.sidebar.page_link("pages/24_Personal_Finance.py", label="Personal Finance")
-    st.sidebar.page_link("pages/25_ESG_Tracker.py", label="ESG Tracker")
-    st.sidebar.page_link("pages/26_Financial_Reporting.py", label="Financial Reporting")
-    st.sidebar.page_link("pages/40_Benchmark_Rates.py", label="Benchmark Rates")
-    st.sidebar.page_link("pages/41_Plotting_Libraries.py", label="Plotting Libraries")
-    st.sidebar.page_link("pages/42_London_House_Prices.py", label="London House Prices")
-
-    # Mini Projects — ML & Quant
-    st.sidebar.caption("ML & Quantitative")
-    st.sidebar.page_link("pages/30_VaR_CVaR.py", label="VaR & CVaR")
-    st.sidebar.page_link("pages/31_Time_Series.py", label="Time Series")
-    st.sidebar.page_link("pages/32_Sentiment_Analysis.py", label="Sentiment Analysis")
-    st.sidebar.page_link("pages/33_Anomaly_Detection.py", label="Anomaly Detection")
-    st.sidebar.page_link("pages/34_Loan_Default.py", label="Loan Default Prediction")
-    st.sidebar.page_link("pages/35_Clustering.py", label="Customer Clustering")
-    st.sidebar.page_link("pages/36_Portfolio_Optimization.py", label="Portfolio Optimization")
-    st.sidebar.page_link("pages/37_Algo_Trading.py", label="Algo Trading Backtest")
-    st.sidebar.page_link("pages/38_Stock_Prediction.py", label="Stock Prediction")
-    st.sidebar.page_link("pages/39_Market_Insights.py", label="Market Insights")
-
-    # Word Tools
-    st.sidebar.caption("Word Tools")
-    st.sidebar.page_link("pages/50_Etymology.py", label="Etymology")
-
-    # Tech Understanding
-    st.sidebar.caption("Tech Understanding")
-    st.sidebar.page_link("pages/60_Big_O.py", label="Big O Notation")
+    # Drive the sidebar from the same registry that builds the landing
+    # cards so the grouping always stays in sync.
+    for category in PROJECTS_BY_CATEGORY.keys():
+        _sidebar_section_label(category)
+        for project in category_with_capstones_last(category):
+            st.sidebar.page_link(project.page_link, label=project.label)
 
     st.sidebar.markdown("---")
-    st.sidebar.page_link("app.py", label="System Health")
     st.sidebar.markdown(
-        "[GitHub](https://github.com/mish-codes/QuantLab) · "
-        "[Blog](https://mish-codes.github.io/FinBytes/)"
+        '<div style="font-family:\'Inter\',system-ui,sans-serif !important;'
+        'font-size:0.78rem;color:#6b6b6b;">'
+        '<a style="color:#d97706;text-decoration:none;" '
+        'href="https://github.com/mish-codes/QuantLab">GitHub</a> · '
+        '<a style="color:#d97706;text-decoration:none;" '
+        'href="https://mish-codes.github.io/FinBytes/">Blog</a>'
+        '</div>',
+        unsafe_allow_html=True,
     )
