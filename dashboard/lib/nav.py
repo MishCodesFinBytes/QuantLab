@@ -336,27 +336,23 @@ h1, h1 *, h2, h2 *, h3, h3 *, h4, h4 *, h5, h5 *, h6, h6 *,
     font-size: 0.86rem;
 }
 
-/* Tighten sidebar page_link spacing to match the mockup.
-   Structure: <a stPageLink-NavLink> > <span> > <div stMarkdownContainer>
-   > <p>label</p>. Every layer can contribute spacing, so we flatten
-   them all. */
-[data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] {
-    padding: 0.1rem 0.4rem !important;
-    margin: 0 !important;
-    min-height: 0 !important;
-    line-height: 1.2 !important;
+/* Tighten sidebar page_link spacing — Streamlit's emotion CSS keeps
+   winning the specificity fight, so we use a maximum-specificity chain
+   with html body prefix and target every nested layer. */
+html body [data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"],
+html body [data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] span,
+html body [data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] div,
+html body [data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] [data-testid="stMarkdownContainer"],
+html body [data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] p {
     font-size: 0.74rem !important;
-    display: block !important;
-}
-[data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] span,
-[data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] div,
-[data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] [data-testid="stMarkdownContainer"],
-[data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] p {
+    line-height: 1.15 !important;
+    margin: 0 !important;
     padding: 0 !important;
-    margin: 0 !important;
     min-height: 0 !important;
-    line-height: 1.2 !important;
-    font-size: 0.74rem !important;
+}
+html body [data-testid="stSidebar"] a[data-testid="stPageLink-NavLink"] {
+    padding: 0.08rem 0.4rem !important;
+    display: block !important;
 }
 </style>
 """
