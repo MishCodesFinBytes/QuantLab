@@ -50,6 +50,79 @@ def _escape(s: str) -> str:
     )
 
 
+# ─────────────────────────────────────────────────────────────
+# Data freshness — read snapshot dates straight from the bundled files
+# ─────────────────────────────────────────────────────────────
+
+def _build_data_freshness_table() -> pd.DataFrame:
+    """Inspect every bundled data file and return a freshness table.
+
+    Each row reports the data source, the snapshot date / source year,
+    refresh cadence, and where the file lives. Reads dates straight
+    from the files where possible; otherwise prints a static cadence."""
+    data_dir = HERE / "data"
+    rows = []
+
+    def _safe(fn, default="—"):
+        try:
+            return fn()
+        except Exception:
+            return default
+
+    rows.append({
+        "Source": "London Land Registry PPD (with bedrooms)",
+        "Correct as of": _safe(
+            lambda: str(pd.read_parquet(data_dir / "london_ppd_with_bedrooms.parquet")["date"].max().date())
+        ),
+        "Cadence": "Monthly (manual refresh via build script)",
+        "File": "london_ppd_with_bedrooms.parquet",
+    })
+    rows.append({
+        "Source": "ONS borough rents — single median",
+        "Correct as of": _safe(
+            lambda: str(int(pd.read_csv(data_dir / "london_borough_rents.csv")["source_year"].iloc[0]))
+        ),
+        "Cadence": "Annual (ONS publishes each spring)",
+        "File": "london_borough_rents.csv",
+    })
+    rows.append({
+        "Source": "ONS borough rents — by bedroom",
+        "Correct as of": _safe(
+            lambda: str(int(pd.read_csv(data_dir / "london_borough_rents_by_bedroom.csv")["source_year"].iloc[0]))
+        ),
+        "Cadence": "Annual (ONS Table 2.7)",
+        "File": "london_borough_rents_by_bedroom.csv",
+    })
+    rows.append({
+        "Source": "London council tax",
+        "Correct as of": _safe(
+            lambda: str(int(pd.read_csv(data_dir / "london_council_tax.csv")["year"].iloc[0]))
+        ),
+        "Cadence": "Annual (each March)",
+        "File": "london_council_tax.csv",
+    })
+    rows.append({
+        "Source": "Bank of England mortgage rates (G1.4)",
+        "Correct as of": _safe(
+            lambda: str(pd.read_csv(data_dir / "boe_mortgage_rates.csv")["snapshot_date"].iloc[0])
+        ),
+        "Cadence": "Monthly (refresh_boe_rates.py)",
+        "File": "boe_mortgage_rates.csv",
+    })
+    rows.append({
+        "Source": "EPC Open Data (cached for PPD bedroom join)",
+        "Correct as of": _safe(
+            lambda: pd.Timestamp(
+                (data_dir / "london_ppd_with_bedrooms.parquet").stat().st_mtime,
+                unit="s",
+            ).strftime("%Y-%m-%d")
+        ),
+        "Cadence": "On-demand (re-run build_ppd_with_bedrooms.py)",
+        "File": "_cache/epc/<la>/certificates.csv",
+    })
+    return pd.DataFrame(rows)
+
+
 def _page_url(page_link: str) -> str:
     """Convert a page_link like 'pages/16_Rent_vs_Buy.py' to the Streamlit
     URL slug '/Rent_vs_Buy' that an <a href="..."> can navigate to."""
@@ -488,6 +561,21 @@ with tab_health:
         st.caption(
             "For full documentation on each API, see the "
             "[APIs & Data Sources](https://mish-codes.github.io/FinBytes/tech-stack/apis-data-sources/) reference."
+        )
+
+        st.markdown("---")
+
+        st.markdown("### Bundled Data — correct as of")
+        st.caption(
+            "Snapshots of public data files committed in the repo. "
+            "These are refreshed manually on the cadence shown."
+        )
+
+        _data_freshness = _build_data_freshness_table()
+        st.dataframe(
+            _data_freshness,
+            hide_index=True,
+            use_container_width=True,
         )
 
         st.markdown("---")
