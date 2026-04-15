@@ -10,7 +10,7 @@ Things that need periodic attention to keep the live demo running.
 
 **Current DB:** `finbytes-scanner-db` — created 2026-04-03, expires **2026-05-03**, region `frankfurt`
 
-**How to check:** Visit [finbytes.streamlit.app/Churros](https://finbytes.streamlit.app/Churros) → unlock → **Render DB** tab shows days-until-expiry with a colour badge.
+**How to check:** Visit [quantlabs.streamlit.app/Churros](https://quantlabs.streamlit.app/Churros) → unlock → **Render DB** tab shows days-until-expiry with a colour badge.
 
 **How to fix (automated):**
 1. Unlock the Churros admin page
@@ -66,7 +66,7 @@ Currently set to `skip` (fallback mode). To enable AI narratives:
 
 | Service | URL | Auto-deploys from |
 |---------|-----|-------------------|
-| Dashboard | [finbytes.streamlit.app](https://finbytes.streamlit.app) | `master` branch |
+| Dashboard | [quantlabs.streamlit.app](https://quantlabs.streamlit.app) | `master` branch |
 | Scanner API | [finbytes-scanner.onrender.com](https://finbytes-scanner.onrender.com) | `master` branch |
 | Blog | [mish-codes.github.io/FinBytes](https://mish-codes.github.io/FinBytes/) | `master` branch |
 | GitHub | [github.com/mish-codes/QuantLab](https://github.com/mish-codes/QuantLab) | — |

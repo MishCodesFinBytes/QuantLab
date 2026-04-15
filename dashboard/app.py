@@ -414,7 +414,7 @@ with tab_health:
         with c3:
             st.markdown("**Dashboard**")
             st.success("Running")
-            st.caption("[finbytes.streamlit.app](https://finbytes.streamlit.app)")
+            st.caption("[quantlabs.streamlit.app](https://quantlabs.streamlit.app)")
 
         st.markdown("---")
 
@@ -423,7 +423,7 @@ with tab_health:
         st.markdown(f"""
 | Service | URL | Hosting | Notes |
 |---------|-----|---------|-------|
-| Dashboard | [finbytes.streamlit.app](https://finbytes.streamlit.app) | Streamlit Cloud | Free, auto-deploys from master |
+| Dashboard | [quantlabs.streamlit.app](https://quantlabs.streamlit.app) | Streamlit Cloud | Free, auto-deploys from master |
 | Scanner API | [finbytes-scanner.onrender.com](https://finbytes-scanner.onrender.com) | Render Free Tier | Sleeps after 15min idle |
 | Scanner DB | Internal (Render) | Render PostgreSQL Free | **Expires 30 days after creation** |
 | CI | [GitHub Actions](https://github.com/{GITHUB_REPO}/actions) | GitHub Free | 2000 mins/month |

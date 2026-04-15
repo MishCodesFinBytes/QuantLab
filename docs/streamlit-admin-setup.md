@@ -62,7 +62,7 @@ Save — Streamlit restarts the app.
 
 ## 3. Access the page
 
-Visit https://finbytes.streamlit.app/Admin — enter the admin password, then
+Visit https://quantlabs.streamlit.app/Admin — enter the admin password, then
 status / stop / start.
 
 ## 4. Expand policy for AWS status panel (optional)

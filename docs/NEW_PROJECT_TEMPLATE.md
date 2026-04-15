@@ -381,7 +381,7 @@ The free PostgreSQL database expires after 30 days. The System Health dashboard 
 
 ### How to recreate (automated)
 
-1. Open the [Churros admin page](https://finbytes.streamlit.app/Churros) and unlock
+1. Open the [Churros admin page](https://quantlabs.streamlit.app/Churros) and unlock
 2. Go to the **Render DB** tab
 3. Type the DB name to confirm and click **Recreate database now**
 4. Watch the 6-step progress — delete, create, rewire `DATABASE_URL`, redeploy

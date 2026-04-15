@@ -89,6 +89,7 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=[
             "https://mish-codes.github.io",
+            "https://quantlabs.streamlit.app",
             "https://finbytes.streamlit.app",
             "http://localhost:8501",
         ],
