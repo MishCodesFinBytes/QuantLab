@@ -141,3 +141,56 @@ def test_default_home_price_falls_back_to_london_median():
                                 postcode_district=None,
                                 property_type="F", new_build=False)
     assert price > 0
+
+
+def test_default_home_price_with_bedrooms_filters():
+    """A 4+ bed home should default to a higher price than a 1-bed in
+    the same borough + property type."""
+    from pathlib import Path
+    import pandas as pd
+    ppd = pd.read_parquet(
+        Path(__file__).resolve().parent.parent / "data" / "london_ppd_with_bedrooms.parquet"
+    )
+    d2b = load_district_to_borough()
+    one_bed = default_home_price(
+        ppd, d2b, borough="Camden", postcode_district=None,
+        property_type="F", new_build=False, bedrooms="1",
+    )
+    four_bed = default_home_price(
+        ppd, d2b, borough="Camden", postcode_district=None,
+        property_type="F", new_build=False, bedrooms="4+",
+    )
+    assert four_bed > one_bed
+
+
+def test_default_home_price_falls_back_when_borough_missing():
+    """When the borough is unknown the function should fall through to
+    the hardcoded £500k."""
+    from pathlib import Path
+    import pandas as pd
+    ppd = pd.read_parquet(
+        Path(__file__).resolve().parent.parent / "data" / "london_ppd_with_bedrooms.parquet"
+    )
+    d2b = load_district_to_borough()
+    price = default_home_price(
+        ppd, d2b, borough="NONEXISTENT BOROUGH",
+        postcode_district=None, property_type="F",
+        new_build=False, bedrooms="2",
+    )
+    assert price == 500_000
+
+
+def test_default_home_price_without_bedrooms_uses_legacy_chain():
+    """Calling default_home_price without bedrooms should still work
+    using the existing logic (backwards compatible)."""
+    from pathlib import Path
+    import pandas as pd
+    ppd = pd.read_parquet(
+        Path(__file__).resolve().parent.parent / "data" / "london_ppd_with_bedrooms.parquet"
+    )
+    d2b = load_district_to_borough()
+    price = default_home_price(
+        ppd, d2b, borough="Camden", postcode_district=None,
+        property_type="F", new_build=False,
+    )
+    assert 200_000 < price < 5_000_000

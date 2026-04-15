@@ -7,7 +7,12 @@ build/
 *.egg
 .venv/
 .env
+.env.local
 secrets.toml
+
+# Dev script caches — populated by build_ppd_with_bedrooms.py
+dashboard/data/_cache/
+!dashboard/data/_cache/epc/.gitkeep
 
 # IDE
 .idea/

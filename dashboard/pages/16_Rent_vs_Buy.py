@@ -81,7 +81,7 @@ Source: [{SDLT_SOURCE_URL}]({SDLT_SOURCE_URL})
 """)
 
 
-_PPD_PATH = Path(__file__).resolve().parent.parent / "data" / "london_ppd.parquet"
+_PPD_PATH = Path(__file__).resolve().parent.parent / "data" / "london_ppd_with_bedrooms.parquet"
 
 
 @st.cache_data(show_spinner="Loading London property data...")
@@ -150,6 +150,7 @@ default_price = default_home_price(
     data["ppd"], data["district_to_borough"],
     borough=borough, postcode_district=postcode_district,
     property_type=property_type, new_build=new_build,
+    bedrooms=bedrooms,
 )
 default_rent = default_monthly_rent(
     data["borough_rents"], data["borough_rents_by_bedroom"],

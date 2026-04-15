@@ -80,3 +80,37 @@ Currently set to `skip` (fallback mode). To enable AI narratives:
 | Renew scanner DB | 2026-05-03 | Use Churros → Render DB tab (1-click) |
 | Check CI minutes | Monthly | Should be well under 2000 min/month |
 | Check Anthropic credits | If API key is added | Set spending cap in Anthropic console |
+
+---
+
+## Refreshing London PPD with bedroom data
+
+The Rent vs Buy London calculator uses
+`dashboard/data/london_ppd_with_bedrooms.parquet`, which is built by
+joining Land Registry PPD with the EPC (Energy Performance Certificates)
+dataset on postcode to enrich each sale with a bedroom band.
+
+To refresh after a new PPD release:
+
+1. Download the latest London PPD CSV from
+   https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads
+   and rebuild `dashboard/data/london_ppd.parquet` with your existing
+   PPD prep flow.
+2. Make sure `dashboard/.env.local` has `EPC_API_EMAIL` and
+   `EPC_API_TOKEN` set (free registration at
+   https://epc.opendatacommunities.org/).
+3. Run from the repo root:
+
+   ```bash
+   python dashboard/scripts/build_ppd_with_bedrooms.py --refresh-epc
+   ```
+
+   This refreshes the EPC cache from the API (32 local authorities,
+   ~3-5 minutes) and rebuilds the enriched parquet.
+4. Verify the printed match rate is at least 50% — anything lower
+   means the EPC API returned partial data and the script should be
+   re-run.
+5. Commit `dashboard/data/london_ppd_with_bedrooms.parquet`.
+
+The EPC cache lives at `dashboard/data/_cache/epc/<la_code>/certificates.csv`
+and is gitignored — only the parquet output is committed.

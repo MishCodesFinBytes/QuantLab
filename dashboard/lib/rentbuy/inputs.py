@@ -41,18 +41,34 @@ def default_home_price(
     postcode_district: str | None,
     property_type: str,
     new_build: bool,
+    bedrooms: str | None = None,
 ) -> int:
     """Return median sale price from the tightest available filter.
 
     Falls back in order:
-      1. (district × property_type × new_build), last 3y, >=10 sales
-      2. (borough × property_type), last 3y, any count > 0
-      3. £500,000 hardcoded fallback
+      1. district × type × new_build × bedrooms, last 3y, >=10 sales
+      2. district × type × new_build, last 3y, >=10 sales
+      3. borough × type × bedrooms, last 3y, > 0 sales
+      4. borough × type, last 3y, > 0 sales
+      5. £500,000 hardcoded fallback
     """
     three_years_ago = pd.Timestamp.now() - pd.DateOffset(years=3)
     recent = ppd_df[ppd_df["date"] >= three_years_ago]
     new_build_flag = "Y" if new_build else "N"
+    has_bedrooms_col = "bedrooms" in recent.columns
 
+    # 1. district x type x new_build x bedrooms
+    if postcode_district and bedrooms and has_bedrooms_col:
+        subset = recent[
+            (recent["postcode_district"] == postcode_district)
+            & (recent["property_type"] == property_type)
+            & (recent["new_build"] == new_build_flag)
+            & (recent["bedrooms"] == bedrooms)
+        ]
+        if len(subset) >= 10:
+            return int(subset["price"].median())
+
+    # 2. district x type x new_build (existing)
     if postcode_district:
         subset = recent[
             (recent["postcode_district"] == postcode_district)
@@ -65,6 +81,18 @@ def default_home_price(
     borough_districts = district_to_borough_df[
         district_to_borough_df["borough"] == borough
     ]["postcode_district"].tolist()
+
+    # 3. borough x type x bedrooms
+    if borough_districts and bedrooms and has_bedrooms_col:
+        subset = recent[
+            (recent["postcode_district"].isin(borough_districts))
+            & (recent["property_type"] == property_type)
+            & (recent["bedrooms"] == bedrooms)
+        ]
+        if len(subset) > 0:
+            return int(subset["price"].median())
+
+    # 4. borough x type (existing)
     if borough_districts:
         subset = recent[
             (recent["postcode_district"].isin(borough_districts))
@@ -73,6 +101,7 @@ def default_home_price(
         if len(subset) > 0:
             return int(subset["price"].median())
 
+    # 5. hardcoded fallback
     return 500_000
 
 
