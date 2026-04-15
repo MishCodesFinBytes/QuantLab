@@ -15,6 +15,7 @@ from rentbuy import (
     run_scenario,
     load_district_to_borough,
     load_borough_rents,
+    load_borough_rents_by_bedroom,
     load_council_tax,
     load_boe_rates,
     default_home_price,
@@ -90,6 +91,7 @@ def _load_all_data():
         "ppd": ppd,
         "district_to_borough": load_district_to_borough(),
         "borough_rents": load_borough_rents(),
+        "borough_rents_by_bedroom": load_borough_rents_by_bedroom(),
         "council_tax": load_council_tax(),
         "boe_rates": load_boe_rates(),
     }
@@ -126,6 +128,15 @@ with col_t:
     PROPERTY_TYPE_MAP = {"Flat": "F", "Terraced": "T", "Semi-detached": "S", "Detached": "D"}
     property_type = PROPERTY_TYPE_MAP[property_type_label]
 
+bedrooms_label = st.selectbox(
+    "Bedrooms",
+    options=["Studio", "1", "2", "3", "4+"],
+    index=2,  # 2-bed default
+    help="Affects the rent and price defaults.",
+)
+BEDROOM_MAP = {"Studio": "studio", "1": "1", "2": "2", "3": "3", "4+": "4+"}
+bedrooms = BEDROOM_MAP[bedrooms_label]
+
 col_nb, col_ftb, col_stay = st.columns([1, 1, 3])
 with col_nb:
     new_build = st.checkbox("New build", value=False)
@@ -140,7 +151,10 @@ default_price = default_home_price(
     borough=borough, postcode_district=postcode_district,
     property_type=property_type, new_build=new_build,
 )
-default_rent = default_monthly_rent(data["borough_rents"], borough)
+default_rent = default_monthly_rent(
+    data["borough_rents"], data["borough_rents_by_bedroom"],
+    borough=borough, bedrooms=bedrooms,
+)
 default_ctax = default_council_tax(data["council_tax"], borough, band="D")
 
 required_upfront_seed = default_price * 0.15 + default_price * 0.05 + 3_000
@@ -274,6 +288,7 @@ scenario = Scenario(
     property_type=property_type,
     new_build=new_build,
     first_time_buyer=first_time_buyer,
+    bedrooms=bedrooms,
     plan_to_stay_years=plan_to_stay_years,
     starting_cash=float(starting_cash),
     investment_return=investment_return,

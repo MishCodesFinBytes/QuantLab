@@ -17,6 +17,15 @@ def load_borough_rents() -> pd.DataFrame:
     return pd.read_csv(DATA_DIR / "london_borough_rents.csv")
 
 
+def load_borough_rents_by_bedroom() -> pd.DataFrame:
+    """Load the ONS bedroom-segmented borough rent table.
+
+    Schema: borough, beds_studio, beds_1, beds_2, beds_3, beds_4plus,
+            source_year, source_url
+    """
+    return pd.read_csv(DATA_DIR / "london_borough_rents_by_bedroom.csv")
+
+
 def load_council_tax() -> pd.DataFrame:
     return pd.read_csv(DATA_DIR / "london_council_tax.csv")
 
@@ -67,7 +76,35 @@ def default_home_price(
     return 500_000
 
 
-def default_monthly_rent(rents_df: pd.DataFrame, borough: str) -> int:
+_BEDROOM_COLUMN_MAP = {
+    "studio": "beds_studio",
+    "1": "beds_1",
+    "2": "beds_2",
+    "3": "beds_3",
+    "4+": "beds_4plus",
+}
+
+
+def default_monthly_rent(
+    rents_df: pd.DataFrame,
+    rents_by_bedroom_df: pd.DataFrame,
+    borough: str,
+    bedrooms: str,
+) -> int:
+    """Return median monthly rent for the chosen borough + bedroom band.
+
+    Falls back to the single-median rents_df row when the bedroom band
+    is missing for the borough, and to a hardcoded £2000 when the borough
+    is unknown to both files.
+    """
+    bedroom_col = _BEDROOM_COLUMN_MAP.get(bedrooms)
+    if bedroom_col is not None:
+        row = rents_by_bedroom_df[rents_by_bedroom_df["borough"] == borough]
+        if len(row) > 0 and bedroom_col in row.columns:
+            value = row[bedroom_col].iloc[0]
+            if pd.notna(value):
+                return int(value)
+
     row = rents_df[rents_df["borough"] == borough]
     if len(row) == 0:
         return 2_000

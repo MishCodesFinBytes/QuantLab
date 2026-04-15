@@ -151,6 +151,7 @@ def make_scenario(**overrides) -> Scenario:
         property_type="F",
         new_build=False,
         first_time_buyer=False,
+        bedrooms="2",
         plan_to_stay_years=7,
         starting_cash=150_000,
         investment_return=0.05,
@@ -337,3 +338,23 @@ def test_breakeven_rent_decreases_with_longer_stay(boe_rates):
     short = compute_breakeven_rent(make_scenario(plan_to_stay_years=3), boe_rates)
     long = compute_breakeven_rent(make_scenario(plan_to_stay_years=20), boe_rates)
     assert short > long
+
+
+def test_scenario_accepts_bedrooms_field():
+    from lib.rentbuy.finance import Scenario
+    scenario = Scenario(
+        borough="Camden", postcode_district=None, property_type="F",
+        new_build=False, first_time_buyer=False,
+        bedrooms="2",
+        plan_to_stay_years=7, starting_cash=100_000.0,
+        investment_return=0.05, isa_tax_free=True, inflation=0.025,
+        home_price=600_000.0, deposit_pct=0.15, auto_tier_rate=True,
+        mortgage_rate=0.0525, fix_years=5, mortgage_term_years=25,
+        legal_survey=2_500.0, maintenance_pct=0.005, council_tax=2_000.0,
+        buildings_insurance=300.0, service_charge=0.0, ground_rent=0.0,
+        lease_years_remaining=None, home_growth=0.025, selling_fee_pct=0.015,
+        monthly_rent=2_500.0, rent_growth=0.025, deposit_weeks=5,
+        renters_insurance=120.0, moving_cost=500.0, avg_tenancy_years=2.0,
+        include_long_term_frictions=True,
+    )
+    assert scenario.bedrooms == "2"

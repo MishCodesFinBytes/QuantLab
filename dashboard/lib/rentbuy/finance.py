@@ -110,6 +110,7 @@ class Scenario:
     property_type: str
     new_build: bool
     first_time_buyer: bool
+    bedrooms: str   # one of "studio", "1", "2", "3", "4+"
 
     # Shared
     plan_to_stay_years: int

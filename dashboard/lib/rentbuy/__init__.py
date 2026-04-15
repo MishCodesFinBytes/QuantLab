@@ -13,6 +13,7 @@ from .finance import (
 from .inputs import (
     load_district_to_borough,
     load_borough_rents,
+    load_borough_rents_by_bedroom,
     load_council_tax,
     load_boe_rates,
     default_home_price,
@@ -36,6 +37,7 @@ __all__ = [
     "compute_breakeven_rent",
     "load_district_to_borough",
     "load_borough_rents",
+    "load_borough_rents_by_bedroom",
     "load_council_tax",
     "load_boe_rates",
     "default_home_price",

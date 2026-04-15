@@ -1,0 +1,34 @@
+borough,beds_studio,beds_1,beds_2,beds_3,beds_4plus,source_year,source_url
+Barking and Dagenham,1100,1175,1395,1700,2200,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Barnet,1150,1395,1750,2300,3200,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Bexley,1050,1100,1300,1600,2050,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Brent,1250,1500,1800,2200,2900,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Bromley,1100,1300,1550,1900,2600,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Camden,1750,2100,2900,4000,6500,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+City of London,1900,2200,3000,4500,7500,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Croydon,1050,1200,1450,1750,2300,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Ealing,1300,1500,1850,2300,3200,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Enfield,1100,1250,1500,1900,2600,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Greenwich,1250,1450,1750,2200,2900,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Hackney,1500,1850,2400,3200,4500,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Hammersmith and Fulham,1700,2000,2700,3700,5800,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Haringey,1300,1550,1950,2500,3500,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Harrow,1100,1300,1600,2000,2700,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Havering,1050,1150,1350,1700,2200,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Hillingdon,1100,1300,1550,1900,2500,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Hounslow,1200,1400,1700,2100,2800,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Islington,1700,2000,2700,3700,5500,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Kensington and Chelsea,2200,2700,4000,6000,9500,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Kingston upon Thames,1250,1500,1800,2300,3000,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Lambeth,1500,1750,2300,3000,4200,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Lewisham,1300,1500,1800,2300,3000,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Merton,1300,1500,1850,2400,3200,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Newham,1300,1450,1750,2200,2900,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Redbridge,1100,1250,1500,1900,2500,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Richmond upon Thames,1400,1700,2150,2800,3900,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Southwark,1500,1800,2400,3200,4500,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Sutton,1050,1200,1450,1800,2400,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Tower Hamlets,1500,1850,2500,3300,4500,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Waltham Forest,1200,1400,1650,2100,2800,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Wandsworth,1500,1800,2350,3100,4400,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
+Westminster,2000,2400,3500,5000,8000,2024,https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/privaterentalmarketsummarystatisticsinengland
