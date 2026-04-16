@@ -421,7 +421,7 @@ def _render_sidebar_impl():
     link_style = "color:#d97706;text-decoration:none;"
     st.sidebar.markdown(
         f'<div style="{byline_style}">Built by '
-        f'<a style="{link_style}" href="https://mish-codes.github.io/FinBytes/">Manisha</a>'
+        f'<a style="{link_style}" href="https://www.linkedin.com/in/manishasshetty/" target="_blank">Manisha</a>'
         f'</div>',
         unsafe_allow_html=True,
     )
