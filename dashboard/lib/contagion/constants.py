@@ -36,9 +36,11 @@ TICKER_ROLES: dict[str, str] = {
     "EIS": "epicenter",      # iShares MSCI Israel
     "KSA": "epicenter",      # iShares MSCI Saudi Arabia
     "UAE": "epicenter",      # iShares MSCI UAE
-    # Contagion — energy-dependent economies (10Y yields via FRED)
-    "FRED:IRLTLT01INM156N": "contagion",   # India 10Y yield, monthly (ffilled)
-    "FRED:IRLTLT01TRM156N": "contagion",   # Turkey 10Y yield
+    # Contagion — energy-dependent economies
+    # India: INDIRLTLT01STM (replaces discontinued IRLTLT01INM156N)
+    "FRED:INDIRLTLT01STM": "contagion",    # India 10Y yield, monthly (ffilled)
+    # Turkey: IRLTLT01TRM156N is discontinued on FRED; use iShares MSCI Turkey ETF as proxy
+    "TUR": "contagion",                    # iShares MSCI Turkey ETF (sovereign risk proxy)
     "FRED:IRLTLT01DEM156N": "contagion",   # Germany 10Y yield
     # Safe haven
     "^TNX": "safe_haven",    # CBOE 10Y Treasury Yield Index
@@ -58,8 +60,8 @@ TICKER_ROLES: dict[str, str] = {
 EPICENTER_LONLAT: tuple[float, float] = (56.0, 26.0)   # Strait of Hormuz
 
 DESTINATION_CITIES: dict[str, dict[str, object]] = {
-    "IN": {"label": "Delhi",    "lonlat": (77.21, 28.61), "ticker": "FRED:IRLTLT01INM156N"},
-    "TR": {"label": "Istanbul", "lonlat": (28.98, 41.01), "ticker": "FRED:IRLTLT01TRM156N"},
+    "IN": {"label": "Delhi",    "lonlat": (77.21, 28.61), "ticker": "FRED:INDIRLTLT01STM"},
+    "TR": {"label": "Istanbul", "lonlat": (28.98, 41.01), "ticker": "TUR"},
     "DE": {"label": "Frankfurt","lonlat": ( 8.68, 50.11), "ticker": "FRED:IRLTLT01DEM156N"},
     "US": {"label": "New York", "lonlat": (-74.01, 40.71),"ticker": "^TNX"},
     "GB": {"label": "London",   "lonlat": (-0.13, 51.51), "ticker": "^TNX"},  # proxy: use TNX for UK too
