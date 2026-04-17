@@ -28,3 +28,10 @@ class TestGlobalContagionPage:
     def test_has_timeline_slider(self):
         at = self._run()
         assert len(at.slider) >= 1, "Expected at least one slider for the timeline"
+
+    def test_has_play_button(self):
+        at = self._run()
+        labels = [b.label for b in at.button]
+        assert any("play" in l.lower() or "pause" in l.lower() for l in labels), (
+            f"Expected a play/pause button; got: {labels}"
+        )

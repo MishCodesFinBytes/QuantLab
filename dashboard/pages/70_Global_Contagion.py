@@ -49,22 +49,53 @@ period_key = st.radio(
 events = _load(period_key)
 
 # ──────────────────────────────────────────────────────────────
-# Timeline slider
+# Timeline slider + play button
 # ──────────────────────────────────────────────────────────────
 dates = sorted(events["date"].unique())
 if not dates:
     st.warning("No data for this period.")
     st.stop()
 
-selected_date = st.slider(
-    "Date",
-    min_value=dates[0],
-    max_value=dates[-1],
-    value=dates[-1],
-    format="YYYY-MM-DD",
-)
+# Session state for playback + current cursor.
+if "contagion_date_idx" not in st.session_state:
+    st.session_state.contagion_date_idx = len(dates) - 1
+if "contagion_playing" not in st.session_state:
+    st.session_state.contagion_playing = False
 
+# Clamp the cursor to the current period's range (period toggle may
+# have shrunk `dates`).
+if st.session_state.contagion_date_idx >= len(dates):
+    st.session_state.contagion_date_idx = len(dates) - 1
+
+col_slider, col_btn = st.columns([6, 1])
+with col_slider:
+    idx = st.slider(
+        "Date",
+        min_value=0,
+        max_value=len(dates) - 1,
+        value=st.session_state.contagion_date_idx,
+        format="%d",
+        label_visibility="collapsed",
+    )
+    st.session_state.contagion_date_idx = idx
+with col_btn:
+    btn_label = "⏸ Pause" if st.session_state.contagion_playing else "▶ Play"
+    if st.button(btn_label, use_container_width=True):
+        st.session_state.contagion_playing = not st.session_state.contagion_playing
+        st.rerun()
+
+selected_date = dates[st.session_state.contagion_date_idx]
 st.caption(f"Showing snapshot at **{selected_date}**")
+
+# Auto-advance while playing
+if st.session_state.contagion_playing:
+    import time as _time
+    _time.sleep(0.15)
+    if st.session_state.contagion_date_idx < len(dates) - 1:
+        st.session_state.contagion_date_idx += 1
+    else:
+        st.session_state.contagion_playing = False   # stop at the end
+    st.rerun()
 
 # ──────────────────────────────────────────────────────────────
 # Globe — pydeck ArcLayer on GlobeView
