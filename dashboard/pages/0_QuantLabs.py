@@ -140,7 +140,8 @@ def _all_projects_card_html(p, category: str) -> str:
     cat_chip = f'<div style="{_CAT_CHIP_STYLE}">{_escape(category)}</div>'
     cta = f'<div style="{_CARD_CTA_STYLE}">OPEN →</div>'
     return (
-        f'<a style="{_CAT_CARD_STYLE}" href="{_escape(_page_url(p.page_link))}" target="_self">'
+        f'<a class="ql-all-card" style="{_CAT_CARD_STYLE}" '
+        f'href="{_escape(_page_url(p.page_link))}" target="_self">'
         f'{cat_chip}'
         f'<div style="{_CAT_TITLE_STYLE}">{_escape(p.label)}{capstone}</div>'
         f'<div style="{_CAT_DESC_STYLE}">{_escape(p.description)}</div>'
@@ -371,6 +372,43 @@ with tab_all:
         '<h1 class="ql-page-title">All projects</h1>'
         '<p class="ql-page-subtitle">Every QuantLabs project at a glance, alphabetical</p>',
         unsafe_allow_html=True,
+    )
+
+    # Local CSS: staggered fade-in on load + lift on hover. Scoped to
+    # .ql-all-card so nothing else on the page inherits these animations.
+    _ql_html(
+        """
+        <style>
+        @keyframes ql-card-in {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .ql-all-card {
+            animation: ql-card-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+            transition: transform 0.18s ease, box-shadow 0.18s ease,
+                        border-color 0.18s ease !important;
+            will-change: transform;
+        }
+        .ql-all-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(26, 26, 26, 0.08);
+            border-color: #d97706 !important;
+        }
+        /* Stagger: each card waits a bit longer before its fade-in starts.
+           Covers up to ~30 cards; anything beyond that just snaps in. */
+        .ql-all-card:nth-child(1)  { animation-delay: 0.00s; }
+        .ql-all-card:nth-child(2)  { animation-delay: 0.03s; }
+        .ql-all-card:nth-child(3)  { animation-delay: 0.06s; }
+        .ql-all-card:nth-child(4)  { animation-delay: 0.09s; }
+        .ql-all-card:nth-child(5)  { animation-delay: 0.12s; }
+        .ql-all-card:nth-child(6)  { animation-delay: 0.15s; }
+        .ql-all-card:nth-child(7)  { animation-delay: 0.18s; }
+        .ql-all-card:nth-child(8)  { animation-delay: 0.21s; }
+        .ql-all-card:nth-child(9)  { animation-delay: 0.24s; }
+        .ql-all-card:nth-child(10) { animation-delay: 0.27s; }
+        .ql-all-card:nth-child(n+11) { animation-delay: 0.30s; }
+        </style>
+        """
     )
 
     # Flatten the category map into [(category, project), …] and sort
