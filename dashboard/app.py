@@ -239,7 +239,20 @@ def _build_marquee_html() -> str:
 # Tabs
 # ─────────────────────────────────────────────────────────────
 
-tab_all, tab_welcome, tab_health = st.tabs(["All projects", "Welcome", "System Health"])
+tab_resume, tab_all, tab_welcome, tab_health = st.tabs(
+    ["Resume", "All projects", "Welcome", "System Health"]
+)
+
+# ─────────────────────────────────────────────────────────────
+# Resume — embedded CV (hosted on FinBytes)
+# ─────────────────────────────────────────────────────────────
+
+with tab_resume:
+    components.iframe(
+        "https://mish-codes.github.io/FinBytes/resume/",
+        height=4500,
+        scrolling=True,
+    )
 
 # ─────────────────────────────────────────────────────────────
 # Welcome — landing portfolio view
