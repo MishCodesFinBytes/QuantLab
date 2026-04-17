@@ -7,12 +7,11 @@ into the unit-test import path.
 """
 from __future__ import annotations
 
-from typing import Dict, List
 
 from .constants import DESTINATION_CITIES, EPICENTER_LONLAT
 
 
-def correlation_to_color(corr: float) -> tuple:
+def correlation_to_color(corr: float) -> tuple[int, int, int, int]:
     """Diverging color ramp: green (-1) → gray (0) → red (+1)."""
     c = max(-1.0, min(1.0, float(corr)))
     # Anchors
@@ -33,8 +32,8 @@ def correlation_to_color(corr: float) -> tuple:
 
 
 def build_arc_rows(
-    correlations_by_country: Dict[str, float]
-) -> List[dict]:
+    correlations_by_country: dict[str, float]
+) -> list[dict]:
     """Build arc dicts for pydeck ArcLayer.
 
     Args:
@@ -44,7 +43,7 @@ def build_arc_rows(
         List of dicts with keys: source, target, color, dest_country,
         dest_label, correlation. Ready to be passed as the ArcLayer `data`.
     """
-    rows: List[dict] = []
+    rows: list[dict] = []
     for country_code, meta in DESTINATION_CITIES.items():
         corr = correlations_by_country.get(country_code, 0.0)
         rows.append({
