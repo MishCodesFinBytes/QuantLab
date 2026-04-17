@@ -182,3 +182,31 @@ st.dataframe(
     hide_index=True,
     use_container_width=True,
 )
+
+# ──────────────────────────────────────────────────────────────
+# Side panel: Brent / Baltic / Gold / VIX sparklines
+# ──────────────────────────────────────────────────────────────
+st.markdown("### Energy, Safe Haven & Fear")
+
+panel_tickers = [
+    ("BZ=F", "Brent Crude"),
+    ("BDRY", "Baltic Dry (ETF)"),
+    ("GC=F", "Gold"),
+    ("^VIX", "VIX"),
+]
+cols = st.columns(4)
+for (ticker, label), col in zip(panel_tickers, cols):
+    with col:
+        series = (
+            events[events["ticker"] == ticker]
+            .set_index("date")["close"]
+            .sort_index()
+        )
+        st.markdown(f"**{label}**")
+        if series.empty:
+            st.caption("no data")
+            continue
+        # Truncate to dates ≤ selected_date so the sparkline "plays along"
+        series = series[series.index <= selected_date]
+        st.line_chart(series, height=80)
+        st.caption(f"Latest: {series.iloc[-1]:.2f}")

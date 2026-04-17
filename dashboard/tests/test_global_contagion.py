@@ -35,3 +35,12 @@ class TestGlobalContagionPage:
         assert any("play" in l.lower() or "pause" in l.lower() for l in labels), (
             f"Expected a play/pause button; got: {labels}"
         )
+
+    def test_side_panel_renders_four_metrics(self):
+        at = self._run()
+        # st.line_chart renders as arrow_vega_lite_chart in AppTest.
+        # Count those elements across the main block.
+        charts = [el for el in at.main if getattr(el, "type", "") == "arrow_vega_lite_chart"]
+        assert len(charts) >= 4, (
+            f"Expected ≥4 sparklines; got {len(charts)}"
+        )
