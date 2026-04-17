@@ -21,6 +21,7 @@ from nav import render_sidebar
 from test_tab import render_test_tab
 from projects import (
     PROJECTS_BY_CATEGORY,
+    FEATURED_KEYS,
     all_projects,
     featured,
     category_with_capstones_last,
@@ -101,11 +102,21 @@ _CAPSTONE_STYLE = (
     "letter-spacing:0.05em;color:#d97706;border:1px solid #d97706;padding:1px 5px;"
     "border-radius:2px;margin-left:0.4rem;vertical-align:middle;"
 )
-_CAT_CHIP_STYLE = (
+_CAT_CHIP_BASE_STYLE = (
     "display:inline-block;font-size:0.62rem;font-weight:500;text-transform:uppercase;"
-    "letter-spacing:0.05em;color:#6b6b6b;background:#f4f4f4;padding:2px 6px;"
-    "border-radius:2px;margin-bottom:0.4rem;"
+    "letter-spacing:0.05em;padding:2px 6px;border-radius:2px;margin-bottom:0.4rem;"
 )
+# Pastel background + saturated text per category. Unknown categories fall
+# back to neutral grey so new categories don't need a palette update before
+# they render.
+_CAT_CHIP_PALETTE = {
+    "Geopolitics & risk":         {"bg": "#fee2e2", "fg": "#991b1b"},
+    "Personal finance & property":{"bg": "#dcfce7", "fg": "#166534"},
+    "Stocks & markets":           {"bg": "#dbeafe", "fg": "#1e40af"},
+    "Analytics & Fintech":        {"bg": "#f3e8ff", "fg": "#6b21a8"},
+    "Tech demos & references":    {"bg": "#fef3c7", "fg": "#92400e"},
+}
+_CAT_CHIP_FALLBACK = {"bg": "#f4f4f4", "fg": "#6b6b6b"}
 _CARD_CTA_STYLE = (
     "font-family:'Inter',system-ui,sans-serif !important;font-size:0.68rem;"
     "font-weight:600;color:#d97706;letter-spacing:0.04em;margin-top:0.5rem;"
@@ -130,14 +141,18 @@ def _featured_card_html(p) -> str:
 
 
 def _all_projects_card_html(p, category: str) -> str:
-    """Card for the All projects tab — includes a category chip since these
-    cards are not grouped by category, plus an explicit `Open →` footer so
-    users can see that the card is clickable."""
+    """Card for the All projects tab — includes a category-coloured chip
+    since these cards are not grouped by category, plus an explicit `Open →`
+    footer so users can see that the card is clickable."""
     tech = " · ".join(_escape(t) for t in p.tech)
     capstone = (
         f'<span style="{_CAPSTONE_STYLE}">Capstone</span>' if p.is_capstone else ""
     )
-    cat_chip = f'<div style="{_CAT_CHIP_STYLE}">{_escape(category)}</div>'
+    colors = _CAT_CHIP_PALETTE.get(category, _CAT_CHIP_FALLBACK)
+    chip_style = (
+        f'{_CAT_CHIP_BASE_STYLE}background:{colors["bg"]};color:{colors["fg"]};'
+    )
+    cat_chip = f'<div style="{chip_style}">{_escape(category)}</div>'
     cta = f'<div style="{_CARD_CTA_STYLE}">OPEN →</div>'
     return (
         f'<a class="ql-all-card" style="{_CAT_CARD_STYLE}" '
@@ -411,14 +426,27 @@ with tab_all:
         """
     )
 
-    # Flatten the category map into [(category, project), …] and sort
-    # alphabetically by label. Category becomes a chip on each card so the
-    # info that used to live in the Category column stays visible.
+    # Flatten the category map into [(category, project), …] then sort so
+    # that projects in FEATURED_KEYS appear first in that order ("funnest
+    # on top") and everything else falls through alphabetically.
+    # Category becomes a colour-coded chip on each card so the info that
+    # used to live in the table's Category column stays visible.
     all_with_category: list[tuple[str, object]] = []
     for category, projs in PROJECTS_BY_CATEGORY.items():
         for p in projs:
             all_with_category.append((category, p))
-    all_with_category.sort(key=lambda item: item[1].label.lower())
+
+    _featured_index = {key: i for i, key in enumerate(FEATURED_KEYS)}
+
+    def _sort_key(item: tuple[str, object]):
+        _, proj = item
+        if proj.key in _featured_index:
+            # Featured group — (0, position-in-FEATURED_KEYS, label)
+            return (0, _featured_index[proj.key], proj.label.lower())
+        # Everything else — (1, 0, label) so it sorts alphabetically after
+        return (1, 0, proj.label.lower())
+
+    all_with_category.sort(key=_sort_key)
 
     grid_html = f'<div style="{_CAT_GRID_STYLE}">'
     for category, p in all_with_category:
