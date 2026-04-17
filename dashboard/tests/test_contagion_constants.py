@@ -27,3 +27,16 @@ def test_epicenter_origin_is_strait_of_hormuz():
     lon, lat = constants.EPICENTER_LONLAT
     assert 55 < lon < 57, "Longitude should be ~56 (Strait of Hormuz)"
     assert 25 < lat < 27, "Latitude should be ~26 (Strait of Hormuz)"
+
+
+def test_every_destination_city_has_a_ticker_in_roles():
+    for country, meta in constants.DESTINATION_CITIES.items():
+        assert "ticker" in meta, f"{country} missing ticker"
+        assert meta["ticker"] in constants.TICKER_ROLES, (
+            f"{country} ticker {meta['ticker']} not in TICKER_ROLES"
+        )
+
+
+def test_correlation_window_is_positive_int():
+    assert isinstance(constants.CORRELATION_WINDOW, int)
+    assert constants.CORRELATION_WINDOW > 0
