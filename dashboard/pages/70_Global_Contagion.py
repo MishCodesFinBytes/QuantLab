@@ -201,6 +201,108 @@ st.dataframe(
     use_container_width=True,
 )
 
+
+# ──────────────────────────────────────────────────────────────
+# Methodology + safe haven write-up (collapsible)
+# ──────────────────────────────────────────────────────────────
+def _safe_haven_summary(events: pd.DataFrame) -> str:
+    """Compute a short narrative on how the safe havens moved during the
+    selected period. Returns markdown text."""
+    me_idx = correlations.middle_east_index(events)
+
+    def _window_corr(ticker: str) -> float | None:
+        series = (
+            events[events["ticker"] == ticker]
+            .set_index("date")["close"]
+            .sort_index()
+        )
+        if series.empty:
+            return None
+        aligned = pd.concat([me_idx, series], axis=1, join="inner").dropna()
+        if len(aligned) < constants.CORRELATION_WINDOW:
+            return None
+        corr = correlations.rolling_corr(
+            aligned.iloc[:, 0], aligned.iloc[:, 1],
+            window=constants.CORRELATION_WINDOW,
+        )
+        return float(corr.dropna().mean()) if not corr.dropna().empty else None
+
+    def _range_change(ticker: str) -> tuple[float, float] | None:
+        series = (
+            events[events["ticker"] == ticker]
+            .set_index("date")["close"]
+            .sort_index()
+        )
+        if series.empty:
+            return None
+        return float(series.iloc[0]), float(series.iloc[-1])
+
+    lines: list[str] = []
+    for ticker, label in (("^TNX", "US 10Y Treasury yield"), ("GC=F", "Gold")):
+        corr = _window_corr(ticker)
+        rng = _range_change(ticker)
+        if corr is None or rng is None:
+            continue
+        start, end = rng
+        pct = ((end - start) / start * 100) if start else 0.0
+        direction = "rose" if pct > 0 else "fell"
+        interpret = (
+            "tracked the Middle East index closely — limited safe-haven premium"
+            if corr > 0.3
+            else (
+                "decoupled from the Middle East index — classic flight-to-safety signature"
+                if corr < -0.3
+                else "moved roughly independently of the Middle East index"
+            )
+        )
+        lines.append(
+            f"- **{label}** {direction} **{abs(pct):.1f}%** across the window "
+            f"(avg 7-day corr to ME index: `{corr:+.2f}`) — {interpret}."
+        )
+    return "\n".join(lines) if lines else "_No safe-haven data for this period._"
+
+
+with st.expander(
+    "📘 How this works — correlation, safe havens, and how they responded",
+    expanded=False,
+):
+    st.markdown(
+        """
+        #### How correlation is calculated
+
+        Every ticker in the snapshot has a daily closing series for the selected
+        period. The **Middle East Risk Index** is the simple mean of the three
+        regional proxies (`EIS`, `KSA`, `UAE` ETF closes).
+
+        For each destination country (Mumbai, Istanbul, Frankfurt, New York, London)
+        we compute a **7-day rolling Pearson correlation** between the ME index
+        and that country's 10-year yield (or ETF proxy where the yield series
+        isn't publicly available). The timeline slider picks a date; the globe's
+        arcs colour to the correlation value on that day.
+
+        Reading the colours:
+        - 🔴 **Red (+1)** — markets moved in lockstep with the Middle East: **strong contagion**.
+        - ⚪ **Gray (0)** — no statistical relationship: markets decoupled or noise-dominated.
+        - 🟢 **Green (−1)** — markets moved *against* the Middle East: **flight-to-safety or inverse hedging**.
+
+        #### What counts as a "safe haven"
+
+        Two assets are treated as reference safe havens:
+        - **US 10-year Treasury yield (`^TNX`)** — when investors flee risk they buy
+          US Treasuries, pushing yields down. A falling `^TNX` during a crisis
+          episode is the classic flight-to-safety signature.
+        - **Gold (`GC=F`)** — no counterparty risk, uncorrelated with equity cycles,
+          tends to rally on geopolitical stress.
+
+        The 🟢 arcs to **New York** and **London** on the globe capture the safe-haven
+        hypothesis: when they go green during a Middle East risk spike, capital is
+        flowing *away* from ME assets *toward* Treasuries and the GBP financial hub.
+        """
+    )
+    st.markdown("#### How did they respond in this window?")
+    st.markdown(_safe_haven_summary(events))
+
+
 # ──────────────────────────────────────────────────────────────
 # Side panel: Brent / Baltic / Gold / VIX sparklines
 # ──────────────────────────────────────────────────────────────
