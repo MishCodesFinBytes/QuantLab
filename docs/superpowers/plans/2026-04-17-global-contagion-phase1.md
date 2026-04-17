@@ -568,13 +568,14 @@ git commit -m "feat(contagion): add arc-layer builder + correlation color ramp"
 
 ---
 
-## Task 5: ETL script + manual run to generate parquet
+## Task 5: ETL script + data-quality test + manual run to generate parquet
 
-This task is half-code, half-operations. The ETL hits live yfinance + FRED, so we don't unit-test the network; we test the pure helpers and then run the script once to produce the committed artifact.
+This task is half-code, half-operations. The ETL hits live yfinance + FRED, so we don't unit-test the network; we test the pure helpers, write a **data-quality test** that asserts on parquet completeness, and then run the script and ensure the committed artifact passes the quality gate. CI will re-run this test on every PR to catch silent regressions (e.g. if someone re-runs the ETL on a bad-data day).
 
 **Files:**
 - Create: `scripts/fetch_contagion_data.py`
 - Create: `dashboard/data/contagion/README.md`
+- Create: `dashboard/tests/test_contagion_data_quality.py`
 - Generate: `dashboard/data/contagion/events.parquet` (via script run)
 
 - [ ] **Step 1: Write the ETL script**
@@ -738,27 +739,142 @@ yfinance or FRED, so the ETL substitutes the country ETFs (`EIS`, `KSA`,
 substitution.
 ```
 
-- [ ] **Step 3: Run the ETL**
+- [ ] **Step 3: Write the failing data-quality test**
+
+Write `dashboard/tests/test_contagion_data_quality.py`:
+
+```python
+"""Data-quality gate for the committed contagion parquet.
+
+Runs against dashboard/data/contagion/events.parquet. Skips if the
+parquet doesn't exist yet (fresh clone before ETL has been run), so
+this doesn't break CI on a checkout that hasn't materialised the data.
+Otherwise it asserts on completeness so regressions surface on PR.
+"""
+from pathlib import Path
+
+import pandas as pd
+import pytest
+
+from lib.contagion import constants, loader
+
+
+PARQUET_PATH = Path(__file__).resolve().parents[1] / "data" / "contagion" / "events.parquet"
+
+# Minimum rows per ticker for the shorter 2020 period. Dailies should
+# yield ~90 trading days; monthly FRED series ≥4 rows. Thresholds are
+# intentionally loose so a slightly short window doesn't trip CI.
+MIN_ROWS_DAILY_2020 = 30
+MIN_ROWS_FRED_2020 = 3
+MIN_ROWS_DAILY_2024 = 200   # 2024→today, ~500 trading days available
+MIN_ROWS_FRED_2024 = 12     # monthly series
+
+# Tickers that must be present in both periods; if these fail the
+# dashboard is effectively non-functional.
+CORE_TICKERS = {"^TNX", "^VIX", "BZ=F", "GC=F"}
+
+
+@pytest.fixture(scope="module")
+def events() -> pd.DataFrame:
+    if not PARQUET_PATH.exists():
+        pytest.skip(
+            f"{PARQUET_PATH} not present — run "
+            "`python scripts/fetch_contagion_data.py` first."
+        )
+    return loader.load_events()
+
+
+def test_both_periods_present(events):
+    got = set(events["period"].unique())
+    expected = set(constants.PERIODS.keys())
+    assert expected <= got, f"Missing periods: {expected - got}"
+
+
+def test_all_asset_roles_present(events):
+    got = set(events["asset_role"].unique())
+    expected = {"epicenter", "contagion", "safe_haven", "energy", "fear"}
+    assert expected <= got, f"Missing asset roles: {expected - got}"
+
+
+def test_core_tickers_present_in_both_periods(events):
+    for period in constants.PERIODS:
+        got = set(events[events["period"] == period]["ticker"].unique())
+        missing = CORE_TICKERS - got
+        assert not missing, f"Period {period} missing core tickers: {missing}"
+
+
+@pytest.mark.parametrize("period,min_daily,min_fred", [
+    ("2020_us_iran", MIN_ROWS_DAILY_2020, MIN_ROWS_FRED_2020),
+    ("2024_hormuz", MIN_ROWS_DAILY_2024, MIN_ROWS_FRED_2024),
+])
+def test_minimum_row_counts_per_ticker(events, period, min_daily, min_fred):
+    slice_ = events[events["period"] == period]
+    for ticker, role in constants.TICKER_ROLES.items():
+        n = (slice_["ticker"] == ticker).sum()
+        threshold = min_fred if ticker.startswith("FRED:") else min_daily
+        # Epicenter ETFs (EIS/KSA/UAE) can be thin in the 2020 window;
+        # don't block on those but still assert they have something.
+        if role == "epicenter" and period == "2020_us_iran":
+            assert n >= 1, f"{ticker} had zero rows in {period}"
+            continue
+        assert n >= threshold, (
+            f"{ticker} ({role}) has {n} rows in {period}, "
+            f"expected ≥{threshold}"
+        )
+
+
+def test_no_na_in_close_column(events):
+    # Forward-fill happens at loader boundary if needed; raw parquet
+    # should not carry NaN close values (ETL drops them).
+    assert events["close"].notna().all(), "Found NaN values in close column"
+
+
+def test_close_values_are_positive(events):
+    # yields and prices are all positive; a negative would signal a
+    # sign-flip bug somewhere.
+    assert (events["close"] > 0).all(), "Found non-positive close values"
+```
+
+- [ ] **Step 4: Run data-quality test — expect skip (parquet not yet generated)**
+
+```bash
+cd dashboard && pytest tests/test_contagion_data_quality.py -v
+```
+Expected: all tests skipped with the "parquet not present" message. This confirms the test doesn't break CI on a fresh clone before ETL has run.
+
+- [ ] **Step 5: Run the ETL**
 
 ```bash
 cd c:/codebase/quant_lab && python scripts/fetch_contagion_data.py
 ```
 Expected: stderr log lines like `Fetching period 2020_us_iran…` followed by per-ticker lines. Final: `Wrote N rows to …events.parquet` where N is in the thousands. Non-zero file on disk.
 
-If any ticker prints a WARNING and returns empty, the script continues with the rest — that's OK as long as the core tickers (yfinance ETFs + `^TNX`, `^VIX`, `BZ=F`, `GC=F`, `BDRY`) succeed. FRED endpoints are the most rate-limit-prone; if they 429, the script retries with backoff.
+If any ticker prints a WARNING and returns empty, the script continues with the rest. Whether the outcome is good enough is decided by the data-quality test in Step 6, not by manual inspection.
 
-- [ ] **Step 4: Verify parquet is reasonable**
+- [ ] **Step 6: Re-run data-quality test — expect pass**
+
+```bash
+cd dashboard && pytest tests/test_contagion_data_quality.py -v
+```
+Expected: all tests pass. If any fails:
+- **Missing role/period**: bug in the ETL — fix and re-run before committing
+- **Core ticker missing**: yfinance/FRED outage; wait and re-run, or substitute ticker in `constants.py` if persistent
+- **Row count below threshold**: either the ticker genuinely has limited history (document in `data/contagion/README.md` and lower that specific threshold with justification), or there's a fetching bug
+
+Do **not** commit a parquet that fails the quality gate. The whole point of the test is to prevent that.
+
+- [ ] **Step 7: Verify parquet stats (informational)**
 
 ```bash
 python -c "import pandas as pd; df = pd.read_parquet('dashboard/data/contagion/events.parquet'); print(df.shape); print(df['period'].value_counts()); print(df['asset_role'].value_counts())"
 ```
 Expected: shape like `(5000-30000, 6)`, both periods present, every asset role represented.
 
-- [ ] **Step 5: Commit script + data**
+- [ ] **Step 8: Commit script + data + test**
 
 ```bash
-git add scripts/fetch_contagion_data.py dashboard/data/contagion/events.parquet dashboard/data/contagion/README.md
-git commit -m "feat(contagion): add ETL script + initial parquet snapshot"
+git add scripts/fetch_contagion_data.py dashboard/data/contagion/events.parquet dashboard/data/contagion/README.md dashboard/tests/test_contagion_data_quality.py
+git commit -m "feat(contagion): add ETL script, data-quality test, and initial parquet snapshot"
 ```
 
 ---
@@ -1327,6 +1443,7 @@ EOF
 - Page at `/Global_Contagion` (`70_Global_Contagion.py`) → Task 7 ✓
 - Tests for rolling corr in bounds → Task 2 ✓
 - Tests for period toggle switching data — covered implicitly by `test_loads_without_error` + `test_has_period_radio`; explicit data-row-count test skipped (trivial verification on a committed parquet)
+- **Data-quality gate on the committed parquet → Task 5 Step 3** ✓ (skips gracefully on fresh clone; asserts completeness on real runs so CI flags silent regressions)
 
 **Placeholder scan:** none found.
 
