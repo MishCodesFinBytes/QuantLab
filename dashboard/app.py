@@ -33,9 +33,37 @@ st.set_page_config(
     page_title="Manisha Shetty — Python Developer",
     page_icon="assets/logo.png",
     layout="wide",
+    initial_sidebar_state="collapsed",
 )
 
 render_sidebar()
+
+# Full-bleed resume: hide Streamlit's sidebar, header, and default padding
+# on the root page only so the embedded resume renders edge-to-edge. Pages
+# under /pages still get the normal QuantLabs sidebar because this CSS is
+# injected here, not in nav.py's global styles.
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"],
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"],
+    [data-testid="stHeader"] {
+        display: none !important;
+    }
+    .main .block-container,
+    [data-testid="stMain"] .block-container,
+    section.main > div.block-container {
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    [data-testid="stAppViewContainer"] > .main {
+        margin-left: 0 !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 _resume_html = (STATIC_DIR / "resume.html").read_text(encoding="utf-8")
 _resume_html = _resume_html.replace("{{QUANTLABS_URL}}", QUANTLABS_URL)
