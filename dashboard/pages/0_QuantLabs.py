@@ -21,6 +21,7 @@ from nav import render_sidebar
 from test_tab import render_test_tab
 from projects import (
     PROJECTS_BY_CATEGORY,
+    FEATURED_KEYS,
     all_projects,
     featured,
     category_with_capstones_last,
@@ -101,6 +102,25 @@ _CAPSTONE_STYLE = (
     "letter-spacing:0.05em;color:#d97706;border:1px solid #d97706;padding:1px 5px;"
     "border-radius:2px;margin-left:0.4rem;vertical-align:middle;"
 )
+_CAT_CHIP_BASE_STYLE = (
+    "display:inline-block;font-size:0.62rem;font-weight:500;text-transform:uppercase;"
+    "letter-spacing:0.05em;padding:2px 6px;border-radius:2px;margin-bottom:0.4rem;"
+)
+# Pastel background + saturated text per category. Unknown categories fall
+# back to neutral grey so new categories don't need a palette update before
+# they render.
+_CAT_CHIP_PALETTE = {
+    "Geopolitics & risk":         {"bg": "#fee2e2", "fg": "#991b1b"},
+    "Personal finance & property":{"bg": "#dcfce7", "fg": "#166534"},
+    "Stocks & markets":           {"bg": "#dbeafe", "fg": "#1e40af"},
+    "Analytics & Fintech":        {"bg": "#f3e8ff", "fg": "#6b21a8"},
+    "Tech demos & references":    {"bg": "#fef3c7", "fg": "#92400e"},
+}
+_CAT_CHIP_FALLBACK = {"bg": "#f4f4f4", "fg": "#6b6b6b"}
+_CARD_CTA_STYLE = (
+    "font-family:'Inter',system-ui,sans-serif !important;font-size:0.68rem;"
+    "font-weight:600;color:#d97706;letter-spacing:0.04em;margin-top:0.5rem;"
+)
 _FEATURED_GRID_STYLE = (
     "display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:1rem;"
 )
@@ -116,6 +136,32 @@ def _featured_card_html(p) -> str:
         f'<div style="{_FEATURED_TITLE_STYLE}">{_escape(p.label)}</div>'
         f'<div style="{_FEATURED_DESC_STYLE}">{_escape(p.description)}</div>'
         f'<div style="{_FEATURED_TECH_STYLE}">{tech}</div>'
+        f'</a>'
+    )
+
+
+def _all_projects_card_html(p, category: str) -> str:
+    """Card for the All projects tab — includes a category-coloured chip
+    since these cards are not grouped by category, plus an explicit `Open →`
+    footer so users can see that the card is clickable."""
+    tech = " · ".join(_escape(t) for t in p.tech)
+    capstone = (
+        f'<span style="{_CAPSTONE_STYLE}">Capstone</span>' if p.is_capstone else ""
+    )
+    colors = _CAT_CHIP_PALETTE.get(category, _CAT_CHIP_FALLBACK)
+    chip_style = (
+        f'{_CAT_CHIP_BASE_STYLE}background:{colors["bg"]};color:{colors["fg"]};'
+    )
+    cat_chip = f'<div style="{chip_style}">{_escape(category)}</div>'
+    cta = f'<div style="{_CARD_CTA_STYLE}">OPEN →</div>'
+    return (
+        f'<a class="ql-all-card" style="{_CAT_CARD_STYLE}" '
+        f'href="{_escape(_page_url(p.page_link))}" target="_self">'
+        f'{cat_chip}'
+        f'<div style="{_CAT_TITLE_STYLE}">{_escape(p.label)}{capstone}</div>'
+        f'<div style="{_CAT_DESC_STYLE}">{_escape(p.description)}</div>'
+        f'<div style="{_CAT_TECH_STYLE}">{tech}</div>'
+        f'{cta}'
         f'</a>'
     )
 
@@ -339,36 +385,74 @@ with tab_welcome:
 with tab_all:
     st.markdown(
         '<h1 class="ql-page-title">All projects</h1>'
-        '<p class="ql-page-subtitle">Sortable directory of every QuantLabs project</p>',
+        '<p class="ql-page-subtitle">Every QuantLabs project at a glance, alphabetical</p>',
         unsafe_allow_html=True,
     )
 
-    rows = []
+    # Local CSS: staggered fade-in on load + lift on hover. Scoped to
+    # .ql-all-card so nothing else on the page inherits these animations.
+    _ql_html(
+        """
+        <style>
+        @keyframes ql-card-in {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .ql-all-card {
+            animation: ql-card-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+            transition: transform 0.18s ease, box-shadow 0.18s ease,
+                        border-color 0.18s ease !important;
+            will-change: transform;
+        }
+        .ql-all-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(26, 26, 26, 0.08);
+            border-color: #d97706 !important;
+        }
+        /* Stagger: each card waits a bit longer before its fade-in starts.
+           Covers up to ~30 cards; anything beyond that just snaps in. */
+        .ql-all-card:nth-child(1)  { animation-delay: 0.00s; }
+        .ql-all-card:nth-child(2)  { animation-delay: 0.03s; }
+        .ql-all-card:nth-child(3)  { animation-delay: 0.06s; }
+        .ql-all-card:nth-child(4)  { animation-delay: 0.09s; }
+        .ql-all-card:nth-child(5)  { animation-delay: 0.12s; }
+        .ql-all-card:nth-child(6)  { animation-delay: 0.15s; }
+        .ql-all-card:nth-child(7)  { animation-delay: 0.18s; }
+        .ql-all-card:nth-child(8)  { animation-delay: 0.21s; }
+        .ql-all-card:nth-child(9)  { animation-delay: 0.24s; }
+        .ql-all-card:nth-child(10) { animation-delay: 0.27s; }
+        .ql-all-card:nth-child(n+11) { animation-delay: 0.30s; }
+        </style>
+        """
+    )
+
+    # Flatten the category map into [(category, project), …] then sort so
+    # that projects in FEATURED_KEYS appear first in that order ("funnest
+    # on top") and everything else falls through alphabetically.
+    # Category becomes a colour-coded chip on each card so the info that
+    # used to live in the table's Category column stays visible.
+    all_with_category: list[tuple[str, object]] = []
     for category, projs in PROJECTS_BY_CATEGORY.items():
         for p in projs:
-            rows.append({
-                "Name": p.label,
-                "Category": category,
-                "Tech": " · ".join(p.tech),
-                "Capstone": "✓" if p.is_capstone else "",
-                # LinkColumn needs a real navigable URL — stuffing the raw
-                # pages/...py path makes Streamlit serve it as ~/+/pages/...
-                # which 404s. Convert to the slug form the rest of the app
-                # uses for the cards.
-                "Link": _page_url(p.page_link),
-            })
-    df = pd.DataFrame(rows).sort_values("Name").reset_index(drop=True)
-    st.dataframe(
-        df,
-        hide_index=True,
-        use_container_width=True,
-        column_config={
-            "Link": st.column_config.LinkColumn(
-                "Open",
-                display_text="open →",
-            ),
-        },
-    )
+            all_with_category.append((category, p))
+
+    _featured_index = {key: i for i, key in enumerate(FEATURED_KEYS)}
+
+    def _sort_key(item: tuple[str, object]):
+        _, proj = item
+        if proj.key in _featured_index:
+            # Featured group — (0, position-in-FEATURED_KEYS, label)
+            return (0, _featured_index[proj.key], proj.label.lower())
+        # Everything else — (1, 0, label) so it sorts alphabetically after
+        return (1, 0, proj.label.lower())
+
+    all_with_category.sort(key=_sort_key)
+
+    grid_html = f'<div style="{_CAT_GRID_STYLE}">'
+    for category, p in all_with_category:
+        grid_html += _all_projects_card_html(p, category)
+    grid_html += '</div>'
+    _ql_html(grid_html)
 
 # ─────────────────────────────────────────────────────────────
 # System Health — preserved from original

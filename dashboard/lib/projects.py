@@ -24,6 +24,19 @@ class Project:
 
 
 PROJECTS_BY_CATEGORY: dict = {
+    "Geopolitics & risk": [
+        Project(
+            key="global_contagion",
+            label="Global Contagion",
+            description=(
+                "Replay geopolitical shocks across a 3D globe — "
+                "bond-yield contagion from Middle East to world markets"
+            ),
+            tech=["Python", "Streamlit", "pydeck", "pandas", "yfinance"],
+            page_link="pages/70_Global_Contagion.py",
+        ),
+    ],
+
     "Personal finance & property": [
         Project(
             key="london_house_prices",
@@ -231,19 +244,6 @@ PROJECTS_BY_CATEGORY: dict = {
         ),
     ],
 
-    "Geopolitics & risk": [
-        Project(
-            key="global_contagion",
-            label="Global Contagion",
-            description=(
-                "Replay geopolitical shocks across a 3D globe — "
-                "bond-yield contagion from Middle East to world markets"
-            ),
-            tech=["Python", "Streamlit", "pydeck", "pandas", "yfinance"],
-            page_link="pages/70_Global_Contagion.py",
-        ),
-    ],
-
     "Tech demos & references": [
         Project(
             key="big_o",
@@ -270,11 +270,17 @@ PROJECTS_BY_CATEGORY: dict = {
 }
 
 
+# FEATURED_KEYS drives two things:
+#   1. The "Featured" grid on the /QuantLabs Welcome tab (top 3 shown)
+#   2. The order of cards on the /QuantLabs All projects tab — featured
+#      first in this order, everything else alphabetical after
+# To reshuffle the "funnest on top" ordering, just rearrange this list.
 FEATURED_KEYS = [
-    "rent_vs_buy",
-    "london_house_prices",
-    "etymology",
-    "big_o",
+    "global_contagion",      # flagship: 3D globe + timeline + (soon) gestures
+    "etymology",             # force-directed word graph
+    "london_house_prices",   # geo maps of 10 years of Land Registry data
+    "big_o",                 # live algorithm runner + log-log plots
+    "rent_vs_buy",           # interactive calculator + scenario charts
     "portfolio_optimization",
     "plotting_libraries",
 ]

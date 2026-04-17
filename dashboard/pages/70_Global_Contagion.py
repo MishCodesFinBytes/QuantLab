@@ -140,6 +140,24 @@ def _correlations_for_date(events: pd.DataFrame, target_date) -> dict:
 corr_by_country = _correlations_for_date(events, selected_date)
 arc_rows = globe.build_arc_rows(corr_by_country)
 
+# pydeck GlobeView with map_provider=None renders only layers we explicitly
+# add. Without a basemap we'd see arcs floating in empty 3D space, so put a
+# country-outline GeoJsonLayer behind the arcs. Natural Earth public URL.
+_WORLD_COUNTRIES_URL = (
+    "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/"
+    "ne_50m_admin_0_scale_rank.geojson"
+)
+
+countries_layer = pdk.Layer(
+    "GeoJsonLayer",
+    data=_WORLD_COUNTRIES_URL,
+    stroked=False,
+    filled=True,
+    get_fill_color=[40, 50, 70, 220],   # dark slate — matches the dashboard theme
+    get_line_color=[80, 95, 115, 120],
+    pickable=False,
+)
+
 arc_layer = pdk.Layer(
     "ArcLayer",
     data=arc_rows,
@@ -161,10 +179,10 @@ view_state = pdk.ViewState(
 )
 
 deck = pdk.Deck(
-    layers=[arc_layer],
+    layers=[countries_layer, arc_layer],   # basemap first so arcs draw on top
     initial_view_state=view_state,
     views=[pdk.View(type="GlobeView", controller=True)],
-    map_provider=None,   # GlobeView does not use map tiles
+    map_provider=None,   # GlobeView does not use tile maps
     tooltip={"text": "{dest_label}\nCorrelation: {correlation}"},
 )
 
