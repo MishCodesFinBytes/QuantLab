@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manisha Shetty — Resume</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #020617;
+            --primary: #3b82f6;
+        }
+        html, body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .hero-gradient {
+            background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.18) 0%, transparent 55%);
+        }
+        .nav-item {
+            position: relative;
+            transition: color 0.3s ease;
+        }
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+        .nav-item:hover::after {
+            width: 100%;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-[var(--bg)]">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 w-full z-50 glass px-6 py-4 flex justify-between items-center">
+        <div class="font-extrabold tracking-tighter text-xl">MS.</div>
+        <div class="hidden md:flex gap-8 text-xs uppercase tracking-[0.2em] font-bold text-slate-400">
+            <a href="#experience" class="nav-item hover:text-white">Experience</a>
+            <a href="#skills" class="nav-item hover:text-white">Arsenal</a>
+            <a href="#projects" class="nav-item hover:text-white">Personal Projects</a>
+            <a href="mailto:manishasadashiv@gmail.com" class="nav-item hover:text-white">Contact</a>
+        </div>
+        <div class="flex gap-2">
+            <a href="mailto:manishasadashiv@gmail.com" class="bg-blue-600 text-white px-5 py-2 rounded-full text-xs font-bold hover:bg-blue-500 transition-all">HIRE ME</a>
+            <a href="{{QUANTLABS_URL}}" target="_top" class="bg-white text-black px-5 py-2 rounded-full text-xs font-bold hover:bg-blue-500 hover:text-white transition-all flex items-center gap-1">ENTER QUANTLABS <span aria-hidden="true">→</span></a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="relative px-6 pt-16 pb-20 hero-gradient">
+        <div class="container mx-auto">
+            <div class="max-w-4xl">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold mb-6 tracking-widest uppercase">
+                    <i data-lucide="map-pin" class="w-3 h-3"></i> London, UK
+                </div>
+                <h1 class="text-6xl md:text-8xl font-extrabold tracking-tighter leading-[0.85] mb-8 text-white">
+                    PYTHON <br /> DEVELOPER
+                </h1>
+                <p class="text-xl md:text-2xl text-slate-400 max-w-2xl mb-10 leading-relaxed font-light">
+                    Designing and scaling <span class="text-white font-medium">business-critical trading solutions</span> for fixed income and commodities. From STP to risk reporting, I build the engines that power markets.
+                </p>
+                <div class="flex flex-wrap gap-4">
+                    <a href="#experience" class="px-8 py-4 bg-white text-black font-bold rounded-full hover:bg-blue-500 hover:text-white transition-all duration-300 flex items-center gap-2">
+                        VIEW EXPERIENCE <i data-lucide="arrow-down-right" class="w-5 h-5"></i>
+                    </a>
+                    <a href="{{QUANTLABS_URL}}" target="_top" class="px-8 py-4 glass text-white font-bold rounded-full hover:bg-white/10 transition-all flex items-center gap-2">
+                        ENTER QUANTLABS <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Top Impact Bento -->
+    <section class="container mx-auto px-6 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="glass p-8 rounded-3xl group hover:border-blue-500/50 transition-all">
+                <div class="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400 mb-6">
+                    <i data-lucide="zap"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Performance Focus</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Optimized legacy regulatory feeds reducing runtime from 3 days to just 11 hours.</p>
+            </div>
+            <div class="glass p-8 rounded-3xl group hover:border-blue-500/50 transition-all">
+                <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400 mb-6">
+                    <i data-lucide="shield-check"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Risk Strategy</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Developing the DWS Model Monitoring platform for Deutsche Bank (Kannon).</p>
+            </div>
+            <div class="glass p-8 rounded-3xl group hover:border-blue-500/50 transition-all">
+                <div class="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center text-purple-400 mb-6">
+                    <i data-lucide="globe"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Global Scale</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Managed LIBOR to SOFR migration and Brexit-related desk splits for J.P. Morgan.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Experience -->
+    <section id="experience" class="container mx-auto px-6 py-12">
+        <h2 class="text-4xl md:text-6xl font-extrabold mb-16 tracking-tighter">THE JOURNEY<span class="text-blue-500">.</span></h2>
+
+        <div class="space-y-12">
+            <!-- Deutsche Bank -->
+            <div class="relative pl-8 border-l border-blue-500/30">
+                <div class="absolute -left-1.5 top-0 w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.8)]"></div>
+                <div class="mb-4">
+                    <span class="text-blue-500 font-bold text-sm tracking-widest uppercase">March 2025 — Present</span>
+                    <h3 class="text-2xl font-bold">Python Developer — Deutsche Bank, London</h3>
+                    <p class="text-slate-400 font-mono text-sm">GSA CONTROL STRATS — MORM</p>
+                </div>
+                <ul class="grid md:grid-cols-2 gap-4 text-slate-300 text-sm">
+                    <li class="flex gap-2"><span class="text-blue-500">›</span> Managing DWS portfolio greenfield project to onboard models onto Kannon platform.</li>
+                    <li class="flex gap-2"><span class="text-blue-500">›</span> Designed and built quarterly attestation tool for DWS model controls framework.</li>
+                    <li class="flex gap-2"><span class="text-blue-500">›</span> Created semi-automated model-change and evidence creation workflows.</li>
+                    <li class="flex gap-2"><span class="text-blue-500">›</span> Developed internal live Risk tier value calculation for models.</li>
+                    <li class="flex gap-2"><span class="text-blue-500">›</span> Built automated email notification system for model risk governance.</li>
+                    <li class="flex gap-2"><span class="text-blue-500">›</span> Enhanced model monitoring dashboard for Credit risk (PD, LGD, CCF) with RAG indicators.</li>
+                    <li class="flex gap-2"><span class="text-blue-500">›</span> Analysed tools for model findings and remediation in line with internal frameworks.</li>
+                    <li class="flex gap-2"><span class="text-blue-500">›</span> Built and deployed scalable UI applications using Python, React, and TypeScript.</li>
+                </ul>
+                <div class="mt-4 flex gap-2">
+                    <span class="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] font-bold">PYTHON</span>
+                    <span class="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] font-bold">REACT</span>
+                    <span class="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] font-bold">KANNON</span>
+                </div>
+            </div>
+
+            <!-- JPM -->
+            <div class="relative pl-8 border-l border-slate-700">
+                <div class="absolute -left-1 w-2 h-2 bg-slate-700 rounded-full"></div>
+                <div class="mb-4">
+                    <span class="text-slate-500 font-bold text-sm tracking-widest uppercase">Sept 2019 — May 2023</span>
+                    <h3 class="text-2xl font-bold">Rates Athena Front Office Developer — JP Morgan, London</h3>
+                    <p class="text-slate-400 font-mono text-sm">FIXED INCOME RATES SECURITIES ATHENA</p>
+                </div>
+                <ul class="grid md:grid-cols-2 gap-4 text-slate-300 text-sm">
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Supported linear products (bonds, futures) for RASL desk on Athena platform.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Implemented future markets changes and connectivity via Reuters and STP.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Created downstream extracts with day-on-day movement on basis points.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Built new position flow to JPM Johannesburg exchange.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Led LIBOR migration project to SOFR, SONIA, and EONIA prices.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Implemented Brexit-related desk splits and holiday calendar logic.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Trained and enabled a new offshore PM team in India.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Achieved 85% runtime reduction on regulatory legacy feeds.</li>
+                </ul>
+            </div>
+
+            <!-- EDF -->
+            <div class="relative pl-8 border-l border-slate-700">
+                <div class="absolute -left-1 w-2 h-2 bg-slate-700 rounded-full"></div>
+                <div class="mb-4">
+                    <span class="text-slate-500 font-bold text-sm tracking-widest uppercase">Sept 2017 — Sept 2019</span>
+                    <h3 class="text-2xl font-bold">Commodities Front Office Developer — EDF Trading, London</h3>
+                    <p class="text-slate-400 font-mono text-sm">FRONT OFFICE TRADING SYSTEMS</p>
+                </div>
+                <ul class="grid md:grid-cols-2 gap-4 text-slate-300 text-sm">
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Built marketplace trade capture and realtime fee reporting for sleeve trades.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Developed short-term gas optimisation tool for intra-company trading.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Built realtime and EoD position reporting for Spark spread trades.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Rewrote nomination engine from BizTalk to .NET components.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Enhanced PEG market consolidation reports and storage injection tools.</li>
+                </ul>
+            </div>
+
+            <!-- SEFE -->
+            <div class="relative pl-8 border-l border-slate-700">
+                <div class="absolute -left-1 w-2 h-2 bg-slate-700 rounded-full"></div>
+                <div class="mb-4">
+                    <span class="text-slate-500 font-bold text-sm tracking-widest uppercase">Nov 2009 — June 2017</span>
+                    <h3 class="text-2xl font-bold">.NET Developer — SEFE/Gazprom, London</h3>
+                </div>
+                <ul class="grid md:grid-cols-2 gap-4 text-slate-300 text-sm">
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Developed ATC messaging systems for FX, Power, Gas, and Carbon.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Interfaced with ICE, EPEX, APX, and Trayport via FIX and APIs.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Maintained 100% daily integration test pass rate for bug-proof flows.</li>
+                    <li class="flex gap-2"><span class="text-slate-500">›</span> Developed SOA-based applications using SOLID and TDD.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Early Career -->
+        <div class="mt-20 p-8 glass rounded-3xl">
+            <h4 class="text-blue-400 font-bold text-xs tracking-widest uppercase mb-4">Early Career Summary</h4>
+            <p class="text-slate-300 text-sm">Onsite Coordinator, Module Lead and Programmer Analyst, Infosys for BP Gas Trading Europe and LNG [2004-2009]</p>
+        </div>
+    </section>
+
+    <!-- Technical Arsenal -->
+    <section id="skills" class="container mx-auto px-6 py-12">
+        <h2 class="text-4xl font-extrabold mb-12 tracking-tighter">TECHNICAL ARSENAL</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="glass p-6 rounded-2xl">
+                <h5 class="text-blue-500 text-xs font-bold uppercase mb-4">Languages</h5>
+                <div class="flex flex-wrap gap-2 text-sm font-bold">
+                    <span>PYTHON</span><span class="text-slate-600">|</span><span>C#</span><span class="text-slate-600">|</span><span>TYPESCRIPT</span>
+                </div>
+            </div>
+            <div class="glass p-6 rounded-2xl">
+                <h5 class="text-blue-500 text-xs font-bold uppercase mb-4">Platforms</h5>
+                <div class="text-sm space-y-1">
+                    <p>Athena / Hydra</p>
+                    <p>Kannon / MariaDB</p>
+                </div>
+            </div>
+            <div class="glass p-6 rounded-2xl">
+                <h5 class="text-blue-500 text-xs font-bold uppercase mb-4">Messaging</h5>
+                <div class="text-sm space-y-1">
+                    <p>RabbitMQ / MSMQ</p>
+                    <p>FIX Protocol</p>
+                    <p>SQL / Time Series</p>
+                </div>
+            </div>
+            <div class="glass p-6 rounded-2xl">
+                <h5 class="text-blue-500 text-xs font-bold uppercase mb-4">Architecture</h5>
+                <div class="text-sm space-y-1">
+                    <p>SOA / Web API</p>
+                    <p>CI/CD / TDD</p>
+                    <p>Agile / Scrum</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Personal Projects -->
+    <section id="projects" class="container mx-auto px-6 py-12">
+        <h2 class="text-4xl md:text-6xl font-extrabold mb-16 tracking-tighter">PERSONAL PROJECTS<span class="text-blue-500">.</span></h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <a href="{{QUANTLABS_URL}}" target="_top"
+               class="glass p-8 rounded-3xl group hover:border-blue-500/50 transition-all block">
+                <div class="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400 mb-6">
+                    <i data-lucide="line-chart"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2 flex items-center gap-2">
+                    QuantLabs
+                    <i data-lucide="arrow-right" class="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition-colors"></i>
+                </h3>
+                <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                    A live Streamlit playground for quantitative finance experiments — risk dashboards, a Rent vs Buy (London) calculator, and ongoing mini-projects in Python.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] font-bold">PYTHON</span>
+                    <span class="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] font-bold">STREAMLIT</span>
+                    <span class="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] font-bold">PANDAS</span>
+                </div>
+                <p class="text-blue-400 text-xs font-bold tracking-widest uppercase mt-6">Enter QuantLabs →</p>
+            </a>
+        </div>
+    </section>
+
+    <!-- Education & Certs -->
+    <section class="container mx-auto px-6 py-12 border-t border-white/5">
+        <div class="grid md:grid-cols-2 gap-12">
+            <div>
+                <h4 class="text-xl font-bold mb-6">Education</h4>
+                <p class="text-slate-300">Computer Science and Engineering Degree<br/>
+                <span class="text-slate-500 text-sm">Visvesvaraya Technological University India</span></p>
+            </div>
+            <div>
+                <h4 class="text-xl font-bold mb-6">Certifications</h4>
+                <ul class="space-y-3 text-slate-300 text-sm">
+                    <li>• World Quant University — Applied Data Science Lab</li>
+                    <li>• PCEP — Python Institute 2023</li>
+                    <li>• Financial Markets Course — Yale via Coursera 2023</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="container mx-auto px-6 py-12 text-center text-slate-500 text-xs tracking-widest uppercase">
+        <p>Manisha Shetty &copy; 2025 • Python Developer • Portfolio</p>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

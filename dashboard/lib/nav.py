@@ -405,12 +405,13 @@ def _render_sidebar_impl():
     # registry, nav.py is imported from many places.
     from projects import PROJECTS_BY_CATEGORY, category_with_capstones_last
 
-    # Render the brand as an <h2> wrapping a link to the landing page
-    # (root '/' on Streamlit Cloud). The class lets the descendant
-    # selector .ql-sidebar-title * force Fraunces onto the inner span.
+    # Render the brand as an <h2> wrapping a link to the project hub
+    # at /QuantLabs (root '/' serves the resume page). The class lets
+    # the descendant selector .ql-sidebar-title * force Fraunces onto
+    # the inner span.
     st.sidebar.markdown(
         '<h2 class="ql-sidebar-title">'
-        '<a href="/" target="_self" style="color:inherit;text-decoration:none;">QuantLabs</a>'
+        '<a href="/QuantLabs" target="_self" style="color:inherit;text-decoration:none;">QuantLabs</a>'
         '</h2>',
         unsafe_allow_html=True,
     )
@@ -422,7 +423,7 @@ def _render_sidebar_impl():
     st.sidebar.markdown(
         f'<div style="{byline_style}">Built by '
         f'<a style="{link_style}" href="https://mish-codes.github.io/FinBytes/">Manisha</a>'
-        f' · <a style="{link_style}" href="https://mish-codes.github.io/FinBytes/resume/">Resume</a>'
+        f' · <a style="{link_style}" href="/" target="_self">Resume</a>'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -444,7 +445,7 @@ def _render_sidebar_impl():
         '<a style="color:#d97706;text-decoration:none;" '
         'href="https://mish-codes.github.io/FinBytes/">Blog</a> · '
         '<a style="color:#d97706;text-decoration:none;" '
-        'href="https://mish-codes.github.io/FinBytes/resume/">Resume</a>'
+        'href="/" target="_self">Resume</a>'
         '</div>',
         unsafe_allow_html=True,
     )
