@@ -101,6 +101,11 @@ _CAPSTONE_STYLE = (
     "letter-spacing:0.05em;color:#d97706;border:1px solid #d97706;padding:1px 5px;"
     "border-radius:2px;margin-left:0.4rem;vertical-align:middle;"
 )
+_CAT_CHIP_STYLE = (
+    "display:inline-block;font-size:0.62rem;font-weight:500;text-transform:uppercase;"
+    "letter-spacing:0.05em;color:#6b6b6b;background:#f4f4f4;padding:2px 6px;"
+    "border-radius:2px;margin-bottom:0.4rem;"
+)
 _FEATURED_GRID_STYLE = (
     "display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:1rem;"
 )
@@ -116,6 +121,24 @@ def _featured_card_html(p) -> str:
         f'<div style="{_FEATURED_TITLE_STYLE}">{_escape(p.label)}</div>'
         f'<div style="{_FEATURED_DESC_STYLE}">{_escape(p.description)}</div>'
         f'<div style="{_FEATURED_TECH_STYLE}">{tech}</div>'
+        f'</a>'
+    )
+
+
+def _all_projects_card_html(p, category: str) -> str:
+    """Card for the All projects tab — includes a category chip since these
+    cards are not grouped by category."""
+    tech = " · ".join(_escape(t) for t in p.tech)
+    capstone = (
+        f'<span style="{_CAPSTONE_STYLE}">Capstone</span>' if p.is_capstone else ""
+    )
+    cat_chip = f'<div style="{_CAT_CHIP_STYLE}">{_escape(category)}</div>'
+    return (
+        f'<a style="{_CAT_CARD_STYLE}" href="{_escape(_page_url(p.page_link))}" target="_self">'
+        f'{cat_chip}'
+        f'<div style="{_CAT_TITLE_STYLE}">{_escape(p.label)}{capstone}</div>'
+        f'<div style="{_CAT_DESC_STYLE}">{_escape(p.description)}</div>'
+        f'<div style="{_CAT_TECH_STYLE}">{tech}</div>'
         f'</a>'
     )
 
@@ -339,36 +362,24 @@ with tab_welcome:
 with tab_all:
     st.markdown(
         '<h1 class="ql-page-title">All projects</h1>'
-        '<p class="ql-page-subtitle">Sortable directory of every QuantLabs project</p>',
+        '<p class="ql-page-subtitle">Every QuantLabs project at a glance, alphabetical</p>',
         unsafe_allow_html=True,
     )
 
-    rows = []
+    # Flatten the category map into [(category, project), …] and sort
+    # alphabetically by label. Category becomes a chip on each card so the
+    # info that used to live in the Category column stays visible.
+    all_with_category: list[tuple[str, object]] = []
     for category, projs in PROJECTS_BY_CATEGORY.items():
         for p in projs:
-            rows.append({
-                "Name": p.label,
-                "Category": category,
-                "Tech": " · ".join(p.tech),
-                "Capstone": "✓" if p.is_capstone else "",
-                # LinkColumn needs a real navigable URL — stuffing the raw
-                # pages/...py path makes Streamlit serve it as ~/+/pages/...
-                # which 404s. Convert to the slug form the rest of the app
-                # uses for the cards.
-                "Link": _page_url(p.page_link),
-            })
-    df = pd.DataFrame(rows).sort_values("Name").reset_index(drop=True)
-    st.dataframe(
-        df,
-        hide_index=True,
-        use_container_width=True,
-        column_config={
-            "Link": st.column_config.LinkColumn(
-                "Open",
-                display_text="open →",
-            ),
-        },
-    )
+            all_with_category.append((category, p))
+    all_with_category.sort(key=lambda item: item[1].label.lower())
+
+    grid_html = f'<div style="{_CAT_GRID_STYLE}">'
+    for category, p in all_with_category:
+        grid_html += _all_projects_card_html(p, category)
+    grid_html += '</div>'
+    _ql_html(grid_html)
 
 # ─────────────────────────────────────────────────────────────
 # System Health — preserved from original
