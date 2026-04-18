@@ -444,23 +444,42 @@ def _split_countries_by_role() -> tuple[dict, dict, dict]:
 
 _epicenter_geo, _destination_geo, _rest_geo = _split_countries_by_role()
 
-# Earth surface: 3 country polygon layers.
+# Earth surface: NASA Black Marble night-lights via BitmapLayer, with
+# two polygon layers drawn over it to highlight the epicenter (red) and
+# the five destination countries (amber).
 #
-# We tried a BitmapLayer with NASA Black Marble night-lights for a prettier
-# "dark earth with glowing cities" look, but pydeck 0.9.1 incorrectly
-# prepends "@@=" to the `image` string prop (treating it as an accessor
-# expression), which makes deck.gl's JSON converter try to parse the data:
-# URL and fail at the first colon ("Unexpected ':' at character 4"). Until
-# pydeck's serialiser fixes that or we work around it with HTML surgery,
-# we stay on polygon layers. Bonus: the 3-role visual split stays
-# (red epicenter / amber destinations / slate rest).
-rest_layer = pdk.Layer(
-    "GeoJsonLayer",
-    data=_rest_geo,
-    stroked=False,
-    filled=True,
-    get_fill_color=[40, 50, 70, 220],
-    pickable=False,
+# pydeck 0.9.1 has a bug where the `image` string prop on BitmapLayer is
+# incorrectly prefixed with "@@=" in the serialised JSON (treated as an
+# accessor expression). deck.gl's JSON converter then tries to parse the
+# data: URL as an expression and fails at the first colon:
+#   Error: Unexpected ":" at character 4
+# We work around it by regex-stripping the prefix from the HTML string
+# after `deck.to_html(...)` — see the `_deck_html` handling below.
+#
+# Night-lights JPG is bundled locally (779 KB) and fed to the BitmapLayer
+# as a base64 data: URL so the deck.gl iframe doesn't need to load an
+# external asset (Streamlit Cloud doesn't expose dashboard/assets
+# statically via any URL deck.gl could fetch).
+import base64 as _b64
+
+_NIGHT_LIGHTS_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "assets" / "images" / "world_night.jpg"
+)
+
+
+@st.cache_data(show_spinner=False)
+def _night_lights_data_url() -> str:
+    with _NIGHT_LIGHTS_PATH.open("rb") as f:
+        encoded = _b64.b64encode(f.read()).decode("ascii")
+    return f"data:image/jpeg;base64,{encoded}"
+
+
+night_lights_layer = pdk.Layer(
+    "BitmapLayer",
+    image=_night_lights_data_url(),
+    bounds=[-180, -90, 180, 90],
+    opacity=1.0,
 )
 destination_layer = pdk.Layer(
     "GeoJsonLayer",
@@ -521,7 +540,7 @@ view_state = pdk.ViewState(
 )
 
 deck = pdk.Deck(
-    layers=[rest_layer, destination_layer, epicenter_layer, arc_layer],
+    layers=[night_lights_layer, destination_layer, epicenter_layer, arc_layer],
     initial_view_state=view_state,
     # pydeck's canonical class for the 3D globe is `_GlobeView` with a
     # leading underscore (deck.gl internal class name). Without the
@@ -552,36 +571,94 @@ with col_globe:
     # _GlobeView. Rendering via deck.to_html() + components.html gives
     # us deck.gl's native JS renderer which honours GlobeView correctly.
     _deck_html = deck.to_html(as_string=True, notebook_display=False)
+    # pydeck 0.9.1 incorrectly tags the BitmapLayer `image` prop with
+    # the "@@=" accessor-expression prefix. Strip it so deck.gl sees a
+    # plain string URL (or data: URL) instead of trying to evaluate an
+    # expression that starts with "data" and fails at the first colon.
+    import re as _re
+    _deck_html = _re.sub(r'"image"\s*:\s*"@@=', '"image": "', _deck_html)
     components.html(_deck_html, height=720, scrolling=False)
 
 with col_table:
     st.caption("7-day corr vs ME index")
-    st.dataframe(
-        pd.DataFrame(
-            [
-                {"Country": constants.DESTINATION_CITIES[c]["label"], "Correlation": round(v, 3)}
-                for c, v in corr_by_country.items()
-            ]
-        ),
-        hide_index=True,
-        use_container_width=True,
+
+    # RAG colour rules — same semantics as the arc colour ramp on the globe
+    # so the table and the globe agree at a glance:
+    #   strong positive corr (≥ +0.5) = contagion           → red
+    #   strong negative corr (≤ -0.5) = decoupling / hedge  → green
+    #   weak / ambiguous (|corr| 0.2 – 0.5)                 → amber
+    #   noise (|corr| < 0.2)                                → neutral grey
+    #
+    # Rendered as hand-rolled HTML because pandas Styler passed to
+    # st.dataframe drops the cell background on some Streamlit Cloud
+    # pandas/streamlit combos — the hand-rolled version is guaranteed
+    # to render since it's just markdown HTML.
+    def _rag_corr_style(v: float) -> str:
+        if pd.isna(v):
+            return ""
+        if v >= 0.5:
+            return "background:#fecaca;color:#7f1d1d;"
+        if v <= -0.5:
+            return "background:#bbf7d0;color:#14532d;"
+        if abs(v) >= 0.2:
+            return "background:#fef3c7;color:#78350f;"
+        return "background:#f3f4f6;color:#374151;"
+
+    _rows_html = "".join(
+        f"<tr>"
+        f"<td style='padding:4px 8px'>{constants.DESTINATION_CITIES[c]['label']}</td>"
+        f"<td style='padding:4px 8px;text-align:right;font-family:ui-monospace,monospace;"
+        f"font-weight:600;{_rag_corr_style(v)}'>{v:+.3f}</td>"
+        f"</tr>"
+        for c, v in corr_by_country.items()
     )
+    _table_html = (
+        "<table style='width:100%;border-collapse:collapse;font-size:0.88rem'>"
+        "<thead><tr>"
+        "<th style='padding:4px 8px;text-align:left;font-weight:500;"
+        "color:#6b7280;border-bottom:1px solid #e5e7eb'>Country</th>"
+        "<th style='padding:4px 8px;text-align:right;font-weight:500;"
+        "color:#6b7280;border-bottom:1px solid #e5e7eb'>Correlation</th>"
+        "</tr></thead>"
+        f"<tbody>{_rows_html}</tbody>"
+        "</table>"
+    )
+    st.markdown(_table_html, unsafe_allow_html=True)
 
 with col_sparks:
     st.caption("Energy · Safe haven · Fear")
+    # polarity: "up_is_bad" means a rising value signals market stress
+    # (energy spike, shipping stress, fear) → colour red on rise, green
+    # on fall. Gold inverts: a rising gold price during crisis is the
+    # safe-haven bid working → colour green on rise.
     _panel_tickers = [
-        ("BZ=F", "Brent Crude"),
-        ("BDRY", "Baltic Dry (ETF)"),
-        ("GC=F", "Gold"),
-        ("^VIX", "VIX"),
+        ("BZ=F", "Brent Crude", "up_is_bad"),
+        ("BDRY", "Baltic Dry (ETF)", "up_is_bad"),
+        ("GC=F", "Gold", "up_is_good"),
+        ("^VIX", "VIX", "up_is_bad"),
     ]
+
+    def _rag_ticker(pct: float, polarity: str) -> str:
+        """RAG colour for a ticker's % change from period start.
+
+        Amber band is ±2% — below that the move is noise, not a signal.
+        Above, a 'bad' direction (given polarity) goes red; a 'good'
+        direction goes green.
+        """
+        red, green, amber = "#dc2626", "#16a34a", "#d97706"
+        if abs(pct) < 2:
+            return amber
+        rising = pct > 0
+        if polarity == "up_is_bad":
+            return red if rising else green
+        return green if rising else red
     # Coerce selected_date to pd.Timestamp and make the index a
     # DatetimeIndex before slicing — this removes the Python-date vs
     # pandas-Timestamp mismatch that was producing empty filtered
     # series (visible in DevTools as "WARN Infinite extent for field
     # date" coming from the vega-lite sparkline embedder).
     _sel_ts = pd.Timestamp(selected_date)
-    for ticker, label in _panel_tickers:
+    for ticker, label, polarity in _panel_tickers:
         series = (
             events[events["ticker"] == ticker]
             .set_index("date")["close"]
@@ -601,7 +678,24 @@ with col_sparks:
         if series.empty:
             st.markdown(f"**{label}** — *no data before this date*")
             continue
-        st.markdown(f"**{label}** &nbsp; `{series.iloc[-1]:.2f}`", unsafe_allow_html=True)
+        _start_val = float(series.iloc[0])
+        _end_val = float(series.iloc[-1])
+        _pct = ((_end_val - _start_val) / _start_val * 100) if _start_val else 0.0
+        _colour = _rag_ticker(_pct, polarity)
+        # Single <div> instead of mixing markdown bold with HTML spans —
+        # Streamlit's markdown renderer was occasionally swallowing the
+        # trailing pct span when the line started with **bold**.
+        st.markdown(
+            f"<div style='margin-bottom:0'>"
+            f"<strong>{label}</strong> &nbsp; "
+            f"<span style='color:{_colour};font-family:ui-monospace,monospace;"
+            f"font-weight:600'>{_end_val:.2f}</span>"
+            f"&nbsp;&nbsp;"
+            f"<span style='color:{_colour};font-size:0.82em;font-weight:500'>"
+            f"{_pct:+.1f}%</span>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
         st.line_chart(series, height=60)
 
 
