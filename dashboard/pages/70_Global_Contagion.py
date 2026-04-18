@@ -345,7 +345,19 @@ from contagion import correlations, globe  # noqa: E402
 
 def _correlations_for_date(events: pd.DataFrame, target_date) -> dict:
     """For each destination country, compute rolling-corr(ME index, country_yield)
-    and return the value at `target_date`."""
+    and return the value at `target_date`.
+
+    Two correlation regimes, chosen per-ticker:
+
+    * **Daily tickers** (`TUR`, `^TNX`) use the standard 7-day rolling
+      window on daily data.
+    * **FRED monthly tickers** (India, Germany 10Y yields) use a 3-month
+      rolling window on monthly data. Forward-filling them onto the daily
+      calendar and applying the 7-day window produced zero-variance
+      stretches and ±inf correlations — monthly-cadence is the honest
+      match for monthly data. Values update once per month, not daily,
+      but at least they're real numbers.
+    """
     me_idx = correlations.middle_east_index(events)
     out: dict = {}
     for country, meta in constants.DESTINATION_CITIES.items():
@@ -358,17 +370,20 @@ def _correlations_for_date(events: pd.DataFrame, target_date) -> dict:
         if country_series.empty:
             out[country] = 0.0
             continue
-        # Align on common dates
+        # FRED monthly tickers get a 3-month window; daily tickers the
+        # standard 7-day.
+        window = 3 if ticker.startswith("FRED:") else constants.CORRELATION_WINDOW
         aligned = pd.concat([me_idx, country_series], axis=1, join="inner").dropna()
-        if len(aligned) < constants.CORRELATION_WINDOW:
+        if len(aligned) < window:
             out[country] = 0.0
             continue
         corr = correlations.rolling_corr(
-            aligned.iloc[:, 0], aligned.iloc[:, 1],
-            window=constants.CORRELATION_WINDOW,
+            aligned.iloc[:, 0], aligned.iloc[:, 1], window=window
         )
-        # Pick the correlation at target_date (or most recent ≤ target_date)
-        corr = corr.dropna()
+        # Drop NaN + any ±inf that would come from constant-variance
+        # windows (defensive — with the window-per-ticker split above,
+        # we shouldn't hit inf in practice)
+        corr = corr.replace([float("inf"), float("-inf")], float("nan")).dropna()
         td = pd.Timestamp(target_date).date()
         mask = corr.index <= td
         out[country] = float(corr[mask].iloc[-1]) if mask.any() else 0.0
