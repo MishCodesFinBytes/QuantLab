@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
 
@@ -431,7 +432,12 @@ deck = pdk.Deck(
 col_globe, col_table, col_sparks = st.columns([3, 1, 1])
 
 with col_globe:
-    st.pydeck_chart(deck, use_container_width=True)
+    # st.pydeck_chart does NOT forward the views= config to its internal
+    # deck.gl renderer — it always uses MapView, silently ignoring
+    # _GlobeView. Rendering via deck.to_html() + components.html gives
+    # us deck.gl's native JS renderer which honours GlobeView correctly.
+    _deck_html = deck.to_html(as_string=True, notebook_display=False)
+    components.html(_deck_html, height=550, scrolling=False)
 
 with col_table:
     st.caption("7-day corr vs ME index")
