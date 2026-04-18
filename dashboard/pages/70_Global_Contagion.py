@@ -128,6 +128,18 @@ st.markdown(
     .ql-contagion-event-dot:hover::after {
         opacity: 1;
     }
+
+    /* Soften the per-frame iframe reload of the globe — each rerun
+       creates a fresh components.html iframe, which used to snap in
+       abruptly. Fade-in over 250ms covers the reload. */
+    @keyframes ql-globe-fade-in {
+        from { opacity: 0.35; }
+        to   { opacity: 1; }
+    }
+    [data-testid="stMain"] iframe[title="streamlit_app"],
+    [data-testid="stMain"] .stIFrame iframe {
+        animation: ql-globe-fade-in 0.25s ease-out;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -308,7 +320,7 @@ st.caption(f"Showing snapshot at **{selected_date}**")
 # Auto-advance while playing — overrides auto-rotate.
 if st.session_state.contagion_playing:
     import time as _time
-    _time.sleep(0.15)
+    _time.sleep(0.35)   # slower default — gives the eye time to register each frame
     if st.session_state.contagion_date_idx < len(dates) - 1:
         st.session_state.contagion_date_idx += 1
     else:
@@ -456,7 +468,8 @@ arc_layer = pdk.Layer(
     get_target_position="target",
     get_source_color="color",
     get_target_color="color",
-    get_width=3,
+    get_width="width",   # per-arc, scales with |correlation| — see globe.correlation_to_width
+    width_min_pixels=1.5,
     great_circle=True,
     pickable=True,
 )

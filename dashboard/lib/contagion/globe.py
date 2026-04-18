@@ -31,6 +31,19 @@ def correlation_to_color(corr: float) -> tuple[int, int, int, int]:
     return (r, g, b, 220)
 
 
+_MIN_ARC_WIDTH: float = 1.5
+_MAX_ARC_WIDTH: float = 8.0
+
+
+def correlation_to_width(corr: float) -> float:
+    """Arc width in pixels — scales with |correlation| so strong contagion
+    reads as a thick bold arc and weak signal reads as a hairline.
+    Adds a second visual channel beyond colour for faster pattern-tracking
+    when the timeline is playing."""
+    strength = min(1.0, abs(float(corr)))
+    return _MIN_ARC_WIDTH + strength * (_MAX_ARC_WIDTH - _MIN_ARC_WIDTH)
+
+
 def build_arc_rows(
     correlations_by_country: dict[str, float]
 ) -> list[dict]:
@@ -40,7 +53,7 @@ def build_arc_rows(
         correlations_by_country: e.g. {"IN": 0.8, "TR": -0.3, ...}
 
     Returns:
-        List of dicts with keys: source, target, color, dest_country,
+        List of dicts with keys: source, target, color, width, dest_country,
         dest_label, correlation. Ready to be passed as the ArcLayer `data`.
     """
     rows: list[dict] = []
@@ -50,6 +63,7 @@ def build_arc_rows(
             "source": list(EPICENTER_LONLAT),
             "target": list(meta["lonlat"]),
             "color": list(correlation_to_color(corr)),
+            "width": correlation_to_width(corr),
             "dest_country": country_code,
             "dest_label": meta["label"],
             "correlation": float(corr),
