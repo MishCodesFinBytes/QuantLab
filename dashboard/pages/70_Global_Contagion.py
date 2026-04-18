@@ -158,20 +158,31 @@ st.markdown(
         animation: ql-ticker-flash 0.4s ease-out;
     }
 
-    /* Heartbeat pulse on the altair sparkline dot.
-       Vega-lite renders each point-mark layer as a group of SVG <path>s
-       under .mark-symbol. We scale the path in place (transform-box:
-       fill-box so the scale origin is the glyph centre, not the SVG
-       root) on a double-beat schedule — a longer "lub" and a shorter
-       "dub" — so the daily-price dot visibly pulses like an EKG cursor
-       leading the line. */
+    /* Altair sparkline: transparent chrome so the dark page bleeds
+       through instead of a white card behind the line. */
+    [data-testid="stMain"] [data-testid="stVegaLiteChart"],
+    [data-testid="stMain"] [data-testid="stVegaLiteChart"] canvas,
+    [data-testid="stMain"] [data-testid="stVegaLiteChart"] svg {
+        background: transparent !important;
+    }
+
+    /* Heartbeat pulse on the altair sparkline dot + halo.
+       Vega-lite renders each circle mark as a <path> inside a group
+       with class "mark-symbol role-mark". We scale the path in place
+       (transform-box: fill-box so the scale origin is the glyph
+       centre, not the SVG root) on a double-beat schedule — a longer
+       "lub" and a shorter "dub" — so the daily-price cursor visibly
+       pulses like an EKG cursor tracking the current date. Both the
+       halo disc and the solid dot share the animation; together they
+       read as a radiating pulse rather than a static marker. */
     @keyframes ql-heartbeat {
-        0%, 100% { transform: scale(1);   opacity: 1; }
-        14%      { transform: scale(1.55); opacity: 0.55; }
+        0%, 100% { transform: scale(1);    opacity: 1; }
+        14%      { transform: scale(1.55); opacity: 0.7; }
         28%      { transform: scale(1);    opacity: 1; }
-        38%      { transform: scale(1.25); opacity: 0.75; }
+        38%      { transform: scale(1.25); opacity: 0.85; }
         52%      { transform: scale(1);    opacity: 1; }
     }
+    [data-testid="stMain"] [data-testid="stVegaLiteChart"] svg g.mark-symbol path,
     [data-testid="stMain"] [data-testid="stVegaLiteChart"] svg .mark-symbol path {
         transform-box: fill-box;
         transform-origin: center;
@@ -602,14 +613,19 @@ night_lights_layer = pdk.Layer(
 # itself becomes the story — strong correlations = bright saturated
 # fill, weak ones fade toward slate so the eye focuses on where the
 # effect is.
+# Translucent glow fills — alpha is kept low so the night-lights
+# texture still reads through the colour, giving a neon/emissive feel
+# rather than a solid painted blob. The country stroke (configured on
+# the layer, not here) stays bright so the shape is still crisply
+# outlined.
 def _corr_to_destination_fill(v: float) -> list[int]:
     if v >= 0.5:
-        return [200, 30, 30, 235]      # arc red  #c81e1e
+        return [200, 30, 30, 140]      # arc red   #c81e1e, translucent
     if v <= -0.5:
-        return [20, 160, 40, 235]      # arc green #14a028
+        return [20, 160, 40, 140]      # arc green #14a028, translucent
     if abs(v) >= 0.2:
-        return [217, 119, 6, 215]      # amber    #d97706
-    return [71, 85, 105, 180]          # slate    #475569
+        return [217, 119, 6, 120]      # amber     #d97706, more subtle
+    return [71, 85, 105, 80]           # slate     #475569, barely-there
 
 
 _dest_features_enriched: list[dict] = []
@@ -636,27 +652,45 @@ destination_layer = pdk.Layer(
     # legitimate "@@=" accessor prefix, which deck.gl will evaluate
     # (unlike the buggy `image` case above).
     get_fill_color="properties.ql_fill",
-    get_line_color=[255, 255, 255, 220],
-    line_width_min_pixels=1.2,
+    # Bright edge glow — the soft fill plus this crisp stroke gives the
+    # "neon outline on a dark map" look. Stroke alpha kept high so the
+    # polygon edges pop even when the fill itself is near-transparent.
+    get_line_color=[255, 255, 255, 235],
+    line_width_min_pixels=1.4,
     pickable=False,
 )
 
-# Epicenter red is unified to the arc-red #c81e1e (200, 30, 30) so
-# every "danger" red on the page — epicenter fill, arcs at +corr,
-# correlation table cells ≥ +0.5, Brent-rising chips — is the exact
-# same hex. Earlier the epicenter was #991b1b, which looked like a
-# third red next to the arc ramp and the RAG table.
+# Epicenter: translucent red fill (same alpha strategy as destinations
+# — colour reads as glow rather than a painted blob). Stroke stays
+# bright so the country shape is visible.
 epicenter_layer = pdk.Layer(
     "GeoJsonLayer",
     data=_epicenter_geo,
     stroked=True,
     filled=True,
-    get_fill_color=[200, 30, 30, 235],
-    get_line_color=[255, 255, 255, 220],
-    line_width_min_pixels=1.4,
+    get_fill_color=[200, 30, 30, 150],
+    get_line_color=[255, 180, 180, 240],
+    line_width_min_pixels=1.6,
     pickable=False,
 )
 
+# Dual arc stack for a soft neon glow. The halo is wide + very
+# low-opacity so it reads as a bloom around the trajectory; the core
+# is thin + nearly opaque so the actual path stays crisp. Stacking two
+# ArcLayers is cheaper and more reliable than post-processing effects.
+arc_halo = pdk.Layer(
+    "ArcLayer",
+    data=arc_rows,
+    get_source_position="source",
+    get_target_position="target",
+    get_source_color="color",
+    get_target_color="color",
+    get_width=9,
+    width_min_pixels=4,
+    opacity=0.18,
+    great_circle=True,
+    pickable=False,
+)
 arc_layer = pdk.Layer(
     "ArcLayer",
     data=arc_rows,
@@ -664,14 +698,9 @@ arc_layer = pdk.Layer(
     get_target_position="target",
     get_source_color="color",
     get_target_color="color",
-    # Earlier we had `get_width="width"` to drive thickness from
-    # correlation magnitude, but something in the Streamlit Cloud
-    # iframe silently broke that accessor — arcs disappeared entirely.
-    # Reverting to a constant width until we diagnose the accessor
-    # issue properly. Arc colour still changes with correlation,
-    # so the contagion signal is still visible.
-    get_width=5,
-    width_min_pixels=2,
+    get_width=2,
+    width_min_pixels=1,
+    opacity=0.9,
     great_circle=True,
     pickable=True,
 )
@@ -695,7 +724,7 @@ view_state = pdk.ViewState(
 )
 
 deck = pdk.Deck(
-    layers=[night_lights_layer, destination_layer, epicenter_layer, arc_layer],
+    layers=[night_lights_layer, destination_layer, epicenter_layer, arc_halo, arc_layer],
     initial_view_state=view_state,
     # pydeck's canonical class for the 3D globe is `_GlobeView` with a
     # leading underscore (deck.gl internal class name). Without the
@@ -837,6 +866,7 @@ with col_sparks:
         # "WARN Infinite extent for field 'date'/'close'" because the
         # domain ends up [Infinity, -Infinity]. dropna keeps the domain
         # finite even when a ticker has sparse coverage.
+        series_full = series.dropna()
         series = series[series.index <= _sel_ts].dropna()
         if series.empty:
             st.markdown(f"**{label}** — *no data before this date*")
@@ -867,42 +897,63 @@ with col_sparks:
             unsafe_allow_html=True,
         )
 
-        # Altair sparkline: line + a filled dot at the selected date.
-        # Using altair (instead of st.line_chart) gives us the "daily
-        # price dot" and matching colour on the line.
+        # Altair sparkline — three layers so the current-date cursor
+        # (the "heartbeat") reads clearly on the dark page:
+        #   1. Full-period line at low opacity — the whole story, faded.
+        #   2. Line up to the selected date at full opacity — where we
+        #      are in the story.
+        #   3. A halo disc + solid dot at the selected date — the EKG
+        #      cursor. These get the CSS heartbeat pulse applied via
+        #      the `.mark-symbol` selector in the page stylesheet.
+        # `mark_circle` is used instead of `mark_point(filled=True)`
+        # because mark_point rendered invisibly on Streamlit Cloud
+        # (likely a vega-embed quirk) — mark_circle reliably paints.
         import altair as alt  # noqa: E402
 
-        _chart_df = series.reset_index()
-        _chart_df.columns = ["date", "close"]
-        _line = (
-            alt.Chart(_chart_df)
-            .mark_line(color=_colour, strokeWidth=1.6, interpolate="monotone")
-            .encode(
-                x=alt.X("date:T", axis=None),
-                y=alt.Y("close:Q", axis=None, scale=alt.Scale(zero=False)),
+        _full_df = series_full.reset_index()
+        _full_df.columns = ["date", "close"]
+        _cur_df = series.reset_index()
+        _cur_df.columns = ["date", "close"]
+        _cursor_df = _cur_df.iloc[[-1]]
+
+        _x = alt.X("date:T", axis=None)
+        _y = alt.Y("close:Q", axis=None, scale=alt.Scale(zero=False))
+
+        _line_base = (
+            alt.Chart(_full_df)
+            .mark_line(
+                color=_colour,
+                strokeWidth=1.0,
+                opacity=0.22,
+                interpolate="monotone",
             )
+            .encode(x=_x, y=_y)
         )
-        _dot = (
-            alt.Chart(_chart_df.iloc[[-1]])
-            .mark_point(
-                filled=True, size=110, color=_colour,
-                stroke="#fff", strokeWidth=1.6, opacity=1.0,
+        _line_trail = (
+            alt.Chart(_cur_df)
+            .mark_line(
+                color=_colour,
+                strokeWidth=1.8,
+                opacity=1.0,
+                interpolate="monotone",
             )
-            .encode(x="date:T", y="close:Q")
+            .encode(x=_x, y=_y)
         )
         _halo = (
-            alt.Chart(_chart_df.iloc[[-1]])
-            .mark_point(
-                filled=True, size=260, color=_colour,
-                opacity=0.25,
-            )
-            .encode(x="date:T", y="close:Q")
+            alt.Chart(_cursor_df)
+            .mark_circle(size=320, color=_colour, opacity=0.28)
+            .encode(x=_x, y=_y)
+        )
+        _dot = (
+            alt.Chart(_cursor_df)
+            .mark_circle(size=90, color=_colour, opacity=1.0)
+            .encode(x=_x, y=_y)
         )
         _chart = (
-            (_line + _halo + _dot)
-            .properties(height=64)
-            .configure_view(strokeWidth=0)
-            .configure_axis(grid=False)
+            alt.layer(_line_base, _line_trail, _halo, _dot)
+            .properties(height=70, background="transparent")
+            .configure_view(strokeWidth=0, fill="transparent")
+            .configure_axis(grid=False, domain=False)
         )
         st.altair_chart(_chart, use_container_width=True)
 
