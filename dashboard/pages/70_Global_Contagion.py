@@ -167,25 +167,21 @@ st.markdown(
     }
 
     /* Heartbeat pulse on the altair sparkline dot + halo.
-       Vega-lite renders each circle mark as a <path> inside a group
-       with class "mark-symbol role-mark". We scale the path in place
-       (transform-box: fill-box so the scale origin is the glyph
-       centre, not the SVG root) on a double-beat schedule — a longer
-       "lub" and a shorter "dub" — so the daily-price cursor visibly
-       pulses like an EKG cursor tracking the current date. Both the
-       halo disc and the solid dot share the animation; together they
-       read as a radiating pulse rather than a static marker. */
+       Earlier version used a CSS `transform: scale(...)` but CSS
+       transforms OVERRIDE the SVG `transform` attribute vega-lite uses
+       to position each symbol — the dots flew to (0,0) of the chart
+       (top-left corner). Opacity-only animation leaves vega's
+       positioning intact, so the dot pulses in place at the current
+       date cursor. Double-beat schedule (lub-dub) reads like an EKG. */
     @keyframes ql-heartbeat {
-        0%, 100% { transform: scale(1);    opacity: 1; }
-        14%      { transform: scale(1.55); opacity: 0.7; }
-        28%      { transform: scale(1);    opacity: 1; }
-        38%      { transform: scale(1.25); opacity: 0.85; }
-        52%      { transform: scale(1);    opacity: 1; }
+        0%, 100% { opacity: 1; }
+        14%      { opacity: 0.35; }
+        28%      { opacity: 1; }
+        42%      { opacity: 0.55; }
+        56%      { opacity: 1; }
     }
     [data-testid="stMain"] [data-testid="stVegaLiteChart"] svg g.mark-symbol path,
     [data-testid="stMain"] [data-testid="stVegaLiteChart"] svg .mark-symbol path {
-        transform-box: fill-box;
-        transform-origin: center;
         animation: ql-heartbeat 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     }
 
@@ -441,11 +437,20 @@ selected_date = dates[st.session_state.contagion_date_idx]
 st.caption(f"Showing snapshot at **{selected_date}**")
 
 # Auto-advance while playing — overrides auto-rotate.
+# Cadence tuned for smooth perceived motion without outrunning
+# Streamlit's rerun pipeline: advance 2 days per frame + 0.2s sleep.
+# Earlier 1-day / 0.35s meant a slow page rebuild (pydeck + 4 altair
+# charts) sometimes outlasted the sleep, producing jagged, half-
+# repainted frames; 2-day steps mean fewer total reruns across the
+# timeline, giving Streamlit time to fully repaint each frame.
 if st.session_state.contagion_playing:
     import time as _time
-    _time.sleep(0.35)   # slower default — gives the eye time to register each frame
+    _time.sleep(0.2)
+    _step = 2
     if st.session_state.contagion_date_idx < len(dates) - 1:
-        st.session_state.contagion_date_idx += 1
+        st.session_state.contagion_date_idx = min(
+            st.session_state.contagion_date_idx + _step, len(dates) - 1
+        )
     else:
         st.session_state.contagion_playing = False   # stop at the end
     st.rerun()
@@ -777,20 +782,22 @@ with col_table:
     # st.dataframe drops the cell background on some Streamlit Cloud
     # pandas/streamlit combos — the hand-rolled version is guaranteed
     # to render since it's just markdown HTML.
-    # Palette deliberately mirrors the globe arc ramp (#c81e1e red,
-    # #14a028 green) and the destination-country amber (#d97706) so the
-    # table reads as an extension of the visual on the left, not a
-    # separate widget with its own colour vocabulary.
+    # Softer tones than the arc ramp — the arcs on the globe are
+    # translucent/glowy on a dark 3D globe so the saturated hex reads as
+    # light, but a solid-fill table cell at #c81e1e hurts the eye next
+    # to the dark page. rgba with alpha 0.82 over the navy page gives
+    # the same colour identity at a comfortable intensity. Text is the
+    # tint-100 of each family so it stays legible.
     def _rag_corr_style(v: float) -> str:
         if pd.isna(v):
-            return "background:#475569;color:#f1f5f9;"
+            return "background:rgba(71,85,105,0.6);color:#cbd5e1;"
         if v >= 0.5:
-            return "background:#c81e1e;color:#fff;"
+            return "background:rgba(185,28,28,0.82);color:#fee2e2;"
         if v <= -0.5:
-            return "background:#14a028;color:#fff;"
+            return "background:rgba(21,128,61,0.82);color:#dcfce7;"
         if abs(v) >= 0.2:
-            return "background:#d97706;color:#fff;"
-        return "background:#475569;color:#f1f5f9;"
+            return "background:rgba(180,83,9,0.80);color:#fef3c7;"
+        return "background:rgba(71,85,105,0.55);color:#cbd5e1;"
 
     _rows_html = "".join(
         f"<tr class='ql-corr-row'>"
@@ -897,17 +904,15 @@ with col_sparks:
             unsafe_allow_html=True,
         )
 
-        # Altair sparkline — three layers so the current-date cursor
-        # (the "heartbeat") reads clearly on the dark page:
-        #   1. Full-period line at low opacity — the whole story, faded.
-        #   2. Line up to the selected date at full opacity — where we
-        #      are in the story.
-        #   3. A halo disc + solid dot at the selected date — the EKG
-        #      cursor. These get the CSS heartbeat pulse applied via
-        #      the `.mark-symbol` selector in the page stylesheet.
-        # `mark_circle` is used instead of `mark_point(filled=True)`
-        # because mark_point rendered invisibly on Streamlit Cloud
-        # (likely a vega-embed quirk) — mark_circle reliably paints.
+        # Altair sparkline — three layers:
+        #   1. Faded full-period line (opacity 0.22) — the whole story.
+        #   2. Solid trail up to the selected date (full opacity) —
+        #      where we are in the story.
+        #   3. A single dot at the selected date — the EKG cursor.
+        # Dropped the separate halo layer: stacking halo + dot doubled
+        # the mark-symbol <path> count, which slowed rerender under the
+        # CSS heartbeat animation. One mark_circle with a white stroke
+        # gives the dot enough visual weight on its own.
         import altair as alt  # noqa: E402
 
         _full_df = series_full.reset_index()
@@ -939,18 +944,16 @@ with col_sparks:
             )
             .encode(x=_x, y=_y)
         )
-        _halo = (
-            alt.Chart(_cursor_df)
-            .mark_circle(size=320, color=_colour, opacity=0.28)
-            .encode(x=_x, y=_y)
-        )
         _dot = (
             alt.Chart(_cursor_df)
-            .mark_circle(size=90, color=_colour, opacity=1.0)
+            .mark_circle(
+                size=130, color=_colour,
+                stroke="#f8fafc", strokeWidth=1.4, opacity=1.0,
+            )
             .encode(x=_x, y=_y)
         )
         _chart = (
-            alt.layer(_line_base, _line_trail, _halo, _dot)
+            alt.layer(_line_base, _line_trail, _dot)
             .properties(height=70, background="transparent")
             .configure_view(strokeWidth=0, fill="transparent")
             .configure_axis(grid=False, domain=False)
