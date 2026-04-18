@@ -454,12 +454,30 @@ rest_layer = pdk.Layer(
     pickable=False,
 )
 
+# Per-render: inject each destination feature's current correlation colour
+# into its properties. The layer reads `properties.fill_color` so countries
+# recolour live with the slider, matching what the arcs do.
+_colored_destination_features: list[dict] = []
+for _feat in _destination_geo["features"]:
+    _iso = _feat.get("properties", {}).get("ISO_A2")
+    _corr = corr_by_country.get(_iso, 0.0)
+    _rgba = list(globe.correlation_to_color(_corr))
+    # Shallow-copy so we don't mutate the cached FeatureCollection
+    _new_props = dict(_feat.get("properties", {}))
+    _new_props["fill_color"] = _rgba
+    _colored_destination_features.append({**_feat, "properties": _new_props})
+
+_destination_geo_live = {
+    "type": "FeatureCollection",
+    "features": _colored_destination_features,
+}
+
 destination_layer = pdk.Layer(
     "GeoJsonLayer",
-    data=_destination_geo,
+    data=_destination_geo_live,
     stroked=True,
     filled=True,
-    get_fill_color=[217, 119, 6, 200],   # amber — arc destinations
+    get_fill_color="properties.fill_color",   # driven by current correlation
     get_line_color=[255, 255, 255, 180],
     line_width_min_pixels=1,
     pickable=False,
