@@ -442,31 +442,45 @@ def _split_countries_by_role() -> tuple[dict, dict, dict]:
     )
 
 
-# Earth surface: NASA Black Marble night-lights texture as a BitmapLayer.
-# The image is bundled at dashboard/assets/images/world_night.jpg (~762 KB)
-# and base64-encoded into a data: URL so the deck.gl iframe has no network
-# dependency — same reliability pattern as the country GeoJSON.
-import base64 as _base64
+_epicenter_geo, _destination_geo, _rest_geo = _split_countries_by_role()
 
-_NIGHT_IMAGE_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "assets" / "images" / "world_night.jpg"
+# Earth surface: 3 country polygon layers.
+#
+# We tried a BitmapLayer with NASA Black Marble night-lights for a prettier
+# "dark earth with glowing cities" look, but pydeck 0.9.1 incorrectly
+# prepends "@@=" to the `image` string prop (treating it as an accessor
+# expression), which makes deck.gl's JSON converter try to parse the data:
+# URL and fail at the first colon ("Unexpected ':' at character 4"). Until
+# pydeck's serialiser fixes that or we work around it with HTML surgery,
+# we stay on polygon layers. Bonus: the 3-role visual split stays
+# (red epicenter / amber destinations / slate rest).
+rest_layer = pdk.Layer(
+    "GeoJsonLayer",
+    data=_rest_geo,
+    stroked=False,
+    filled=True,
+    get_fill_color=[40, 50, 70, 220],
+    pickable=False,
 )
-
-
-@st.cache_data
-def _load_night_image_data_url() -> str:
-    with _NIGHT_IMAGE_PATH.open("rb") as f:
-        encoded = _base64.b64encode(f.read()).decode("ascii")
-    return f"data:image/jpeg;base64,{encoded}"
-
-
-night_layer = pdk.Layer(
-    "BitmapLayer",
-    data=None,
-    image=_load_night_image_data_url(),
-    bounds=[-180, -90, 180, 90],   # equirectangular, whole earth
-    opacity=1.0,
+destination_layer = pdk.Layer(
+    "GeoJsonLayer",
+    data=_destination_geo,
+    stroked=True,
+    filled=True,
+    get_fill_color=[217, 119, 6, 200],
+    get_line_color=[255, 255, 255, 180],
+    line_width_min_pixels=1,
+    pickable=False,
+)
+epicenter_layer = pdk.Layer(
+    "GeoJsonLayer",
+    data=_epicenter_geo,
+    stroked=True,
+    filled=True,
+    get_fill_color=[153, 27, 27, 220],
+    get_line_color=[255, 255, 255, 200],
+    line_width_min_pixels=1,
+    pickable=False,
 )
 
 arc_layer = pdk.Layer(
@@ -502,7 +516,7 @@ view_state = pdk.ViewState(
 )
 
 deck = pdk.Deck(
-    layers=[night_layer, arc_layer],   # earth surface first, arcs on top
+    layers=[rest_layer, destination_layer, epicenter_layer, arc_layer],
     initial_view_state=view_state,
     # pydeck's canonical class for the 3D globe is `_GlobeView` with a
     # leading underscore (deck.gl internal class name). Without the
