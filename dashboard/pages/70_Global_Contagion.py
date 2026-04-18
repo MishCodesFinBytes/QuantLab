@@ -442,6 +442,8 @@ def _split_countries_by_role() -> tuple[dict, dict, dict]:
     )
 
 
+_epicenter_geo, _destination_geo, _rest_geo = _split_countries_by_role()
+
 # Earth surface: 3 country polygon layers.
 #
 # We tried a BitmapLayer with NASA Black Marble night-lights for a prettier
