@@ -66,6 +66,43 @@ st.markdown(
         border-radius: 4px;
     }
 
+    /* Hand-rolled correlation table (replaces st.dataframe on this page
+       so the RAG cell backgrounds always render). Each row gets a very
+       brief brightness flash on every re-render — when the slider
+       advances, the eye sees the five rows pulse, which sells the
+       "values just updated" moment without being noisy. */
+    @keyframes ql-corr-flash {
+        0%   { filter: brightness(1.35); }
+        100% { filter: brightness(1); }
+    }
+    .ql-corr-table .ql-corr-cell {
+        animation: ql-corr-flash 0.45s ease-out;
+        transition: background 0.3s ease;
+    }
+
+    /* Sparkline ticker values get the same flash so the value text
+       visibly updates alongside the daily-price dot animating along
+       the sparkline. */
+    @keyframes ql-ticker-flash {
+        0%   { filter: brightness(1.4); }
+        100% { filter: brightness(1); }
+    }
+    .ql-ticker-row .ql-ticker-value {
+        animation: ql-ticker-flash 0.4s ease-out;
+    }
+
+    /* Breathe the daily-price dot on the altair sparkline so the eye
+       catches where the cursor is on each ticker. The halo dot in the
+       altair layer stack is the larger, low-opacity circle — this
+       keyframe is a fallback pulse for the wrapper. */
+    @keyframes ql-sparkline-pulse {
+        0%, 100% { opacity: 1; }
+        50%      { opacity: 0.88; }
+    }
+    [data-testid="stMain"] [data-testid="stVegaLiteChart"] {
+        animation: ql-sparkline-pulse 2.2s ease-in-out infinite;
+    }
+
     /* Progress indicator under the timeline — thin greyscale bar so
        it clearly reads as "indicator", not a second slider. */
     .ql-contagion-progress-wrap {
@@ -593,27 +630,33 @@ with col_table:
     # st.dataframe drops the cell background on some Streamlit Cloud
     # pandas/streamlit combos — the hand-rolled version is guaranteed
     # to render since it's just markdown HTML.
+    # Palette deliberately mirrors the globe arc ramp (#c81e1e red,
+    # #14a028 green) and the destination-country amber (#d97706) so the
+    # table reads as an extension of the visual on the left, not a
+    # separate widget with its own colour vocabulary.
     def _rag_corr_style(v: float) -> str:
         if pd.isna(v):
-            return ""
+            return "background:#475569;color:#f1f5f9;"
         if v >= 0.5:
-            return "background:#fecaca;color:#7f1d1d;"
+            return "background:#c81e1e;color:#fff;"
         if v <= -0.5:
-            return "background:#bbf7d0;color:#14532d;"
+            return "background:#14a028;color:#fff;"
         if abs(v) >= 0.2:
-            return "background:#fef3c7;color:#78350f;"
-        return "background:#f3f4f6;color:#374151;"
+            return "background:#d97706;color:#fff;"
+        return "background:#475569;color:#f1f5f9;"
 
     _rows_html = "".join(
-        f"<tr>"
-        f"<td style='padding:4px 8px'>{constants.DESTINATION_CITIES[c]['label']}</td>"
-        f"<td style='padding:4px 8px;text-align:right;font-family:ui-monospace,monospace;"
-        f"font-weight:600;{_rag_corr_style(v)}'>{v:+.3f}</td>"
+        f"<tr class='ql-corr-row'>"
+        f"<td style='padding:6px 8px'>{constants.DESTINATION_CITIES[c]['label']}</td>"
+        f"<td class='ql-corr-cell' style='padding:6px 10px;text-align:right;"
+        f"font-family:ui-monospace,monospace;font-weight:600;border-radius:4px;"
+        f"{_rag_corr_style(v)}'>{v:+.3f}</td>"
         f"</tr>"
         for c, v in corr_by_country.items()
     )
     _table_html = (
-        "<table style='width:100%;border-collapse:collapse;font-size:0.88rem'>"
+        "<table class='ql-corr-table' style='width:100%;border-collapse:separate;"
+        "border-spacing:0 4px;font-size:0.88rem'>"
         "<thead><tr>"
         "<th style='padding:4px 8px;text-align:left;font-weight:500;"
         "color:#6b7280;border-bottom:1px solid #e5e7eb'>Country</th>"
@@ -643,9 +686,11 @@ with col_sparks:
 
         Amber band is ±2% — below that the move is noise, not a signal.
         Above, a 'bad' direction (given polarity) goes red; a 'good'
-        direction goes green.
+        direction goes green. Palette matches the globe arc ramp so
+        values, correlations, and arcs all share the same colour
+        language.
         """
-        red, green, amber = "#dc2626", "#16a34a", "#d97706"
+        red, green, amber = "#c81e1e", "#14a028", "#d97706"
         if abs(pct) < 2:
             return amber
         rising = pct > 0
@@ -682,21 +727,66 @@ with col_sparks:
         _end_val = float(series.iloc[-1])
         _pct = ((_end_val - _start_val) / _start_val * 100) if _start_val else 0.0
         _colour = _rag_ticker(_pct, polarity)
+        # Direction arrow mirrors the sign of the cumulative change:
+        # ↑ on rising, ↓ on falling, · on flat. The arrow colour matches
+        # the RAG polarity so rising Brent = red ↑, rising Gold = green ↑.
+        _arrow = "↑" if _pct > 0.1 else ("↓" if _pct < -0.1 else "·")
         # Single <div> instead of mixing markdown bold with HTML spans —
         # Streamlit's markdown renderer was occasionally swallowing the
-        # trailing pct span when the line started with **bold**.
+        # trailing pct span when the line started with **bold**. The
+        # ql-ticker-value class gets a brief opacity pulse each re-render
+        # so the values visibly flash when the slider advances.
         st.markdown(
-            f"<div style='margin-bottom:0'>"
+            f"<div class='ql-ticker-row'>"
             f"<strong>{label}</strong> &nbsp; "
-            f"<span style='color:{_colour};font-family:ui-monospace,monospace;"
+            f"<span class='ql-ticker-value' "
+            f"style='color:{_colour};font-family:ui-monospace,monospace;"
             f"font-weight:600'>{_end_val:.2f}</span>"
             f"&nbsp;&nbsp;"
-            f"<span style='color:{_colour};font-size:0.82em;font-weight:500'>"
-            f"{_pct:+.1f}%</span>"
+            f"<span style='color:{_colour};font-size:0.82em;font-weight:600'>"
+            f"{_arrow} {_pct:+.1f}%</span>"
             f"</div>",
             unsafe_allow_html=True,
         )
-        st.line_chart(series, height=60)
+
+        # Altair sparkline: line + a filled dot at the selected date.
+        # Using altair (instead of st.line_chart) gives us the "daily
+        # price dot" and matching colour on the line.
+        import altair as alt  # noqa: E402
+
+        _chart_df = series.reset_index()
+        _chart_df.columns = ["date", "close"]
+        _line = (
+            alt.Chart(_chart_df)
+            .mark_line(color=_colour, strokeWidth=1.6, interpolate="monotone")
+            .encode(
+                x=alt.X("date:T", axis=None),
+                y=alt.Y("close:Q", axis=None, scale=alt.Scale(zero=False)),
+            )
+        )
+        _dot = (
+            alt.Chart(_chart_df.iloc[[-1]])
+            .mark_point(
+                filled=True, size=110, color=_colour,
+                stroke="#fff", strokeWidth=1.6, opacity=1.0,
+            )
+            .encode(x="date:T", y="close:Q")
+        )
+        _halo = (
+            alt.Chart(_chart_df.iloc[[-1]])
+            .mark_point(
+                filled=True, size=260, color=_colour,
+                opacity=0.25,
+            )
+            .encode(x="date:T", y="close:Q")
+        )
+        _chart = (
+            (_line + _halo + _dot)
+            .properties(height=64)
+            .configure_view(strokeWidth=0)
+            .configure_axis(grid=False)
+        )
+        st.altair_chart(_chart, use_container_width=True)
 
 
 # ──────────────────────────────────────────────────────────────
