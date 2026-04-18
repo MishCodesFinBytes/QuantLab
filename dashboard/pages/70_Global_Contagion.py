@@ -454,30 +454,19 @@ rest_layer = pdk.Layer(
     pickable=False,
 )
 
-# Per-render: inject each destination feature's current correlation colour
-# into its properties. The layer reads `properties.fill_color` so countries
-# recolour live with the slider, matching what the arcs do.
-_colored_destination_features: list[dict] = []
-for _feat in _destination_geo["features"]:
-    _iso = _feat.get("properties", {}).get("ISO_A2")
-    _corr = corr_by_country.get(_iso, 0.0)
-    _rgba = list(globe.correlation_to_color(_corr))
-    # Shallow-copy so we don't mutate the cached FeatureCollection
-    _new_props = dict(_feat.get("properties", {}))
-    _new_props["fill_color"] = _rgba
-    _colored_destination_features.append({**_feat, "properties": _new_props})
-
-_destination_geo_live = {
-    "type": "FeatureCollection",
-    "features": _colored_destination_features,
-}
-
+# Destination layer uses a static amber fill. Earlier we tried driving
+# fill_color per-feature via `get_fill_color="properties.fill_color"`,
+# but something in the Streamlit-Cloud-hosted components.html iframe
+# rejected the accessor silently — countries rendered but never updated.
+# Reverting to a static colour keeps the three-role visual split
+# (red/amber/slate) reliable; per-row recolouring can be reinvestigated
+# once we've diagnosed why the accessor failed.
 destination_layer = pdk.Layer(
     "GeoJsonLayer",
-    data=_destination_geo_live,
+    data=_destination_geo,
     stroked=True,
     filled=True,
-    get_fill_color="properties.fill_color",   # driven by current correlation
+    get_fill_color=[217, 119, 6, 200],   # amber — the 5 arc destinations
     get_line_color=[255, 255, 255, 180],
     line_width_min_pixels=1,
     pickable=False,
@@ -501,8 +490,14 @@ arc_layer = pdk.Layer(
     get_target_position="target",
     get_source_color="color",
     get_target_color="color",
-    get_width="width",   # per-arc, scales with |correlation| — see globe.correlation_to_width
-    width_min_pixels=1.5,
+    # Earlier we had `get_width="width"` to drive thickness from
+    # correlation magnitude, but something in the Streamlit Cloud
+    # iframe silently broke that accessor — arcs disappeared entirely.
+    # Reverting to a constant width until we diagnose the accessor
+    # issue properly. Arc colour still changes with correlation,
+    # so the contagion signal is still visible.
+    get_width=5,
+    width_min_pixels=2,
     great_circle=True,
     pickable=True,
 )
@@ -571,6 +566,12 @@ with col_sparks:
         ("GC=F", "Gold"),
         ("^VIX", "VIX"),
     ]
+    # Coerce selected_date to pd.Timestamp and make the index a
+    # DatetimeIndex before slicing — this removes the Python-date vs
+    # pandas-Timestamp mismatch that was producing empty filtered
+    # series (visible in DevTools as "WARN Infinite extent for field
+    # date" coming from the vega-lite sparkline embedder).
+    _sel_ts = pd.Timestamp(selected_date)
     for ticker, label in _panel_tickers:
         series = (
             events[events["ticker"] == ticker]
@@ -580,7 +581,11 @@ with col_sparks:
         if series.empty:
             st.markdown(f"**{label}** — *no data*")
             continue
-        series = series[series.index <= selected_date]
+        series.index = pd.to_datetime(series.index)
+        series = series[series.index <= _sel_ts]
+        if series.empty:
+            st.markdown(f"**{label}** — *no data before this date*")
+            continue
         st.markdown(f"**{label}** &nbsp; `{series.iloc[-1]:.2f}`", unsafe_allow_html=True)
         st.line_chart(series, height=60)
 
