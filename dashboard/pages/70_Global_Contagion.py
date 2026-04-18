@@ -34,6 +34,73 @@ render_sidebar()
 st.markdown(
     """
     <style>
+    /* ───────────────────────── night-lights page theme ─────────────────────
+       The whole page sits on the same deep-navy as the globe's clearColor
+       so the viz doesn't feel pasted onto a white card. Text switches to
+       a light neutral (#e5e7eb). RAG colours (#c81e1e / #14a028 / #d97706
+       / #475569) are the *only* saturated hues on the page — they always
+       mean signal. All four palette anchors appear identically on the
+       arcs, the destination-country fills, the correlation cells, and
+       the ticker chips so the colour vocabulary stays in sync across
+       every widget. */
+    [data-testid="stMain"] {
+        background: radial-gradient(ellipse at top, #0b1226 0%, #050810 70%);
+        color: #e5e7eb;
+    }
+    [data-testid="stMain"] h1,
+    [data-testid="stMain"] h2,
+    [data-testid="stMain"] h3,
+    [data-testid="stMain"] p,
+    [data-testid="stMain"] strong,
+    [data-testid="stMain"] li,
+    [data-testid="stMain"] label,
+    [data-testid="stMain"] .stMarkdown,
+    [data-testid="stMain"] .stMarkdown * {
+        color: #e5e7eb !important;
+    }
+    [data-testid="stMain"] [data-testid="stCaptionContainer"],
+    [data-testid="stMain"] [data-testid="stCaptionContainer"] * {
+        color: #94a3b8 !important;
+    }
+    [data-testid="stMain"] .stMarkdown a { color: #93c5fd !important; }
+    [data-testid="stMain"] code,
+    [data-testid="stMain"] .stMarkdown code {
+        background: rgba(148,163,184,0.12) !important;
+        color: #cbd5e1 !important;
+        border-radius: 3px;
+        padding: 0 4px;
+    }
+    /* Expanders (About + Methodology) as darker cards. */
+    [data-testid="stMain"] [data-testid="stExpander"] {
+        background: rgba(255,255,255,0.03) !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        border-radius: 8px;
+    }
+    [data-testid="stMain"] [data-testid="stExpander"] summary {
+        color: #e5e7eb !important;
+    }
+    /* Tables inside expanders & hand-rolled correlation table read on dark. */
+    [data-testid="stMain"] table {
+        color: #e5e7eb !important;
+    }
+    [data-testid="stMain"] table th {
+        color: #94a3b8 !important;
+        border-bottom-color: rgba(148,163,184,0.25) !important;
+    }
+    /* Radio labels + slider value badge */
+    [data-testid="stMain"] [role="radiogroup"] label {
+        color: #e5e7eb !important;
+    }
+    /* Play button on dark card */
+    [data-testid="stMain"] button[kind="secondary"] {
+        background: rgba(255,255,255,0.06) !important;
+        color: #e5e7eb !important;
+        border-color: rgba(255,255,255,0.15) !important;
+    }
+    [data-testid="stMain"] button[kind="secondary"]:hover {
+        background: rgba(255,255,255,0.12) !important;
+    }
+
     @keyframes ql-contagion-fade-in {
         from { opacity: 0; transform: translateY(10px); }
         to   { opacity: 1; transform: translateY(0); }
@@ -91,16 +158,24 @@ st.markdown(
         animation: ql-ticker-flash 0.4s ease-out;
     }
 
-    /* Breathe the daily-price dot on the altair sparkline so the eye
-       catches where the cursor is on each ticker. The halo dot in the
-       altair layer stack is the larger, low-opacity circle — this
-       keyframe is a fallback pulse for the wrapper. */
-    @keyframes ql-sparkline-pulse {
-        0%, 100% { opacity: 1; }
-        50%      { opacity: 0.88; }
+    /* Heartbeat pulse on the altair sparkline dot.
+       Vega-lite renders each point-mark layer as a group of SVG <path>s
+       under .mark-symbol. We scale the path in place (transform-box:
+       fill-box so the scale origin is the glyph centre, not the SVG
+       root) on a double-beat schedule — a longer "lub" and a shorter
+       "dub" — so the daily-price dot visibly pulses like an EKG cursor
+       leading the line. */
+    @keyframes ql-heartbeat {
+        0%, 100% { transform: scale(1);   opacity: 1; }
+        14%      { transform: scale(1.55); opacity: 0.55; }
+        28%      { transform: scale(1);    opacity: 1; }
+        38%      { transform: scale(1.25); opacity: 0.75; }
+        52%      { transform: scale(1);    opacity: 1; }
     }
-    [data-testid="stMain"] [data-testid="stVegaLiteChart"] {
-        animation: ql-sparkline-pulse 2.2s ease-in-out infinite;
+    [data-testid="stMain"] [data-testid="stVegaLiteChart"] svg .mark-symbol path {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: ql-heartbeat 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     }
 
     /* Progress indicator under the timeline — thin greyscale bar so
@@ -518,24 +593,67 @@ night_lights_layer = pdk.Layer(
     bounds=[-180, -90, 180, 90],
     opacity=1.0,
 )
+
+
+# Destination countries now glow with their *current* correlation: red
+# when the market is moving in lockstep with the Middle East index
+# (contagion), green when it's decoupling (safe-haven / hedge), amber
+# for moderate signal, slate when there's no relationship. The map
+# itself becomes the story — strong correlations = bright saturated
+# fill, weak ones fade toward slate so the eye focuses on where the
+# effect is.
+def _corr_to_destination_fill(v: float) -> list[int]:
+    if v >= 0.5:
+        return [200, 30, 30, 235]      # arc red  #c81e1e
+    if v <= -0.5:
+        return [20, 160, 40, 235]      # arc green #14a028
+    if abs(v) >= 0.2:
+        return [217, 119, 6, 215]      # amber    #d97706
+    return [71, 85, 105, 180]          # slate    #475569
+
+
+_dest_features_enriched: list[dict] = []
+for _feat in _destination_geo.get("features", []):
+    _iso = _feat.get("properties", {}).get("ISO_A2")
+    _corr = corr_by_country.get(_iso, 0.0)
+    _dest_features_enriched.append(
+        {
+            **_feat,
+            "properties": {
+                **_feat.get("properties", {}),
+                "ql_fill": _corr_to_destination_fill(_corr),
+            },
+        }
+    )
+
 destination_layer = pdk.Layer(
     "GeoJsonLayer",
-    data=_destination_geo,
+    data={"type": "FeatureCollection", "features": _dest_features_enriched},
     stroked=True,
     filled=True,
-    get_fill_color=[217, 119, 6, 200],
-    get_line_color=[255, 255, 255, 180],
-    line_width_min_pixels=1,
+    # Accessor expression — each feature carries its own ql_fill rgba
+    # baked in by the Python side. Pydeck serialises this with the
+    # legitimate "@@=" accessor prefix, which deck.gl will evaluate
+    # (unlike the buggy `image` case above).
+    get_fill_color="properties.ql_fill",
+    get_line_color=[255, 255, 255, 220],
+    line_width_min_pixels=1.2,
     pickable=False,
 )
+
+# Epicenter red is unified to the arc-red #c81e1e (200, 30, 30) so
+# every "danger" red on the page — epicenter fill, arcs at +corr,
+# correlation table cells ≥ +0.5, Brent-rising chips — is the exact
+# same hex. Earlier the epicenter was #991b1b, which looked like a
+# third red next to the arc ramp and the RAG table.
 epicenter_layer = pdk.Layer(
     "GeoJsonLayer",
     data=_epicenter_geo,
     stroked=True,
     filled=True,
-    get_fill_color=[153, 27, 27, 220],
-    get_line_color=[255, 255, 255, 200],
-    line_width_min_pixels=1,
+    get_fill_color=[200, 30, 30, 235],
+    get_line_color=[255, 255, 255, 220],
+    line_width_min_pixels=1.4,
     pickable=False,
 )
 

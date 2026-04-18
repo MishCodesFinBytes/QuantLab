@@ -12,22 +12,31 @@ from .constants import DESTINATION_CITIES, EPICENTER_LONLAT
 
 
 def correlation_to_color(corr: float) -> tuple[int, int, int, int]:
-    """Diverging color ramp: green (-1) → gray (0) → red (+1)."""
+    """Diverging color ramp: green (-1) → slate (0) → red (+1).
+
+    Anchors deliberately match the page palette so arcs, destination
+    country fills, correlation cells, and ticker chips all speak the
+    same colour language:
+        red   = #c81e1e  (strong contagion)
+        green = #14a028  (strong decoupling / safe-haven bid)
+        slate = #475569  (no signal) — swapped from neutral gray so the
+                                       arc midpoints read against the
+                                       dark night-lights globe.
+    """
     c = max(-1.0, min(1.0, float(corr)))
-    # Anchors
-    green = (20, 160, 40)
-    gray = (128, 128, 128)
-    red = (200, 30, 30)
+    green = (20, 160, 40)    # #14a028
+    slate = (71, 85, 105)    # #475569
+    red = (200, 30, 30)      # #c81e1e
     if c >= 0:
         t = c
-        r = int(gray[0] + t * (red[0] - gray[0]))
-        g = int(gray[1] + t * (red[1] - gray[1]))
-        b = int(gray[2] + t * (red[2] - gray[2]))
+        r = int(slate[0] + t * (red[0] - slate[0]))
+        g = int(slate[1] + t * (red[1] - slate[1]))
+        b = int(slate[2] + t * (red[2] - slate[2]))
     else:
         t = -c
-        r = int(gray[0] + t * (green[0] - gray[0]))
-        g = int(gray[1] + t * (green[1] - gray[1]))
-        b = int(gray[2] + t * (green[2] - gray[2]))
+        r = int(slate[0] + t * (green[0] - slate[0]))
+        g = int(slate[1] + t * (green[1] - slate[1]))
+        b = int(slate[2] + t * (green[2] - slate[2]))
     return (r, g, b, 220)
 
 
