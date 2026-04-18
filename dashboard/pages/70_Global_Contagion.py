@@ -226,16 +226,23 @@ st.markdown(
         opacity: 1;
     }
 
-    /* Soften the per-frame iframe reload of the globe — each rerun
-       creates a fresh components.html iframe, which used to snap in
-       abruptly. Fade-in over 250ms covers the reload. */
+    /* Soften the per-frame iframe reload of the globe. Each Play rerun
+       sends a fresh components.html payload and the iframe reinits
+       deck.gl — briefly going blank between frames and producing a
+       strobe/blink effect. We mask the blink with:
+         • starting opacity 0.72 (not 0 or 0.35) so the transition
+           doesn't look like a flash-of-black
+         • longer 0.6s ease so adjacent frames overlap visually
+       Paired with the jsDelivr-cached night-lights image, the iframe
+       reload is fast enough that the ramp lands on a painted globe. */
     @keyframes ql-globe-fade-in {
-        from { opacity: 0.35; }
+        from { opacity: 0.72; }
         to   { opacity: 1; }
     }
     [data-testid="stMain"] iframe[title="streamlit_app"],
     [data-testid="stMain"] .stIFrame iframe {
-        animation: ql-globe-fade-in 0.25s ease-out;
+        animation: ql-globe-fade-in 0.6s ease-out;
+        will-change: opacity;
     }
     </style>
     """,
@@ -549,12 +556,23 @@ _epicenter_geo, _destination_geo, _rest_geo = _split_countries_by_role()
 # We work around it by regex-stripping the prefix from the HTML string
 # after `deck.to_html(...)` — see the `_deck_html` handling below.
 #
-# Night-lights JPG is bundled locally (779 KB) and fed to the BitmapLayer
-# as a base64 data: URL so the deck.gl iframe doesn't need to load an
-# external asset (Streamlit Cloud doesn't expose dashboard/assets
-# statically via any URL deck.gl could fetch).
+# Night-lights JPG lives in the repo and is served via jsDelivr's
+# GitHub CDN so the browser caches it once and reuses it across every
+# Play-loop rerun. Previously we inlined the 779 KB image as a base64
+# data: URL, which meant each Streamlit rerun sent ~1 MB of HTML over
+# the websocket and forced the iframe to re-parse the data URL — the
+# globe visibly blinked every frame during playback. jsDelivr serves
+# with CORS + long cache headers so WebGL can load the texture and
+# subsequent iframe reloads skip the network entirely.
+#
+# If jsDelivr is unreachable for any reason, fall back to the bundled
+# base64 (keeps the page functional offline / on forks).
 import base64 as _b64
 
+_NIGHT_LIGHTS_CDN_URL = (
+    "https://cdn.jsdelivr.net/gh/mish-codes/QuantLab@master/"
+    "dashboard/assets/images/world_night.jpg"
+)
 _NIGHT_LIGHTS_PATH = (
     Path(__file__).resolve().parents[1]
     / "assets" / "images" / "world_night.jpg"
@@ -563,6 +581,13 @@ _NIGHT_LIGHTS_PATH = (
 
 @st.cache_data(show_spinner=False)
 def _night_lights_data_url() -> str:
+    """Fallback: bundled image as a base64 data URL.
+
+    Kept for local development and for forks where the jsDelivr URL is
+    wrong. Not used on the deployed app — jsDelivr is preferred because
+    it's browser-cacheable, which is what makes the Play loop stop
+    blinking the globe on every frame.
+    """
     with _NIGHT_LIGHTS_PATH.open("rb") as f:
         encoded = _b64.b64encode(f.read()).decode("ascii")
     return f"data:image/jpeg;base64,{encoded}"
@@ -570,7 +595,7 @@ def _night_lights_data_url() -> str:
 
 night_lights_layer = pdk.Layer(
     "BitmapLayer",
-    image=_night_lights_data_url(),
+    image=_NIGHT_LIGHTS_CDN_URL,
     bounds=[-180, -90, 180, 90],
     opacity=1.0,
 )
@@ -688,7 +713,7 @@ arc_layer = pdk.Layer(
 view_state = pdk.ViewState(
     longitude=constants.EPICENTER_LONLAT[0],
     latitude=constants.EPICENTER_LONLAT[1] + 8,
-    zoom=0.6,
+    zoom=0.85,
     pitch=35,
     bearing=st.session_state.get("contagion_globe_bearing", 0.0),
 )
@@ -717,7 +742,7 @@ deck = pdk.Deck(
 # + stacked sparklines (20%). Sparklines live alongside the globe
 # so the "mood gauges" frame the viz instead of being buried below.
 # ──────────────────────────────────────────────────────────────
-col_globe, col_table, col_sparks = st.columns([5, 1.2, 1.3])
+col_globe, col_table, col_sparks = st.columns([7, 1.2, 1.3])
 
 with col_globe:
     # st.pydeck_chart does NOT forward the views= config to its internal
@@ -731,7 +756,7 @@ with col_globe:
     # expression that starts with "data" and fails at the first colon.
     import re as _re
     _deck_html = _re.sub(r'"image"\s*:\s*"@@=', '"image": "', _deck_html)
-    components.html(_deck_html, height=820, scrolling=False)
+    components.html(_deck_html, height=900, scrolling=False)
 
 with col_table:
     st.caption("7-day corr vs ME index")
