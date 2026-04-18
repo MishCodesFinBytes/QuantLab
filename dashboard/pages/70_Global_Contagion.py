@@ -509,10 +509,13 @@ deck = pdk.Deck(
     # underscore pydeck silently falls back to MapView (Mercator),
     # which is why earlier versions rendered as a flat world map.
     views=[pdk.View(type="_GlobeView", controller=True)],
-    # cull=True — sphere renders opaque (back side doesn't bleed through).
-    # clearColor black so the space around the globe matches the dark
-    # night-lights aesthetic.
-    parameters={"cull": True, "clearColor": [0, 0, 0, 1]},
+    # Suspect the blanket cull=True was silently removing ArcLayer
+    # geometry (and possibly BitmapLayer back faces) — user reports no
+    # arcs visible even after reverting get_width to a constant. Dropping
+    # cull for now; if back-side bleed-through becomes an issue with the
+    # bitmap earth we can solve it per-layer. clearColor black matches
+    # the dark night-lights aesthetic.
+    parameters={"clearColor": [0, 0, 0, 1]},
     map_provider=None,
     tooltip={"text": "{dest_label}\nCorrelation: {correlation}"},
 )
