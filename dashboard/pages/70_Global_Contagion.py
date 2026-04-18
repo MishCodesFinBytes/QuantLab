@@ -442,45 +442,31 @@ def _split_countries_by_role() -> tuple[dict, dict, dict]:
     )
 
 
-_epicenter_geo, _destination_geo, _rest_geo = _split_countries_by_role()
+# Earth surface: NASA Black Marble night-lights texture as a BitmapLayer.
+# The image is bundled at dashboard/assets/images/world_night.jpg (~762 KB)
+# and base64-encoded into a data: URL so the deck.gl iframe has no network
+# dependency — same reliability pattern as the country GeoJSON.
+import base64 as _base64
 
-# Three stacked layers — rest first (deepest), then highlighted groups on top
-rest_layer = pdk.Layer(
-    "GeoJsonLayer",
-    data=_rest_geo,
-    stroked=False,
-    filled=True,
-    get_fill_color=[40, 50, 70, 220],   # dark slate — neutral
-    pickable=False,
+_NIGHT_IMAGE_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "assets" / "images" / "world_night.jpg"
 )
 
-# Destination layer uses a static amber fill. Earlier we tried driving
-# fill_color per-feature via `get_fill_color="properties.fill_color"`,
-# but something in the Streamlit-Cloud-hosted components.html iframe
-# rejected the accessor silently — countries rendered but never updated.
-# Reverting to a static colour keeps the three-role visual split
-# (red/amber/slate) reliable; per-row recolouring can be reinvestigated
-# once we've diagnosed why the accessor failed.
-destination_layer = pdk.Layer(
-    "GeoJsonLayer",
-    data=_destination_geo,
-    stroked=True,
-    filled=True,
-    get_fill_color=[217, 119, 6, 200],   # amber — the 5 arc destinations
-    get_line_color=[255, 255, 255, 180],
-    line_width_min_pixels=1,
-    pickable=False,
-)
 
-epicenter_layer = pdk.Layer(
-    "GeoJsonLayer",
-    data=_epicenter_geo,
-    stroked=True,
-    filled=True,
-    get_fill_color=[153, 27, 27, 220],   # crisis red — Middle East risk region
-    get_line_color=[255, 255, 255, 200],
-    line_width_min_pixels=1,
-    pickable=False,
+@st.cache_data
+def _load_night_image_data_url() -> str:
+    with _NIGHT_IMAGE_PATH.open("rb") as f:
+        encoded = _base64.b64encode(f.read()).decode("ascii")
+    return f"data:image/jpeg;base64,{encoded}"
+
+
+night_layer = pdk.Layer(
+    "BitmapLayer",
+    data=None,
+    image=_load_night_image_data_url(),
+    bounds=[-180, -90, 180, 90],   # equirectangular, whole earth
+    opacity=1.0,
 )
 
 arc_layer = pdk.Layer(
@@ -516,16 +502,20 @@ view_state = pdk.ViewState(
 )
 
 deck = pdk.Deck(
-    layers=[rest_layer, destination_layer, epicenter_layer, arc_layer],   # basemap first so arcs draw on top
+    layers=[night_layer, arc_layer],   # earth surface first, arcs on top
     initial_view_state=view_state,
     # pydeck's canonical class for the 3D globe is `_GlobeView` with a
     # leading underscore (deck.gl internal class name). Without the
     # underscore pydeck silently falls back to MapView (Mercator),
     # which is why earlier versions rendered as a flat world map.
     views=[pdk.View(type="_GlobeView", controller=True)],
-    # cull=True is required for the sphere to render opaque — without
-    # it you see through the globe to the back side.
-    parameters={"cull": True},
+    # Suspect the blanket cull=True was silently removing ArcLayer
+    # geometry (and possibly BitmapLayer back faces) — user reports no
+    # arcs visible even after reverting get_width to a constant. Dropping
+    # cull for now; if back-side bleed-through becomes an issue with the
+    # bitmap earth we can solve it per-layer. clearColor black matches
+    # the dark night-lights aesthetic.
+    parameters={"clearColor": [0, 0, 0, 1]},
     map_provider=None,
     tooltip={"text": "{dest_label}\nCorrelation: {correlation}"},
 )
