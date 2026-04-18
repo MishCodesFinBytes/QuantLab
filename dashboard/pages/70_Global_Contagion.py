@@ -507,11 +507,16 @@ arc_layer = pdk.Layer(
 # viewport fills with land before the sphere edge is visible.
 # bearing is driven by session_state so the auto-rotate checkbox can
 # progressively rotate the globe between reruns.
+# pitch=35 gives a "from orbit, looking down" tilt — the sphere reads
+# as a 3D body in space rather than a head-on disc. latitude nudged
+# up from the epicenter's 26° so Europe/Russia peek above the horizon
+# on load and the arcs emerge from the upper-left of the sphere rather
+# than straight out of the centre.
 view_state = pdk.ViewState(
     longitude=constants.EPICENTER_LONLAT[0],
-    latitude=constants.EPICENTER_LONLAT[1],
-    zoom=0.8,   # nudged up from 0 so the sphere fills more of the viewport
-    pitch=0,
+    latitude=constants.EPICENTER_LONLAT[1] + 8,
+    zoom=0.6,
+    pitch=35,
     bearing=st.session_state.get("contagion_globe_bearing", 0.0),
 )
 
@@ -586,7 +591,13 @@ with col_sparks:
             st.markdown(f"**{label}** — *no data*")
             continue
         series.index = pd.to_datetime(series.index)
-        series = series[series.index <= _sel_ts]
+        # Drop NaN before passing to line_chart — a series that filters
+        # down to all-NaN (or that has leading/trailing NaNs from a parquet
+        # with ragged ticker calendars) makes vega-lite log
+        # "WARN Infinite extent for field 'date'/'close'" because the
+        # domain ends up [Infinity, -Infinity]. dropna keeps the domain
+        # finite even when a ticker has sparse coverage.
+        series = series[series.index <= _sel_ts].dropna()
         if series.empty:
             st.markdown(f"**{label}** — *no data before this date*")
             continue
