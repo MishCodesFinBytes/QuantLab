@@ -60,7 +60,7 @@ TICKER_ROLES: dict[str, str] = {
 EPICENTER_LONLAT: tuple[float, float] = (56.0, 26.0)   # Strait of Hormuz
 
 DESTINATION_CITIES: dict[str, dict[str, object]] = {
-    "IN": {"label": "Delhi",    "lonlat": (77.21, 28.61), "ticker": "FRED:INDIRLTLT01STM"},
+    "IN": {"label": "Mumbai",   "lonlat": (72.88, 19.08), "ticker": "FRED:INDIRLTLT01STM"},
     "TR": {"label": "Istanbul", "lonlat": (28.98, 41.01), "ticker": "TUR"},
     "DE": {"label": "Frankfurt","lonlat": ( 8.68, 50.11), "ticker": "FRED:IRLTLT01DEM156N"},
     "US": {"label": "New York", "lonlat": (-74.01, 40.71),"ticker": "^TNX"},

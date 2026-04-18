@@ -15,7 +15,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import requests
 
-sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
 
 from nav import render_sidebar
 from test_tab import render_test_tab
