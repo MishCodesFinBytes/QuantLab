@@ -556,32 +556,68 @@ with col_globe:
 
 with col_table:
     st.caption("7-day corr vs ME index")
-    st.dataframe(
-        pd.DataFrame(
-            [
-                {"Country": constants.DESTINATION_CITIES[c]["label"], "Correlation": round(v, 3)}
-                for c, v in corr_by_country.items()
-            ]
-        ),
-        hide_index=True,
-        use_container_width=True,
+
+    # RAG colour rules — same semantics as the arc colour ramp on the globe
+    # so the table and the globe agree at a glance:
+    #   strong positive corr (≥ +0.5) = contagion           → red
+    #   strong negative corr (≤ -0.5) = decoupling / hedge  → green
+    #   weak / ambiguous (|corr| < 0.5)                     → amber
+    def _rag_corr_cell(v: float) -> str:
+        if pd.isna(v):
+            return ""
+        if v >= 0.5:
+            return "background-color: #fecaca; color: #7f1d1d;"
+        if v <= -0.5:
+            return "background-color: #bbf7d0; color: #14532d;"
+        if abs(v) >= 0.2:
+            return "background-color: #fef3c7; color: #78350f;"
+        return "background-color: #f3f4f6; color: #374151;"
+
+    _corr_df = pd.DataFrame(
+        [
+            {"Country": constants.DESTINATION_CITIES[c]["label"], "Correlation": round(v, 3)}
+            for c, v in corr_by_country.items()
+        ]
     )
+    _styled_corr = _corr_df.style.map(_rag_corr_cell, subset=["Correlation"]).format(
+        {"Correlation": "{:+.3f}"}
+    )
+    st.dataframe(_styled_corr, hide_index=True, use_container_width=True)
 
 with col_sparks:
     st.caption("Energy · Safe haven · Fear")
+    # polarity: "up_is_bad" means a rising value signals market stress
+    # (energy spike, shipping stress, fear) → colour red on rise, green
+    # on fall. Gold inverts: a rising gold price during crisis is the
+    # safe-haven bid working → colour green on rise.
     _panel_tickers = [
-        ("BZ=F", "Brent Crude"),
-        ("BDRY", "Baltic Dry (ETF)"),
-        ("GC=F", "Gold"),
-        ("^VIX", "VIX"),
+        ("BZ=F", "Brent Crude", "up_is_bad"),
+        ("BDRY", "Baltic Dry (ETF)", "up_is_bad"),
+        ("GC=F", "Gold", "up_is_good"),
+        ("^VIX", "VIX", "up_is_bad"),
     ]
+
+    def _rag_ticker(pct: float, polarity: str) -> str:
+        """RAG colour for a ticker's % change from period start.
+
+        Amber band is ±2% — below that the move is noise, not a signal.
+        Above, a 'bad' direction (given polarity) goes red; a 'good'
+        direction goes green.
+        """
+        red, green, amber = "#dc2626", "#16a34a", "#d97706"
+        if abs(pct) < 2:
+            return amber
+        rising = pct > 0
+        if polarity == "up_is_bad":
+            return red if rising else green
+        return green if rising else red
     # Coerce selected_date to pd.Timestamp and make the index a
     # DatetimeIndex before slicing — this removes the Python-date vs
     # pandas-Timestamp mismatch that was producing empty filtered
     # series (visible in DevTools as "WARN Infinite extent for field
     # date" coming from the vega-lite sparkline embedder).
     _sel_ts = pd.Timestamp(selected_date)
-    for ticker, label in _panel_tickers:
+    for ticker, label, polarity in _panel_tickers:
         series = (
             events[events["ticker"] == ticker]
             .set_index("date")["close"]
@@ -601,7 +637,17 @@ with col_sparks:
         if series.empty:
             st.markdown(f"**{label}** — *no data before this date*")
             continue
-        st.markdown(f"**{label}** &nbsp; `{series.iloc[-1]:.2f}`", unsafe_allow_html=True)
+        _start_val = float(series.iloc[0])
+        _end_val = float(series.iloc[-1])
+        _pct = ((_end_val - _start_val) / _start_val * 100) if _start_val else 0.0
+        _colour = _rag_ticker(_pct, polarity)
+        st.markdown(
+            f"**{label}** &nbsp; "
+            f"<span style='color:{_colour};font-family:ui-monospace,monospace;"
+            f"font-weight:600'>{_end_val:.2f}</span> "
+            f"<span style='color:{_colour};font-size:0.78em'>({_pct:+.1f}%)</span>",
+            unsafe_allow_html=True,
+        )
         st.line_chart(series, height=60)
 
 
