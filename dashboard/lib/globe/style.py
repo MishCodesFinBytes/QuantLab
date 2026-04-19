@@ -10,7 +10,7 @@ arguments without importing pydeck.
 # Deep navy — reads as "space" or "deep ocean" while keeping enough contrast
 # for cyan continent glows to pop.  Value is normalised float RGBA for
 # deck.gl's clearColor parameter.
-CLEAR_COLOR: list[float] = [0.04, 0.06, 0.14, 1.0]   # ≈ #0A0F23
+CLEAR_COLOR: list[float] = [1.0, 1.0, 1.0, 1.0]   # white outside sphere
 
 # Continent fills & borders ───────────────────────────────────────────────────
 CONTINENT_FILL:       list[int] = [20, 40, 80, 60]       # translucent navy land

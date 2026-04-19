@@ -499,7 +499,7 @@ rest_layer = pdk.Layer(
     data=_rest_geo,
     stroked=False,
     filled=True,
-    get_fill_color=[30, 50, 90, 180],   # slightly lighter navy than clearColor
+    get_fill_color=[30, 50, 90, 200],   # navy land mass against white background
     pickable=False,
 )
 
@@ -666,7 +666,7 @@ deck = pdk.Deck(
     # leading underscore (deck.gl internal class name). Without the
     # underscore pydeck silently falls back to MapView (Mercator).
     views=[pdk.View(type="_GlobeView", controller=True)],
-    parameters={"clearColor": [0.04, 0.06, 0.14, 1]},   # deep navy — must be [0,1] floats
+    parameters={"clearColor": [1.0, 1.0, 1.0, 1.0]},   # white outside sphere — must be [0,1] floats
     map_provider=None,
     tooltip={"text": "{dest_label}\nCorrelation: {correlation}"},
 )
