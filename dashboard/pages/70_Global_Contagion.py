@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
 
@@ -730,44 +731,31 @@ deck = pdk.Deck(
 col_globe, col_right = st.columns([5, 2])
 
 with col_globe:
-    # Persistent deck.gl globe via our custom Streamlit component. The
-    # component mounts Deck once inside its iframe and on subsequent
-    # reruns updates only the ArcLayer data + destination fills via
-    # deck.gl's setProps — no iframe reload, no WebGL re-init, no
-    # per-frame strobe. This replaces the earlier
-    # `components.html(deck.to_html(...))` pattern which shipped the
-    # full HTML over the websocket every rerun and caused the jagged
-    # refresh. See dashboard/components/contagion_globe/frontend/
-    # index.html for the deck.gl setup the frontend runs.
+    # Reverted to components.html(deck.to_html(...)) after a custom
+    # Streamlit component built for seamless arc updates couldn't be
+    # loaded by Streamlit Cloud (declare_component with both path= and
+    # url=jsDelivr both produced the "trouble loading component"
+    # timeout). The custom-component code is preserved under
+    # dashboard/lib/components/contagion_globe/ for a follow-up debug
+    # session — the deck.gl + postMessage logic is correct, the
+    # blocker is Streamlit Cloud's component-serving layer for a
+    # dashboard subdirectory.
     #
-    # colour_trigger is the deck.gl `updateTriggers` cache-buster:
-    # the arc data array length doesn't change between frames, so
-    # without a trigger deck.gl would keep stale colours. Passing the
-    # selected date forces a re-evaluation of the colour accessor on
-    # every date change.
-    from components.contagion_globe import contagion_globe  # noqa: E402
-    contagion_globe(
-        arcs=arc_rows,
-        destination_features={
-            "type": "FeatureCollection",
-            "features": _dest_features_enriched,
-        },
-        epicenter_features=_epicenter_geo,
-        # night_lights_url omitted on purpose — the frontend ships its
-        # own bundled world_night.jpg alongside index.html, served by
-        # Streamlit from the same origin as the iframe. That avoids
-        # the jsDelivr CDN CORS/fetch failure seen on Cloud.
-        view_state={
-            "longitude": constants.EPICENTER_LONLAT[0],
-            "latitude": constants.EPICENTER_LONLAT[1] + 8,
-            "zoom": 1.0,
-            "pitch": 35,
-            "bearing": st.session_state.get("contagion_globe_bearing", 0.0),
-        },
-        colour_trigger=str(selected_date),
-        height=980,
-        key="contagion_globe",
-    )
+    # Trade-off: this pattern ships the full deck HTML (~50 KB) on
+    # every rerun, so the iframe reloads and deck.gl re-inits each
+    # time selected_date advances. The per-frame blink is visible but
+    # tolerable when Play stepping is monthly rather than daily (see
+    # the Playback tick block at the bottom of the script) — fewer
+    # reloads per second means the 0.6 s iframe fade-in has time to
+    # mask each one.
+    import re as _re
+    _deck_html = deck.to_html(as_string=True, notebook_display=False)
+    # pydeck 0.9.1 prefixes the BitmapLayer `image` prop with "@@=" in
+    # the serialised JSON. Strip it so deck.gl sees a plain URL string
+    # instead of trying to evaluate an expression that starts with
+    # "data" and fails at the first colon.
+    _deck_html = _re.sub(r'"image"\s*:\s*"@@=', '"image": "', _deck_html)
+    components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
     # Big month-year anchor above the correlation numbers — gives the

@@ -30,41 +30,30 @@ accessors. Without this, deck.gl keeps stale colours because the
 """
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import streamlit.components.v1 as components
 
 _FRONTEND_DIR = Path(__file__).resolve().parent / "frontend"
 
-# Streamlit Cloud was returning the "trouble loading the component"
-# banner with ``path=`` — it wasn't serving our bundled index.html /
-# world_night.jpg reliably for the app running out of a subdirectory.
-# Workaround: host the frontend via jsDelivr (which already mirrors
-# every file in the public repo) and use ``url=``. Streamlit then just
-# points the iframe at the jsDelivr URL; the component protocol
-# (``streamlit:componentReady`` + ``streamlit:render`` postMessages)
-# works identically regardless of host. Image references inside
-# index.html stay relative (``./world_night.jpg``) and resolve against
-# the jsDelivr host, which serves the JPG from the same directory.
+# KNOWN ISSUE (2026-04): Streamlit Cloud would not load this component
+# for our app layout — both ``path=`` and ``url=<jsDelivr>`` produced
+# the "trouble loading the component" timeout banner. The page has
+# reverted to ``components.html(deck.to_html(...))`` in the meantime
+# and does NOT currently call ``contagion_globe()``. The code below is
+# kept as a starting point for a future debug session once we can
+# reproduce locally against a Cloud-like sandbox.
 #
-# Override via QL_CONTAGION_GLOBE_URL for dev (e.g., localhost dev
-# server) or QL_CONTAGION_GLOBE_USE_PATH=1 to force the old path=
-# behaviour against a local Streamlit.
-_JSDELIVR_URL = (
-    "https://cdn.jsdelivr.net/gh/mish-codes/QuantLab@master/"
-    "dashboard/lib/components/contagion_globe/frontend/index.html"
+# Hypothesis for next debug pass: the iframe loads, but our immediate
+# ``streamlit:componentReady`` postMessage may be blocked because the
+# parent is still registering listeners. Try streamlit-component-lib's
+# official ready/setReady helpers + a small MutationObserver that
+# re-fires ready whenever the iframe's connection to the parent is
+# re-established after Streamlit's own remount cycle.
+_component_func = components.declare_component(
+    "contagion_globe",
+    path=str(_FRONTEND_DIR),
 )
-
-_override_url = os.environ.get("QL_CONTAGION_GLOBE_URL")
-_use_path = os.environ.get("QL_CONTAGION_GLOBE_USE_PATH") == "1"
-
-if _override_url:
-    _component_func = components.declare_component("contagion_globe", url=_override_url)
-elif _use_path:
-    _component_func = components.declare_component("contagion_globe", path=str(_FRONTEND_DIR))
-else:
-    _component_func = components.declare_component("contagion_globe", url=_JSDELIVR_URL)
 
 
 def contagion_globe(
