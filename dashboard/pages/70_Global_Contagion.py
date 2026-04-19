@@ -704,7 +704,9 @@ with col_globe:
   gl.clearColor = () => orig(1, 1, 1, 1);
 })();
 </script>"""
-    _deck_html = _deck_html.replace("</body>", _patch + "</body>")
+    # Inject BEFORE </html> — the main script (and deckInstance) lives after
+    # </body>, so injecting before </body> runs before deckInstance exists.
+    _deck_html = _deck_html.replace("</html>", _patch + "</html>")
     components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
