@@ -688,15 +688,23 @@ with col_globe:
     # flat Mercator, losing the 3D sphere entirely. No BitmapLayer means the
     # pydeck 0.9.1 "@@=" image-prop bug no longer applies here.
     _deck_html = deck.to_html(as_string=True, notebook_display=False)
-    # pydeck's `parameters` dict is passed to deck.gl as WebGL state (e.g.
-    # depthTest) — NOT to the Deck constructor. clearColor is a top-level
-    # Deck constructor prop, so it must be injected directly into the JSON
-    # spec that @deck.gl/json reads. The JSON always contains '"views":',
-    # making it a reliable anchor.
-    _deck_html = _deck_html.replace(
-        '"views":',
-        '"clearColor": [1, 1, 1, 1], "views":',
-    )
+    # Neither pydeck parameters={} (WebGL state dict) nor injecting clearColor
+    # into jsonInput works — @deck.gl/json's JSON API doesn't forward clearColor
+    # to the Deck constructor. Patch gl.clearColor on the WebGL context directly
+    # after the deck initialises. deckInstance.deck is the raw Deck object;
+    # .gl is the WebGL2RenderingContext. We override clearColor so every frame
+    # clear uses white instead of deck.gl's default teal.
+    _patch = """
+<script>
+(function patchBg() {
+  const d = deckInstance && (deckInstance.deck || deckInstance);
+  const gl = d && d.gl;
+  if (!gl) { setTimeout(patchBg, 50); return; }
+  const orig = gl.clearColor.bind(gl);
+  gl.clearColor = () => orig(1, 1, 1, 1);
+})();
+</script>"""
+    _deck_html = _deck_html.replace("</body>", _patch + "</body>")
     components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
