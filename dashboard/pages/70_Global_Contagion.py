@@ -629,20 +629,35 @@ epicenter_layer = pdk.Layer(
     pickable=False,
 )
 
-# Dual arc stack for a soft translucent glow. Halo is wide + very
-# low-opacity so it reads as a bloom; core is thin + moderately
-# translucent (not opaque) so the path stays visible without painting
-# hard lines over the globe.
-arc_halo = pdk.Layer(
+# Triple-layer neon-glow arc stack. Outer halo is very wide + very
+# low-opacity (bloom), middle glow fills the body with a soft haze,
+# inner core is a thin bright line. Combined they read like a neon
+# beam on the dark globe instead of three painted strokes. Width is
+# driven by each arc's correlation magnitude (ql width field) so
+# strong signals visibly thicken.
+arc_outer = pdk.Layer(
     "ArcLayer",
     data=arc_rows,
     get_source_position="source",
     get_target_position="target",
     get_source_color="color",
     get_target_color="color",
-    get_width=8,
+    get_width="width * 8",
+    width_min_pixels=6,
+    opacity=0.06,
+    great_circle=True,
+    pickable=False,
+)
+arc_glow = pdk.Layer(
+    "ArcLayer",
+    data=arc_rows,
+    get_source_position="source",
+    get_target_position="target",
+    get_source_color="color",
+    get_target_color="color",
+    get_width="width * 3",
     width_min_pixels=3,
-    opacity=0.10,
+    opacity=0.18,
     great_circle=True,
     pickable=False,
 )
@@ -653,9 +668,9 @@ arc_layer = pdk.Layer(
     get_target_position="target",
     get_source_color="color",
     get_target_color="color",
-    get_width=1.5,
+    get_width="width",
     width_min_pixels=1,
-    opacity=0.55,
+    opacity=0.95,
     great_circle=True,
     pickable=True,
 )
@@ -679,7 +694,14 @@ view_state = pdk.ViewState(
 )
 
 deck = pdk.Deck(
-    layers=[night_lights_layer, destination_layer, epicenter_layer, arc_halo, arc_layer],
+    layers=[
+        night_lights_layer,
+        destination_layer,
+        epicenter_layer,
+        arc_outer,
+        arc_glow,
+        arc_layer,
+    ],
     initial_view_state=view_state,
     # pydeck's canonical class for the 3D globe is `_GlobeView` with a
     # leading underscore (deck.gl internal class name). Without the
@@ -709,42 +731,22 @@ deck = pdk.Deck(
 col_globe, col_right = st.columns([5, 2])
 
 with col_globe:
-    # Globe-freeze-during-Play:
-    # Generating the deck HTML on every Play rerun (~5 Hz) sends ~50 KB
-    # over the websocket and causes the iframe to reload deck.gl end-
-    # to-end — user sees a jagged flicker. We cache the HTML in session
-    # state and skip regeneration during playback: identical string on
-    # every frame means Streamlit's reconciler leaves the iframe alone.
-    # The globe catches up immediately when:
-    #   * the user toggles period (cache key includes period_key)
-    #   * Play ends / user drags slider (playing flips False → rebuild)
-    #   * auto-rotate is on (bearing changes → not-playing branch runs
-    #     → cache refreshed each tick)
-    # Trade-off: during Play the arc colours + destination fills stay at
-    # the last-rendered date while the right-hand panels keep ticking
-    # live. Arc-by-arc smooth updates without iframe reload would need
-    # a bidirectional custom component (postMessage into a persistent
-    # deck.gl instance) — bigger lift, deferred.
-    _should_rebuild_globe = (
-        not st.session_state.contagion_playing
-        or "contagion_globe_html" not in st.session_state
-        or st.session_state.get("contagion_globe_cache_period") != period_key
-    )
-    if _should_rebuild_globe:
-        import re as _re
-        _fresh_html = deck.to_html(as_string=True, notebook_display=False)
-        # pydeck 0.9.1 incorrectly tags the BitmapLayer `image` prop
-        # with the "@@=" accessor-expression prefix. Strip it so deck.gl
-        # sees a plain URL string instead of trying to evaluate an
-        # expression starting with "data" (fails at the first colon).
-        _fresh_html = _re.sub(r'"image"\s*:\s*"@@=', '"image": "', _fresh_html)
-        st.session_state.contagion_globe_html = _fresh_html
-        st.session_state.contagion_globe_cache_period = period_key
-    components.html(
-        st.session_state.contagion_globe_html,
-        height=980,
-        scrolling=False,
-    )
+    # Globe rebuilt every frame so arc colours + widths + destination
+    # country fills update live with the timeline. Earlier we cached
+    # the HTML and skipped regeneration during Play to avoid the iframe-
+    # reload blink, but it made arcs feel frozen and defeated the point
+    # of the playback. The fade-in + jsDelivr-cached night-lights
+    # texture make the per-frame reload cost tolerable; true smooth
+    # arc-only updates still need a bidirectional custom component
+    # (postMessage into a persistent deck.gl instance) — deferred.
+    import re as _re
+    _deck_html = deck.to_html(as_string=True, notebook_display=False)
+    # pydeck 0.9.1 incorrectly tags the BitmapLayer `image` prop with
+    # the "@@=" accessor-expression prefix. Strip it so deck.gl sees a
+    # plain URL string instead of trying to evaluate an expression
+    # starting with "data" (fails at the first colon).
+    _deck_html = _re.sub(r'"image"\s*:\s*"@@=', '"image": "', _deck_html)
+    components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
     # Big month-year anchor above the correlation numbers — gives the

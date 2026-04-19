@@ -37,21 +37,24 @@ def correlation_to_color(corr: float) -> tuple[int, int, int, int]:
         r = int(slate[0] + t * (green[0] - slate[0]))
         g = int(slate[1] + t * (green[1] - slate[1]))
         b = int(slate[2] + t * (green[2] - slate[2]))
-    # Alpha 170 (was 220) — arcs are meant to read as soft glow over
-    # the dark globe, not painted strokes. Combined with the halo/core
-    # layer opacity stack this keeps them translucent and subtle.
-    return (r, g, b, 170)
+    # Alpha scales with |correlation| so strong signals read as bright
+    # glow and weak ones fade toward slate — helps the eye pick out
+    # which markets are actually "lit up" without having to read the
+    # correlation table. Range 110 (weak) → 240 (strong).
+    strength = abs(c)
+    alpha = int(110 + strength * 130)
+    return (r, g, b, alpha)
 
 
-_MIN_ARC_WIDTH: float = 1.5
-_MAX_ARC_WIDTH: float = 8.0
+_MIN_ARC_WIDTH: float = 0.8
+_MAX_ARC_WIDTH: float = 3.0
 
 
 def correlation_to_width(corr: float) -> float:
     """Arc width in pixels — scales with |correlation| so strong contagion
     reads as a thick bold arc and weak signal reads as a hairline.
-    Adds a second visual channel beyond colour for faster pattern-tracking
-    when the timeline is playing."""
+    Range is deliberately thin (0.8–3 px) so the arc stack (outer halo
+    + inner core) reads as a neon beam rather than a painted line."""
     strength = min(1.0, abs(float(corr)))
     return _MIN_ARC_WIDTH + strength * (_MAX_ARC_WIDTH - _MIN_ARC_WIDTH)
 
@@ -76,6 +79,8 @@ def build_arc_rows(
             "target": list(meta["lonlat"]),
             "color": list(correlation_to_color(corr)),
             "width": correlation_to_width(corr),
+            # pre-computed rounded correlation for the ArcLayer tooltip;
+            # deck.gl doesn't do numeric formatting so we format here.
             "dest_country": country_code,
             "dest_label": meta["label"],
             "correlation": float(corr),
