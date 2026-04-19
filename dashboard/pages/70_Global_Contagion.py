@@ -744,32 +744,20 @@ deck = pdk.Deck(
 col_globe, col_right = st.columns([5, 2])
 
 with col_globe:
-    # Custom component — iframe stays mounted across reruns, only arc
-    # data + destination fills update via deck.gl setProps. Registered
-    # with a data: URL (see dashboard/lib/components/contagion_globe/
-    # __init__.py) so Streamlit Cloud's component-serving layer isn't
-    # involved — previous path= and url=<CDN> attempts both timed out
-    # on Cloud. With data: URL the iframe's src is the entire HTML +
-    # embedded image inline, nothing to fetch externally.
-    from components.contagion_globe import contagion_globe  # noqa: E402
-    contagion_globe(
-        arcs=arc_rows,
-        destination_features={
-            "type": "FeatureCollection",
-            "features": _dest_features_enriched,
-        },
-        epicenter_features=_epicenter_geo,
-        view_state={
-            "longitude": constants.EPICENTER_LONLAT[0],
-            "latitude": constants.EPICENTER_LONLAT[1] + 8,
-            "zoom": 1.0,
-            "pitch": 35,
-            "bearing": st.session_state.get("contagion_globe_bearing", 0.0),
-        },
-        colour_trigger=str(selected_date),
-        height=980,
-        key="contagion_globe",
-    )
+    # Using components.html(deck.to_html(...)) — not ideal (iframe
+    # reloads on every Play rerun, producing the visible blink) but
+    # it's the known-working path. Four attempts at a custom component
+    # (path=, url=jsDelivr, url=data:URL, with immediate
+    # componentReady) all timed out on Streamlit Cloud, leaving the
+    # globe blank. The custom-component code stays on disk under
+    # dashboard/lib/components/contagion_globe/ as a dormant artifact
+    # for a future debug session with a Cloud-like sandbox we can
+    # actually iterate against — nothing imports it now.
+    import re as _re
+    _deck_html = deck.to_html(as_string=True, notebook_display=False)
+    # pydeck 0.9.1 prefixes BitmapLayer `image` with "@@=". Strip it.
+    _deck_html = _re.sub(r'"image"\s*:\s*"@@=', '"image": "', _deck_html)
+    components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
     # Big month-year anchor above the correlation numbers — gives the
