@@ -183,15 +183,28 @@ st.markdown(
 
     /* Soften the per-frame iframe reload of the globe. Each Play rerun
        sends a fresh components.html payload and the iframe reinits
-       deck.gl — briefly going blank between frames and producing a
-       strobe/blink effect. We mask the blink with:
-         • starting opacity 0.72 (not 0 or 0.35) so the transition
-           doesn't look like a flash-of-black
-         • longer 0.6s ease so adjacent frames overlap visually
-       Paired with the jsDelivr-cached night-lights image, the iframe
-       reload is fast enough that the ramp lands on a painted globe. */
+       deck.gl — between the old iframe unmounting and the new one
+       painting, Streamlit briefly shows its default white page bg
+       through the gap, producing the "flash to white" the user sees.
+
+       Fix is two-part:
+       1. Paint the iframe WRAPPER black so the gap is dark, not
+          white. During the brief unmount-then-remount window the
+          wrapper div is still in the DOM and its background shows.
+       2. Fade-in the new iframe from opacity 0.55 over 0.6 s so the
+          transition from "dark stage" to "painted globe" is a gentle
+          ramp rather than a hard cut. */
+    [data-testid="stMain"] [data-testid="stIFrame"],
+    [data-testid="stMain"] .stIFrame,
+    [data-testid="stMain"] .element-container:has([data-testid="stIFrame"]) {
+        background: #000 !important;
+    }
+    [data-testid="stMain"] [data-testid="stIFrame"] iframe,
+    [data-testid="stMain"] .stIFrame iframe {
+        background: #000 !important;
+    }
     @keyframes ql-globe-fade-in {
-        from { opacity: 0.72; }
+        from { opacity: 0.55; }
         to   { opacity: 1; }
     }
     [data-testid="stMain"] iframe[title="streamlit_app"],
