@@ -694,19 +694,18 @@ with col_globe:
     # after the deck initialises. deckInstance.deck is the raw Deck object;
     # .gl is the WebGL2RenderingContext. We override clearColor so every frame
     # clear uses white instead of deck.gl's default teal.
+    # const deckInstance is block-scoped to its <script> tag — a separate
+    # <script> cannot see it. Inject the patch INSIDE the same script block,
+    # right after the createDeck call closes.
     _patch = """
-<script>
 (function patchBg() {
   const d = deckInstance && (deckInstance.deck || deckInstance);
   const gl = d && d.gl;
   if (!gl) { setTimeout(patchBg, 50); return; }
   const orig = gl.clearColor.bind(gl);
   gl.clearColor = () => orig(1, 1, 1, 1);
-})();
-</script>"""
-    # Inject BEFORE </html> — the main script (and deckInstance) lives after
-    # </body>, so injecting before </body> runs before deckInstance exists.
-    _deck_html = _deck_html.replace("</html>", _patch + "</html>")
+})();"""
+    _deck_html = _deck_html.replace("  });\n\n  </script>", f"  }});\n{_patch}\n  </script>")
     components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
