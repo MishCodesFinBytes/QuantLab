@@ -681,7 +681,6 @@ view_state = pdk.ViewState(
 
 deck = pdk.Deck(
     layers=[
-        ocean_layer,        # white sphere fill — occludes Mapbox GL teal ocean
         rest_layer,         # blue tech-globe basemap (all other countries)
         destination_layer,  # correlation-driven fills over basemap
         epicenter_layer,    # crisis-red over basemap
@@ -694,9 +693,9 @@ deck = pdk.Deck(
     # pydeck's canonical class for the 3D globe is `_GlobeView` with a
     # leading underscore (deck.gl internal class name). Without the
     # underscore pydeck silently falls back to MapView (Mercator).
-    views=[pdk.View(type="_GlobeView", controller={"minPitch": 5, "maxPitch": 55})],
+    views=[pdk.View(type="_GlobeView", controller=True)],
+    parameters={"clearColor": [0.04, 0.06, 0.14, 1]},  # deep navy background
     map_provider=None,
-    map_style=None,   # removes the default "dark" mapStyle from JSON — that's what renders the teal ocean
     tooltip={"text": "{dest_label}\nCorrelation: {correlation}"},
 )
 
@@ -717,34 +716,6 @@ with col_globe:
     # flat Mercator, losing the 3D sphere entirely. No BitmapLayer means the
     # pydeck 0.9.1 "@@=" image-prop bug no longer applies here.
     _deck_html = deck.to_html(as_string=True, notebook_display=False)
-    # The teal sky is a WebGL draw call from deck.gl's GlobeView rendering.
-    # Two-part defence:
-    #   1. Pitch constraint (minPitch:5, maxPitch:55) keeps the globe
-    #      large in the viewport — prevents extreme tilts where the sphere
-    #      shrinks and sky fills the frame.
-    #   2. White CSS background + radial-gradient overlay hides any residual
-    #      teal outside the sphere boundary in normal-range views.
-    _css = (
-        "<style>"
-        "html,body,#deck-container{background:#fff!important;}"
-        "#deck-container>div:first-child{"
-        "background:#fff!important;"
-        "}"
-        "#globe-sky-mask{"
-        "position:absolute;inset:0;pointer-events:none;z-index:999;"
-        "background:radial-gradient("
-        "circle 47% at 50% 50%,"
-        "transparent 97%,#fff 98%);"
-        "}"
-        "</style>"
-    )
-    _mask_div = '<div id="globe-sky-mask"></div>'
-    _deck_html = _deck_html.replace("<head>", "<head>" + _css, 1)
-    _deck_html = _deck_html.replace(
-        '<div id="deck-container"></div>',
-        f'<div id="deck-container">{_mask_div}</div>',
-        1,
-    )
     components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
