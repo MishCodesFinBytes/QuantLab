@@ -717,17 +717,31 @@ with col_globe:
     # flat Mercator, losing the 3D sphere entirely. No BitmapLayer means the
     # pydeck 0.9.1 "@@=" image-prop bug no longer applies here.
     _deck_html = deck.to_html(as_string=True, notebook_display=False)
-    # Pass clearColor directly to createDeck() — the Deck constructor prop
-    # that controls the WebGL sky/atmosphere clear colour in GlobeView.
-    # Injecting into jsonInput doesn't reach the Deck constructor via
-    # @deck.gl/jupyter-widget's JSON API; adding to createDeck({...}) does.
+    # GlobeView renders teal sky as a draw call — clearColor patching is
+    # ineffective. Instead, overlay a white div with a radial-gradient mask
+    # that is transparent over the globe sphere and opaque outside it,
+    # sitting above the WebGL canvas via z-index.
+    _css = (
+        "<style>"
+        "html,body{background:#fff!important;}"
+        "#deck-container{position:relative;background:#fff!important;}"
+        "#globe-sky-mask{"
+        "position:absolute;inset:0;pointer-events:none;z-index:999;"
+        "background:radial-gradient("
+        "circle 47% at 50% 50%,"
+        "transparent 97%,#fff 98%);"
+        "}"
+        "</style>"
+    )
+    _mask_div = '<div id="globe-sky-mask"></div>'
+    _deck_html = _deck_html.replace("<head>", "<head>" + _css, 1)
+    # Inject mask inside #deck-container so position:absolute inset:0 is
+    # relative to the container (which deck.gl also appends its canvas into).
     _deck_html = _deck_html.replace(
-        "createDeck({\n                  container,",
-        "createDeck({\n                  container,\n      clearColor: [1, 1, 1, 1],",
+        '<div id="deck-container"></div>',
+        f'<div id="deck-container">{_mask_div}</div>',
         1,
     )
-    _whitebg = "<style>html,body,#deck-container{background:#fff!important;}</style>"
-    _deck_html = _deck_html.replace("<head>", "<head>" + _whitebg, 1)
     components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
