@@ -36,6 +36,20 @@ import streamlit.components.v1 as components
 
 _FRONTEND_DIR = Path(__file__).resolve().parent / "frontend"
 
+# KNOWN ISSUE (2026-04): Streamlit Cloud would not load this component
+# for our app layout — both ``path=`` and ``url=<jsDelivr>`` produced
+# the "trouble loading the component" timeout banner. The page has
+# reverted to ``components.html(deck.to_html(...))`` in the meantime
+# and does NOT currently call ``contagion_globe()``. The code below is
+# kept as a starting point for a future debug session once we can
+# reproduce locally against a Cloud-like sandbox.
+#
+# Hypothesis for next debug pass: the iframe loads, but our immediate
+# ``streamlit:componentReady`` postMessage may be blocked because the
+# parent is still registering listeners. Try streamlit-component-lib's
+# official ready/setReady helpers + a small MutationObserver that
+# re-fires ready whenever the iframe's connection to the parent is
+# re-established after Streamlit's own remount cycle.
 _component_func = components.declare_component(
     "contagion_globe",
     path=str(_FRONTEND_DIR),
