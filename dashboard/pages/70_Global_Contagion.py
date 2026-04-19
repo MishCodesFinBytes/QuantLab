@@ -159,6 +159,22 @@ st.markdown(
         animation: ql-ticker-flash 0.4s ease-out;
     }
 
+    /* Category chip beside each ticker label — "Energy" / "Safe haven"
+       / "Fear". Soft translucent pill: labels the row without
+       competing with the RAG-coloured value/arrow. */
+    .ql-ticker-chip {
+        display: inline-block;
+        font-size: 0.68em;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 1px 7px;
+        margin-left: 4px;
+        border-radius: 8px;
+        background: rgba(148,163,184,0.15);
+        color: #94a3b8;
+        vertical-align: 2px;
+    }
+
     /* Sparklines are now inline SVG inside st.markdown (not altair) —
        the heartbeat pulse runs via an <animate> tag embedded in each
        SVG. No CSS targeting vega-embed elements needed. */
@@ -713,7 +729,7 @@ arc_layer = pdk.Layer(
 view_state = pdk.ViewState(
     longitude=constants.EPICENTER_LONLAT[0],
     latitude=constants.EPICENTER_LONLAT[1] + 8,
-    zoom=0.85,
+    zoom=1.0,
     pitch=35,
     bearing=st.session_state.get("contagion_globe_bearing", 0.0),
 )
@@ -742,7 +758,11 @@ deck = pdk.Deck(
 # + stacked sparklines (20%). Sparklines live alongside the globe
 # so the "mood gauges" frame the viz instead of being buried below.
 # ──────────────────────────────────────────────────────────────
-col_globe, col_table, col_sparks = st.columns([7, 1.2, 1.3])
+# Two-column layout: globe on the left (bigger), right column stacks
+# correlation table on top of ticker sparklines. Earlier three-column
+# split (globe / table / sparks) ate into the globe's width for
+# panels that don't need it.
+col_globe, col_right = st.columns([5, 2])
 
 with col_globe:
     # st.pydeck_chart does NOT forward the views= config to its internal
@@ -756,9 +776,9 @@ with col_globe:
     # expression that starts with "data" and fails at the first colon.
     import re as _re
     _deck_html = _re.sub(r'"image"\s*:\s*"@@=', '"image": "', _deck_html)
-    components.html(_deck_html, height=900, scrolling=False)
+    components.html(_deck_html, height=980, scrolling=False)
 
-with col_table:
+with col_right:
     st.caption("7-day corr vs ME index")
 
     # RAG colour rules — same semantics as the arc colour ramp on the globe
@@ -791,7 +811,7 @@ with col_table:
 
     _rows_html = "".join(
         f"<tr class='ql-corr-row'>"
-        f"<td style='padding:6px 8px'>{constants.DESTINATION_CITIES[c]['label']}</td>"
+        f"<td style='padding:6px 8px'>{constants.DESTINATION_CITIES[c]['country']}</td>"
         f"<td class='ql-corr-cell' style='padding:6px 10px;text-align:right;"
         f"font-family:ui-monospace,monospace;font-weight:600;border-radius:4px;"
         f"{_rag_corr_style(v)}'>{v:+.3f}</td>"
@@ -862,17 +882,28 @@ def _ticker_sparkline_svg(
     )
 
 
-with col_sparks:
-    st.caption("Energy · Safe haven · Fear")
+    # Tickers live in the SAME right-hand column as the correlation
+    # table now, stacked below it with a thin separator so the eye
+    # reads "correlations first, then the underlying stress signals."
+    st.markdown(
+        "<div style='height:1px;background:rgba(148,163,184,0.2);"
+        "margin:12px 0 10px'></div>",
+        unsafe_allow_html=True,
+    )
+    st.caption("Market stress signals")
     # polarity: "up_is_bad" means a rising value signals market stress
     # (energy spike, shipping stress, fear) → colour red on rise, green
     # on fall. Gold inverts: a rising gold price during crisis is the
     # safe-haven bid working → colour green on rise.
+    # Category tag appears as a small chip beside each ticker label so
+    # the "Energy · Safe haven · Fear" grouping is clear per-row
+    # instead of being a single header that didn't line up with any
+    # specific ticker.
     _panel_tickers = [
-        ("BZ=F", "Brent Crude", "up_is_bad"),
-        ("BDRY", "Baltic Dry (ETF)", "up_is_bad"),
-        ("GC=F", "Gold", "up_is_good"),
-        ("^VIX", "VIX", "up_is_bad"),
+        ("BZ=F", "Brent Crude",      "Energy",     "up_is_bad"),
+        ("BDRY", "Baltic Dry (ETF)", "Energy",     "up_is_bad"),
+        ("GC=F", "Gold",             "Safe haven", "up_is_good"),
+        ("^VIX", "VIX",              "Fear",       "up_is_bad"),
     ]
 
     def _rag_ticker(pct: float, polarity: str) -> str:
@@ -897,7 +928,7 @@ with col_sparks:
     # series (visible in DevTools as "WARN Infinite extent for field
     # date" coming from the vega-lite sparkline embedder).
     _sel_ts = pd.Timestamp(selected_date)
-    for ticker, label, polarity in _panel_tickers:
+    for ticker, label, category, polarity in _panel_tickers:
         series = (
             events[events["ticker"] == ticker]
             .set_index("date")["close"]
@@ -933,7 +964,8 @@ with col_sparks:
         # so the values visibly flash when the slider advances.
         st.markdown(
             f"<div class='ql-ticker-row'>"
-            f"<strong>{label}</strong> &nbsp; "
+            f"<strong>{label}</strong> "
+            f"<span class='ql-ticker-chip'>{category}</span> &nbsp;"
             f"<span class='ql-ticker-value' "
             f"style='color:{_colour};font-family:ui-monospace,monospace;"
             f"font-weight:600'>{_end_val:.2f}</span>"

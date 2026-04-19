@@ -59,12 +59,17 @@ TICKER_ROLES: dict[str, str] = {
 # ──────────────────────────────────────────────────────────────
 EPICENTER_LONLAT: tuple[float, float] = (56.0, 26.0)   # Strait of Hormuz
 
+# `country` is shown in the correlation table (the row identifies the
+# *market*, and users were confused that the "Country" column had city
+# names). `label` stays as the city because the arc tooltip and the
+# lat/lon anchor are city-based — the arcs terminate on the financial
+# centre, not the country centroid.
 DESTINATION_CITIES: dict[str, dict[str, object]] = {
-    "IN": {"label": "Mumbai",   "lonlat": (72.88, 19.08), "ticker": "FRED:INDIRLTLT01STM"},
-    "TR": {"label": "Istanbul", "lonlat": (28.98, 41.01), "ticker": "TUR"},
-    "DE": {"label": "Frankfurt","lonlat": ( 8.68, 50.11), "ticker": "FRED:IRLTLT01DEM156N"},
-    "US": {"label": "New York", "lonlat": (-74.01, 40.71),"ticker": "^TNX"},
-    "GB": {"label": "London",   "lonlat": (-0.13, 51.51), "ticker": "^TNX"},  # proxy: use TNX for UK too
+    "IN": {"country": "India",          "label": "Mumbai",    "lonlat": (72.88, 19.08), "ticker": "FRED:INDIRLTLT01STM"},
+    "TR": {"country": "Turkey",         "label": "Istanbul",  "lonlat": (28.98, 41.01), "ticker": "TUR"},
+    "DE": {"country": "Germany",        "label": "Frankfurt", "lonlat": ( 8.68, 50.11), "ticker": "FRED:IRLTLT01DEM156N"},
+    "US": {"country": "United States",  "label": "New York",  "lonlat": (-74.01, 40.71),"ticker": "^TNX"},
+    "GB": {"country": "United Kingdom", "label": "London",    "lonlat": (-0.13, 51.51), "ticker": "^TNX"},
 }
 
 
