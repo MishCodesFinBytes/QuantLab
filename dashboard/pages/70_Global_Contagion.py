@@ -694,7 +694,7 @@ deck = pdk.Deck(
     # pydeck's canonical class for the 3D globe is `_GlobeView` with a
     # leading underscore (deck.gl internal class name). Without the
     # underscore pydeck silently falls back to MapView (Mercator).
-    views=[pdk.View(type="_GlobeView", controller={"minPitch": -20, "maxPitch": 70})],
+    views=[pdk.View(type="_GlobeView", controller={"minPitch": 5, "maxPitch": 55})],
     map_provider=None,
     map_style=None,   # removes the default "dark" mapStyle from JSON — that's what renders the teal ocean
     tooltip={"text": "{dest_label}\nCorrelation: {correlation}"},
@@ -717,29 +717,34 @@ with col_globe:
     # flat Mercator, losing the 3D sphere entirely. No BitmapLayer means the
     # pydeck 0.9.1 "@@=" image-prop bug no longer applies here.
     _deck_html = deck.to_html(as_string=True, notebook_display=False)
-    # The teal sky is deck.gl GlobeView's atmosphere — a WebGL draw call that
-    # no CSS background or clearColor patch can suppress. Solution: clip the
-    # canvas itself to a circle using CSS clip-path. The browser composites the
-    # clipped canvas over a white container, so the sphere appears on white
-    # regardless of what deck.gl renders outside/around it.
-    # circle(46%) ≈ 406px radius on the ~880px diagonal of the column — sized
-    # to sit just inside the globe sphere boundary at zoom=1.0.
-    # atmosphere:false is kept as a belt-and-braces prop attempt.
-    _deck_html = _deck_html.replace(
-        '"@@type": "_GlobeView"',
-        '"@@type": "_GlobeView", "atmosphere": false',
-        1,
-    )
+    # The teal sky is a WebGL draw call from deck.gl's GlobeView rendering.
+    # Two-part defence:
+    #   1. Pitch constraint (minPitch:5, maxPitch:55) keeps the globe
+    #      large in the viewport — prevents extreme tilts where the sphere
+    #      shrinks and sky fills the frame.
+    #   2. White CSS background + radial-gradient overlay hides any residual
+    #      teal outside the sphere boundary in normal-range views.
     _css = (
         "<style>"
         "html,body,#deck-container{background:#fff!important;}"
-        "#deck-container canvas{"
-        "clip-path:circle(46% at 50% 50%);"
-        "-webkit-clip-path:circle(46% at 50% 50%);"
+        "#deck-container>div:first-child{"
+        "background:#fff!important;"
+        "}"
+        "#globe-sky-mask{"
+        "position:absolute;inset:0;pointer-events:none;z-index:999;"
+        "background:radial-gradient("
+        "circle 47% at 50% 50%,"
+        "transparent 97%,#fff 98%);"
         "}"
         "</style>"
     )
+    _mask_div = '<div id="globe-sky-mask"></div>'
     _deck_html = _deck_html.replace("<head>", "<head>" + _css, 1)
+    _deck_html = _deck_html.replace(
+        '<div id="deck-container"></div>',
+        f'<div id="deck-container">{_mask_div}</div>',
+        1,
+    )
     components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
