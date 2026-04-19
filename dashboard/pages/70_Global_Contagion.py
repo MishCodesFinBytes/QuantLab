@@ -697,10 +697,13 @@ with col_globe:
     # const deckInstance is block-scoped to its <script> tag — a separate
     # <script> cannot see it. Inject the patch INSIDE the same script block,
     # right after the createDeck call closes.
+    # Get the WebGL context directly from the canvas — deckInstance.deck.gl
+    # is not a public prop. Canvas appears ~50 ms after createDeck returns.
     _patch = """
 (function patchBg() {
-  const d = deckInstance && (deckInstance.deck || deckInstance);
-  const gl = d && d.gl;
+  const canvas = document.querySelector('#deck-container canvas');
+  if (!canvas) { setTimeout(patchBg, 50); return; }
+  const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
   if (!gl) { setTimeout(patchBg, 50); return; }
   const orig = gl.clearColor.bind(gl);
   gl.clearColor = () => orig(1, 1, 1, 1);
