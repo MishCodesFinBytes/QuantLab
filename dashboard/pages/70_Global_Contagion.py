@@ -688,13 +688,14 @@ with col_globe:
     # flat Mercator, losing the 3D sphere entirely. No BitmapLayer means the
     # pydeck 0.9.1 "@@=" image-prop bug no longer applies here.
     _deck_html = deck.to_html(as_string=True, notebook_display=False)
-    # clearColor in pydeck parameters is silently ignored by deck.gl (it's a
-    # top-level Deck prop, not a WebGL state param). Inject CSS on the canvas
-    # instead — deck.gl's default clearColor is transparent, so CSS bg shows
-    # through both the space outside the sphere and the ocean inside it.
+    # pydeck's `parameters` dict is passed to deck.gl as WebGL state (e.g.
+    # depthTest) — NOT to the Deck constructor. clearColor is a top-level
+    # Deck constructor prop, so it must be injected directly into the JSON
+    # spec that @deck.gl/json reads. The JSON always contains '"views":',
+    # making it a reliable anchor.
     _deck_html = _deck_html.replace(
-        "</head>",
-        "<style>body,#deck-container{background:#fff!important;}</style></head>",
+        '"views":',
+        '"clearColor": [1, 1, 1, 1], "views":',
     )
     components.html(_deck_html, height=980, scrolling=False)
 
