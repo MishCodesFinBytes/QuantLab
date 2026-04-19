@@ -666,7 +666,6 @@ deck = pdk.Deck(
     # leading underscore (deck.gl internal class name). Without the
     # underscore pydeck silently falls back to MapView (Mercator).
     views=[pdk.View(type="_GlobeView", controller=True)],
-    parameters={"clearColor": [1.0, 1.0, 1.0, 1.0]},   # white outside sphere — must be [0,1] floats
     map_provider=None,
     tooltip={"text": "{dest_label}\nCorrelation: {correlation}"},
 )
@@ -688,6 +687,14 @@ with col_globe:
     # flat Mercator, losing the 3D sphere entirely. No BitmapLayer means the
     # pydeck 0.9.1 "@@=" image-prop bug no longer applies here.
     _deck_html = deck.to_html(as_string=True, notebook_display=False)
+    # clearColor in pydeck parameters is silently ignored by deck.gl (it's a
+    # top-level Deck prop, not a WebGL state param). Inject CSS on the canvas
+    # instead — deck.gl's default clearColor is transparent, so CSS bg shows
+    # through both the space outside the sphere and the ocean inside it.
+    _deck_html = _deck_html.replace(
+        "</head>",
+        "<style>body,canvas{background:#fff!important;}</style></head>",
+    )
     components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
