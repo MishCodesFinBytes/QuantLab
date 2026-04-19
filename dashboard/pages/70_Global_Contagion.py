@@ -11,7 +11,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
 
@@ -731,22 +730,41 @@ deck = pdk.Deck(
 col_globe, col_right = st.columns([5, 2])
 
 with col_globe:
-    # Globe rebuilt every frame so arc colours + widths + destination
-    # country fills update live with the timeline. Earlier we cached
-    # the HTML and skipped regeneration during Play to avoid the iframe-
-    # reload blink, but it made arcs feel frozen and defeated the point
-    # of the playback. The fade-in + jsDelivr-cached night-lights
-    # texture make the per-frame reload cost tolerable; true smooth
-    # arc-only updates still need a bidirectional custom component
-    # (postMessage into a persistent deck.gl instance) — deferred.
-    import re as _re
-    _deck_html = deck.to_html(as_string=True, notebook_display=False)
-    # pydeck 0.9.1 incorrectly tags the BitmapLayer `image` prop with
-    # the "@@=" accessor-expression prefix. Strip it so deck.gl sees a
-    # plain URL string instead of trying to evaluate an expression
-    # starting with "data" (fails at the first colon).
-    _deck_html = _re.sub(r'"image"\s*:\s*"@@=', '"image": "', _deck_html)
-    components.html(_deck_html, height=980, scrolling=False)
+    # Persistent deck.gl globe via our custom Streamlit component. The
+    # component mounts Deck once inside its iframe and on subsequent
+    # reruns updates only the ArcLayer data + destination fills via
+    # deck.gl's setProps — no iframe reload, no WebGL re-init, no
+    # per-frame strobe. This replaces the earlier
+    # `components.html(deck.to_html(...))` pattern which shipped the
+    # full HTML over the websocket every rerun and caused the jagged
+    # refresh. See dashboard/components/contagion_globe/frontend/
+    # index.html for the deck.gl setup the frontend runs.
+    #
+    # colour_trigger is the deck.gl `updateTriggers` cache-buster:
+    # the arc data array length doesn't change between frames, so
+    # without a trigger deck.gl would keep stale colours. Passing the
+    # selected date forces a re-evaluation of the colour accessor on
+    # every date change.
+    from components.contagion_globe import contagion_globe  # noqa: E402
+    contagion_globe(
+        arcs=arc_rows,
+        destination_features={
+            "type": "FeatureCollection",
+            "features": _dest_features_enriched,
+        },
+        epicenter_features=_epicenter_geo,
+        night_lights_url=_NIGHT_LIGHTS_CDN_URL,
+        view_state={
+            "longitude": constants.EPICENTER_LONLAT[0],
+            "latitude": constants.EPICENTER_LONLAT[1] + 8,
+            "zoom": 1.0,
+            "pitch": 35,
+            "bearing": st.session_state.get("contagion_globe_bearing", 0.0),
+        },
+        colour_trigger=str(selected_date),
+        height=980,
+        key="contagion_globe",
+    )
 
 with col_right:
     # Big month-year anchor above the correlation numbers — gives the
