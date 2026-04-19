@@ -1159,14 +1159,30 @@ with st.expander(
 # ──────────────────────────────────────────────────────────────
 if st.session_state.contagion_playing:
     import time as _time
-    _time.sleep(0.2)
-    _step = 2
-    if st.session_state.contagion_date_idx < len(dates) - 1:
-        st.session_state.contagion_date_idx = min(
-            st.session_state.contagion_date_idx + _step, len(dates) - 1
-        )
-    else:
+    # Calendar-monthly stepping: advance to the first data point on or
+    # after the 1st of the next month. Coarser than the previous 2-day
+    # stepping, but the whole point is to shrink the number of iframe
+    # reloads during Play — jumping month-to-month means the 0.6 s
+    # fade-in has time to fully cover each reload, so the globe reads
+    # as smooth progressive snapshots instead of a strobe. The large
+    # month-year badge in the correlation column is now also the
+    # natural unit of playback, so the visual cadence matches.
+    _time.sleep(1.0)
+    _cur_ts = pd.Timestamp(dates[st.session_state.contagion_date_idx])
+    _next_month_start = (_cur_ts + pd.offsets.MonthBegin(1)).date()
+    _next_idx = None
+    for _i in range(
+        st.session_state.contagion_date_idx + 1, len(dates)
+    ):
+        if pd.Timestamp(dates[_i]).date() >= _next_month_start:
+            _next_idx = _i
+            break
+    if _next_idx is None:
+        # No data beyond the current month → stop at the last point.
+        st.session_state.contagion_date_idx = len(dates) - 1
         st.session_state.contagion_playing = False
+    else:
+        st.session_state.contagion_date_idx = _next_idx
     st.rerun()
 elif st.session_state.contagion_auto_rotate:
     import time as _time
