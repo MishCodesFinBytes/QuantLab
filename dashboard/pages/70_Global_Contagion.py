@@ -376,16 +376,10 @@ if _period_events and dates:
 selected_date = dates[st.session_state.contagion_date_idx]
 st.caption(f"Showing snapshot at **{selected_date}**")
 
-# Big month-year badge so the current date is always obvious at a
-# glance — helps the eye anchor to "where in the conflict am I?"
-# while the timeline slider is a compact frame index.
+# Month-year badge moved from under the slider into the correlation
+# column below — it sits next to the table so the numbers have a
+# visible date anchor. See `with col_right:` block.
 _month_year = selected_date.strftime("%B %Y") if hasattr(selected_date, "strftime") else str(selected_date)
-st.markdown(
-    f'<div style="font-family:Georgia, serif;font-size:2.2rem;'
-    f'font-weight:600;letter-spacing:-0.01em;margin:-6px 0 12px;'
-    f'color:#1f2937">{_month_year}</div>',
-    unsafe_allow_html=True,
-)
 
 # Auto-advance while playing — overrides auto-rotate.
 # Cadence tuned for smooth perceived motion without outrunning
@@ -753,6 +747,15 @@ with col_globe:
     )
 
 with col_right:
+    # Big month-year anchor above the correlation numbers — gives the
+    # table a visible date header so the eye knows which moment of the
+    # conflict it's reading.
+    st.markdown(
+        f'<div style="font-family:Georgia, serif;font-size:1.9rem;'
+        f'font-weight:600;letter-spacing:-0.01em;margin:0 0 8px;'
+        f'color:#1f2937">{_month_year}</div>',
+        unsafe_allow_html=True,
+    )
     st.caption("7-day corr vs ME index")
 
     # RAG colour rules — same semantics as the arc colour ramp on the globe
@@ -885,11 +888,16 @@ with col_right:
 
         Amber band is ±2% — below that the move is noise, not a signal.
         Above, a 'bad' direction (given polarity) goes red; a 'good'
-        direction goes green. Palette matches the globe arc ramp so
-        values, correlations, and arcs all share the same colour
-        language.
+        direction goes green.
+
+        Palette is the tint-700 cousin of the globe arc ramp
+        (#b91c1c / #15803d / #b45309) rather than the saturated arc
+        hexes. Arcs live on the dark globe iframe where the saturated
+        hexes read as soft glow, but the ticker text + sparkline trail
+        sit on the white page where the same hexes read as neon and
+        hurt the eye. Same colour family, tone adjusted per context.
         """
-        red, green, amber = "#c81e1e", "#14a028", "#d97706"
+        red, green, amber = "#b91c1c", "#15803d", "#b45309"
         if abs(pct) < 2:
             return amber
         rising = pct > 0
