@@ -22,7 +22,7 @@ from page_header import render_page_header  # noqa: E402
 
 
 st.set_page_config(
-    page_title="Global Contagion — QuantLabs",
+    page_title="Global Risk Contagion — QuantLabs",
     page_icon="assets/logo.png",
     layout="wide",
 )
@@ -187,7 +187,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 render_page_header(
-    "Global Contagion Command Center",
+    "Global Risk Contagion",
     "Visualising geopolitical-risk contagion on a 3D globe",
 )
 

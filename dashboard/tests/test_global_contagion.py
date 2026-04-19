@@ -15,7 +15,7 @@ class TestGlobalContagionPage:
     def test_shows_title(self):
         at = self._run()
         blobs = " ".join(m.value for m in at.markdown)
-        assert "Global Contagion" in blobs
+        assert "Global Risk Contagion" in blobs
 
     def test_has_period_radio(self):
         at = self._run()

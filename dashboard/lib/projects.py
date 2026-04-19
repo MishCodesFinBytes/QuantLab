@@ -27,7 +27,7 @@ PROJECTS_BY_CATEGORY: dict = {
     "Geopolitics & risk": [
         Project(
             key="global_contagion",
-            label="Global Contagion",
+            label="Global Risk Contagion",
             description=(
                 "Replay geopolitical shocks across a 3D globe — "
                 "bond-yield contagion from Middle East to world markets"
