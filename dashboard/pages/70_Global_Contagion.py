@@ -717,13 +717,13 @@ with col_globe:
     # flat Mercator, losing the 3D sphere entirely. No BitmapLayer means the
     # pydeck 0.9.1 "@@=" image-prop bug no longer applies here.
     _deck_html = deck.to_html(as_string=True, notebook_display=False)
-    # Explicitly null out mapStyle so @deck.gl/jupyter-widget doesn't fall back
-    # to its built-in default (dark Mapbox style).  Also inject white CSS so
-    # the area outside the sphere shows the body background, not the Mapbox GL
-    # canvas teal that bleeds through the transparent deck.gl canvas.
+    # Pass clearColor directly to createDeck() — the Deck constructor prop
+    # that controls the WebGL sky/atmosphere clear colour in GlobeView.
+    # Injecting into jsonInput doesn't reach the Deck constructor via
+    # @deck.gl/jupyter-widget's JSON API; adding to createDeck({...}) does.
     _deck_html = _deck_html.replace(
-        "const jsonInput = {",
-        'const jsonInput = {\n  "mapStyle": null,\n  "clearColor": [1, 1, 1, 1],',
+        "createDeck({\n                  container,",
+        "createDeck({\n                  container,\n      clearColor: [1, 1, 1, 1],",
         1,
     )
     _whitebg = "<style>html,body,#deck-container{background:#fff!important;}</style>"
