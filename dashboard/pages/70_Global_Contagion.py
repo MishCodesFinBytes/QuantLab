@@ -488,17 +488,18 @@ def _split_countries_by_role() -> tuple[dict, dict, dict]:
 _epicenter_geo, _destination_geo, _rest_geo = _split_countries_by_role()
 
 # Blue tech-globe basemap — all countries not in the epicenter or
-# destination groups get the neutral navy fill with glowing cyan borders.
-# This replaces the NASA night-lights BitmapLayer so the aesthetic shifts
-# from a photorealistic dark-earth to a digital-globe network style.
+# destination groups get a slightly lighter navy fill, no stroke.
+# Stroke is intentionally omitted on the world basemap: applying cyan
+# borders to ~200 country polygons in GlobeView floods the entire sphere
+# with cyan (the border width is not constant in 3D projection). Cyan
+# accents are reserved for the five destination countries where they
+# read as highlights rather than noise.
 rest_layer = pdk.Layer(
     "GeoJsonLayer",
     data=_rest_geo,
-    stroked=True,
+    stroked=False,
     filled=True,
-    get_fill_color=_globe_style.CONTINENT_FILL,
-    get_line_color=_globe_style.CONTINENT_STROKE,
-    line_width_min_pixels=_globe_style.CONTINENT_LINE_WIDTH,
+    get_fill_color=[30, 50, 90, 180],   # slightly lighter navy than clearColor
     pickable=False,
 )
 
@@ -665,7 +666,7 @@ deck = pdk.Deck(
     # leading underscore (deck.gl internal class name). Without the
     # underscore pydeck silently falls back to MapView (Mercator).
     views=[pdk.View(type="_GlobeView", controller=True)],
-    parameters={"clearColor": _globe_style.CLEAR_COLOR},
+    parameters={"clearColor": [0.04, 0.06, 0.14, 1]},   # deep navy — must be [0,1] floats
     map_provider=None,
     tooltip={"text": "{dest_label}\nCorrelation: {correlation}"},
 )
