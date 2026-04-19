@@ -688,16 +688,23 @@ with col_globe:
     # flat Mercator, losing the 3D sphere entirely. No BitmapLayer means the
     # pydeck 0.9.1 "@@=" image-prop bug no longer applies here.
     _deck_html = deck.to_html(as_string=True, notebook_display=False)
-    # The teal background is Mapbox GL rendering the ocean — mapbox-gl.js is
-    # loaded in the pydeck template and initialises with a default teal style
-    # even when map_style=None (pydeck omits mapStyle but mapbox-gl defaults).
-    # Fix: inject an inline MapLibre style with only a white background layer.
-    # This replaces the teal ocean with white without any external tile requests.
-    _deck_html = _deck_html.replace(
-        '"views":',
-        '"mapStyle":{"version":8,"sources":{},"layers":[{"id":"bg","type":"background","paint":{"background-color":"#ffffff"}}]},'
-        ' "views":',
+    # Patch WebGL clearColor at the instance level before deck.gl/mapbox-gl
+    # initialise — intercepts every canvas.getContext() call and wraps
+    # clearColor to always force white, overriding the teal that Mapbox GL
+    # sets as its default ocean background colour.
+    _whitebg = (
+        "<script>(function(){"
+        "var _orig=HTMLCanvasElement.prototype.getContext;"
+        "HTMLCanvasElement.prototype.getContext=function(t,a){"
+        "var ctx=_orig.call(this,t,a);"
+        "if(ctx&&(t==='webgl'||t==='webgl2'||t==='experimental-webgl')){"
+        "ctx.clearColor=function(r,g,b,a){"
+        "Object.getPrototypeOf(ctx).clearColor.call(ctx,1,1,1,1);"
+        "};"
+        "}return ctx;};"
+        "})();</script>"
     )
+    _deck_html = _deck_html.replace("<body>", "<body>" + _whitebg, 1)
     components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
