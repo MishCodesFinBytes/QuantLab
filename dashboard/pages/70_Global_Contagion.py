@@ -753,7 +753,10 @@ with col_globe:
             "features": _dest_features_enriched,
         },
         epicenter_features=_epicenter_geo,
-        night_lights_url=_NIGHT_LIGHTS_CDN_URL,
+        # night_lights_url omitted on purpose — the frontend ships its
+        # own bundled world_night.jpg alongside index.html, served by
+        # Streamlit from the same origin as the iframe. That avoids
+        # the jsDelivr CDN CORS/fetch failure seen on Cloud.
         view_state={
             "longitude": constants.EPICENTER_LONLAT[0],
             "latitude": constants.EPICENTER_LONLAT[1] + 8,

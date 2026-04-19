@@ -47,9 +47,9 @@ def contagion_globe(
     arcs: list[dict],
     destination_features: dict,
     epicenter_features: dict,
-    night_lights_url: str,
     view_state: dict,
     colour_trigger: str,
+    night_lights_url: str | None = None,
     height: int = 980,
     key: str | None = None,
 ):
@@ -59,6 +59,12 @@ def contagion_globe(
     passed every rerun. The frontend keeps the same Deck instance
     alive across renders and only updates the layers via setProps —
     no iframe reload, no WebGL re-init.
+
+    ``night_lights_url`` is optional. If omitted, the frontend uses
+    the JPG bundled alongside index.html inside the component
+    directory (served by Streamlit from the same origin as the
+    iframe — no CORS / no CDN fetch). Pass an explicit URL only if
+    you want a different globe texture.
     """
     return _component_func(
         arcs=arcs,

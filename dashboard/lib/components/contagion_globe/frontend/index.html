@@ -45,14 +45,18 @@
       // Earth surface — NASA Black Marble texture. jsDelivr URL set
       // from Python; browser caches it so subsequent renders don't
       // re-fetch.
-      if (args.nightLightsUrl) {
-        layers.push(new deck.BitmapLayer({
-          id: 'night-lights',
-          image: args.nightLightsUrl,
-          bounds: [-180, -90, 180, 90],
-          opacity: 1.0,
-        }));
-      }
+      // Bundled JPG lives next to this index.html inside the component
+      // directory, so Streamlit serves it from the same origin as the
+      // iframe — no CORS / no CDN-fetch failure path. Python can
+      // still override via args.nightLightsUrl if someone wants a
+      // different texture; defaults to the bundled file.
+      const nightLightsSrc = args.nightLightsUrl || './world_night.jpg';
+      layers.push(new deck.BitmapLayer({
+        id: 'night-lights',
+        image: nightLightsSrc,
+        bounds: [-180, -90, 180, 90],
+        opacity: 1.0,
+      }));
 
       // Destination countries — fill driven by each feature's
       // ql_fill property (the current rolling correlation mapped
