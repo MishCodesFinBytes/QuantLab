@@ -694,7 +694,7 @@ deck = pdk.Deck(
     # pydeck's canonical class for the 3D globe is `_GlobeView` with a
     # leading underscore (deck.gl internal class name). Without the
     # underscore pydeck silently falls back to MapView (Mercator).
-    views=[pdk.View(type="_GlobeView", controller=True)],
+    views=[pdk.View(type="_GlobeView", controller={"minPitch": -20, "maxPitch": 70})],
     map_provider=None,
     map_style=None,   # removes the default "dark" mapStyle from JSON — that's what renders the teal ocean
     tooltip={"text": "{dest_label}\nCorrelation: {correlation}"},
