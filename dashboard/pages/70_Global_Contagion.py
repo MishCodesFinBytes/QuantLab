@@ -688,27 +688,16 @@ with col_globe:
     # flat Mercator, losing the 3D sphere entirely. No BitmapLayer means the
     # pydeck 0.9.1 "@@=" image-prop bug no longer applies here.
     _deck_html = deck.to_html(as_string=True, notebook_display=False)
-    # Neither pydeck parameters={} (WebGL state dict) nor injecting clearColor
-    # into jsonInput works — @deck.gl/json's JSON API doesn't forward clearColor
-    # to the Deck constructor. Patch gl.clearColor on the WebGL context directly
-    # after the deck initialises. deckInstance.deck is the raw Deck object;
-    # .gl is the WebGL2RenderingContext. We override clearColor so every frame
-    # clear uses white instead of deck.gl's default teal.
-    # const deckInstance is block-scoped to its <script> tag — a separate
-    # <script> cannot see it. Inject the patch INSIDE the same script block,
-    # right after the createDeck call closes.
-    # Get the WebGL context directly from the canvas — deckInstance.deck.gl
-    # is not a public prop. Canvas appears ~50 ms after createDeck returns.
-    _patch = """
-(function patchBg() {
-  const canvas = document.querySelector('#deck-container canvas');
-  if (!canvas) { setTimeout(patchBg, 50); return; }
-  const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-  if (!gl) { setTimeout(patchBg, 50); return; }
-  const orig = gl.clearColor.bind(gl);
-  gl.clearColor = () => orig(1, 1, 1, 1);
-})();"""
-    _deck_html = _deck_html.replace("  });\n\n  </script>", f"  }});\n{_patch}\n  </script>")
+    # The teal background is Mapbox GL rendering the ocean — mapbox-gl.js is
+    # loaded in the pydeck template and initialises with a default teal style
+    # even when map_style=None (pydeck omits mapStyle but mapbox-gl defaults).
+    # Fix: inject an inline MapLibre style with only a white background layer.
+    # This replaces the teal ocean with white without any external tile requests.
+    _deck_html = _deck_html.replace(
+        '"views":',
+        '"mapStyle":{"version":8,"sources":{},"layers":[{"id":"bg","type":"background","paint":{"background-color":"#ffffff"}}]},'
+        ' "views":',
+    )
     components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
