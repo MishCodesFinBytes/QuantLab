@@ -717,34 +717,29 @@ with col_globe:
     # flat Mercator, losing the 3D sphere entirely. No BitmapLayer means the
     # pydeck 0.9.1 "@@=" image-prop bug no longer applies here.
     _deck_html = deck.to_html(as_string=True, notebook_display=False)
-    # The teal sky is deck.gl GlobeView's atmosphere draw call — not clearColor.
-    # Disable it via the "atmosphere" prop on the GlobeView JSON object, which
-    # deck.gl 9.x supports to suppress the sky/haze geometry pass.
+    # The teal sky is deck.gl GlobeView's atmosphere — a WebGL draw call that
+    # no CSS background or clearColor patch can suppress. Solution: clip the
+    # canvas itself to a circle using CSS clip-path. The browser composites the
+    # clipped canvas over a white container, so the sphere appears on white
+    # regardless of what deck.gl renders outside/around it.
+    # circle(46%) ≈ 406px radius on the ~880px diagonal of the column — sized
+    # to sit just inside the globe sphere boundary at zoom=1.0.
+    # atmosphere:false is kept as a belt-and-braces prop attempt.
     _deck_html = _deck_html.replace(
         '"@@type": "_GlobeView"',
         '"@@type": "_GlobeView", "atmosphere": false',
         1,
     )
-    # Also apply white background + outer-sphere mask as belt-and-braces.
     _css = (
         "<style>"
-        "html,body{background:#fff!important;}"
-        "#deck-container{position:relative;background:#fff!important;}"
-        "#globe-sky-mask{"
-        "position:absolute;inset:0;pointer-events:none;z-index:999;"
-        "background:radial-gradient("
-        "circle 47% at 50% 50%,"
-        "transparent 97%,#fff 98%);"
+        "html,body,#deck-container{background:#fff!important;}"
+        "#deck-container canvas{"
+        "clip-path:circle(46% at 50% 50%);"
+        "-webkit-clip-path:circle(46% at 50% 50%);"
         "}"
         "</style>"
     )
-    _mask_div = '<div id="globe-sky-mask"></div>'
     _deck_html = _deck_html.replace("<head>", "<head>" + _css, 1)
-    _deck_html = _deck_html.replace(
-        '<div id="deck-container"></div>',
-        f'<div id="deck-container">{_mask_div}</div>',
-        1,
-    )
     components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
