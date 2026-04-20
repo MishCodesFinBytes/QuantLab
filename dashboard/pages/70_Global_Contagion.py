@@ -801,6 +801,39 @@ with col_globe:
         "</style>"
     )
     _deck_html = _deck_html.replace("</head>", _globe_inject + "</head>", 1)
+
+    # Post-createDeck purge: deck.gl adds AtmosphereEffect internally using a
+    # module-scoped closure reference, so patching the exported constructor
+    # above prevents new instances but doesn't remove the one already added
+    # during DeckGL construction. This setTimeout fires after createDeck()
+    # returns and removes any Atmosphere effect from the effectManager directly.
+    _post_patch = (
+        "<script>"
+        "setTimeout(function(){"
+        "try{"
+        # deckgl may wrap an inner .deck Deck instance (DeckGL React wrapper)
+        # or be the Deck instance directly.
+        "var d=typeof deckgl!=='undefined'?(deckgl._deck||deckgl.deck||deckgl):null;"
+        "if(!d)return;"
+        "var em=d.effectManager||d._effectManager;"
+        "if(!em)return;"
+        # Walk every list key the effectManager might store effects under.
+        "['_effects','effects','postProcessEffects','_postProcessEffects'].forEach(function(k){"
+        "if(Array.isArray(em[k])){"
+        "em[k]=em[k].filter(function(e){"
+        "var n=(e&&e.constructor&&e.constructor.name)||'';"
+        "return n.indexOf('Atmosphere')<0;"
+        "});"
+        "}"
+        "});"
+        # Force a redraw so the removed effect doesn't appear on the next frame.
+        "if(typeof d.setProps==='function')d.setProps({});"
+        "if(typeof d.redraw==='function')d.redraw('atmo-purge');"
+        "}catch(ignore){}"
+        "},400)"
+        "</script>"
+    )
+    _deck_html = _deck_html.replace("</body>", _post_patch + "</body>", 1)
     components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
