@@ -690,8 +690,8 @@ city_nodes_layer = pdk.Layer(
 view_state = pdk.ViewState(
     longitude=constants.EPICENTER_LONLAT[0],
     latitude=constants.EPICENTER_LONLAT[1] + 8,
-    zoom=1.5,
-    pitch=20,
+    zoom=2.5,
+    pitch=0,
     bearing=st.session_state.get("contagion_globe_bearing", 0.0),
 )
 
