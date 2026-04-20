@@ -5,17 +5,19 @@ Phase 1: data + globe + timeline. Gesture control ships in Phase 2.
 from __future__ import annotations
 
 import sys
+import time as _time
 from datetime import date
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 import streamlit as st
 import streamlit.components.v1 as components
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
 
-from contagion import constants, loader  # noqa: E402
+from contagion import constants, correlations, loader  # noqa: E402
 from globe import style as _globe_style   # noqa: E402
 from nav import render_sidebar  # noqa: E402
 from page_header import render_page_header  # noqa: E402
@@ -269,6 +271,9 @@ period_key = st.radio(
     format_func=lambda k: period_labels[k],
     horizontal=True,
 )
+# Expose period_key to the fragment via session state so globe-only
+# reruns (scope="fragment") can re-load the correct dataset.
+st.session_state.contagion_period_key = period_key
 
 events = _load(period_key)
 
@@ -372,43 +377,17 @@ if _period_events and dates:
             unsafe_allow_html=True,
         )
 
-selected_date = dates[st.session_state.contagion_date_idx]
-st.caption(f"Showing snapshot at **{selected_date}**")
-
-# Month-year badge moved from under the slider into the correlation
-# column below — it sits next to the table so the numbers have a
-# visible date anchor. See `with col_right:` block.
-_month_year = selected_date.strftime("%B %Y") if hasattr(selected_date, "strftime") else str(selected_date)
-
-# Auto-advance while playing — overrides auto-rotate.
-# Cadence tuned for smooth perceived motion without outrunning
-# Streamlit's rerun pipeline: advance 2 days per frame + 0.2s sleep.
-# Earlier 1-day / 0.35s meant a slow page rebuild (pydeck + 4 altair
-# charts) sometimes outlasted the sleep, producing jagged, half-
-# repainted frames; 2-day steps mean fewer total reruns across the
-# timeline, giving Streamlit time to fully repaint each frame.
-# Playback state advance moved to the *bottom* of the script — see the
-# "Playback tick" block at the end of the file. If st.rerun() fires
-# here, the script halts immediately and nothing below this line
-# renders, so during Play the globe / correlation table / sparklines
-# never got a chance to redraw — which is why tickers appeared to
-# update only 2-3 times across a full Play.
 
 # ──────────────────────────────────────────────────────────────
-# Globe — Plotly orthographic globe + correlation arcs
-# Switched from pydeck GlobeView: deck.gl v8's atmosphere shader is
-# baked into the WebGL render pass and cannot be disabled via any
-# Python API, JS prototype patch, or effectManager purge — producing
-# an unavoidable teal haze regardless of clearColor settings.
-# Plotly orthographic projection gives the same 3D-globe aesthetic
-# with zero atmosphere and native Streamlit rendering (no iframe).
+# Helper functions — module level so the fragment can call them
 # ──────────────────────────────────────────────────────────────
-import plotly.graph_objects as go  # noqa: E402
 
-from contagion import correlations  # noqa: E402
+# ISO-2 → ISO-3 mapping required by Plotly choropleth locationmode="ISO-3"
+_ISO2_TO_ISO3 = {"IN": "IND", "TR": "TUR", "DE": "DEU", "US": "USA", "GB": "GBR"}
+_EPICENTER_ISO3 = ["ISR", "SAU", "ARE", "IRN"]
 
 
-def _correlations_for_date(events: pd.DataFrame, target_date) -> dict:
+def _correlations_for_date(evts: pd.DataFrame, target_date) -> dict:
     """For each destination country, compute rolling-corr(ME index, country_yield)
     and return the value at `target_date`.
 
@@ -423,20 +402,18 @@ def _correlations_for_date(events: pd.DataFrame, target_date) -> dict:
       match for monthly data. Values update once per month, not daily,
       but at least they're real numbers.
     """
-    me_idx = correlations.middle_east_index(events)
+    me_idx = correlations.middle_east_index(evts)
     out: dict = {}
     for country, meta in constants.DESTINATION_CITIES.items():
         ticker = meta["ticker"]
         country_series = (
-            events[events["ticker"] == ticker]
+            evts[evts["ticker"] == ticker]
             .set_index("date")["close"]
             .sort_index()
         )
         if country_series.empty:
             out[country] = 0.0
             continue
-        # FRED monthly tickers get a 3-month window; daily tickers the
-        # standard 7-day.
         window = 3 if ticker.startswith("FRED:") else constants.CORRELATION_WINDOW
         aligned = pd.concat([me_idx, country_series], axis=1, join="inner").dropna()
         if len(aligned) < window:
@@ -445,21 +422,11 @@ def _correlations_for_date(events: pd.DataFrame, target_date) -> dict:
         corr = correlations.rolling_corr(
             aligned.iloc[:, 0], aligned.iloc[:, 1], window=window
         )
-        # Drop NaN + any ±inf that would come from constant-variance
-        # windows (defensive — with the window-per-ticker split above,
-        # we shouldn't hit inf in practice)
         corr = corr.replace([float("inf"), float("-inf")], float("nan")).dropna()
         td = pd.Timestamp(target_date).date()
         mask = corr.index <= td
         out[country] = float(corr[mask].iloc[-1]) if mask.any() else 0.0
     return out
-
-
-corr_by_country = _correlations_for_date(events, selected_date)
-# ── Plotly orthographic globe ─────────────────────────────────────────────
-# ISO-2 → ISO-3 mapping required by Plotly choropleth locationmode="ISO-3"
-_ISO2_TO_ISO3 = {"IN": "IND", "TR": "TUR", "DE": "DEU", "US": "USA", "GB": "GBR"}
-_EPICENTER_ISO3 = ["ISR", "SAU", "ARE", "IRN"]
 
 
 def _corr_arc_color(v: float, alpha: float) -> str:
@@ -473,180 +440,33 @@ def _corr_arc_color(v: float, alpha: float) -> str:
     return f"rgba(71,85,105,{alpha:.2f})"
 
 
-_globe_fig = go.Figure()
-
-# Destination countries — choropleth colored by rolling correlation
-_dest_keys = [k for k in constants.DESTINATION_CITIES if k in _ISO2_TO_ISO3]
-_globe_fig.add_trace(go.Choropleth(
-    locations=[_ISO2_TO_ISO3[k] for k in _dest_keys],
-    z=[corr_by_country.get(k, 0.0) for k in _dest_keys],
-    locationmode="ISO-3",
-    colorscale=[
-        [0.0, "rgba(50,140,80,0.75)"],
-        [0.5, "rgba(71,85,105,0.55)"],
-        [1.0, "rgba(180,70,70,0.75)"],
-    ],
-    zmin=-1, zmax=1,
-    showscale=False,
-    marker=dict(line=dict(color="#1e3a5f", width=0.8)),
-))
-
-# Epicenter countries — fixed crisis-red
-_globe_fig.add_trace(go.Choropleth(
-    locations=_EPICENTER_ISO3,
-    z=[0.7] * len(_EPICENTER_ISO3),
-    locationmode="ISO-3",
-    colorscale=[[0.0, "rgba(180,50,50,0.65)"], [1.0, "rgba(180,50,50,0.65)"]],
-    zmin=0, zmax=1,
-    showscale=False,
-    marker=dict(line=dict(color="#ff5050", width=0.8)),
-))
-
-# Arcs: three-layer glow (outer bloom → mid glow → core line)
-_epi_lon, _epi_lat = constants.EPICENTER_LONLAT
-for _iso2, _meta in constants.DESTINATION_CITIES.items():
-    _dest_lon, _dest_lat = _meta["lonlat"]
-    _corr = corr_by_country.get(_iso2, 0.0)
-    for _width, _alpha in [(14, 0.05), (5, 0.20), (2, 0.92)]:
-        _globe_fig.add_trace(go.Scattergeo(
-            lon=[_epi_lon, _dest_lon],
-            lat=[_epi_lat, _dest_lat],
-            mode="lines",
-            line=dict(width=_width, color=_corr_arc_color(_corr, _alpha)),
-            showlegend=False,
-            hoverinfo="skip",
-        ))
-
-# Destination city dots
-_globe_fig.add_trace(go.Scattergeo(
-    lon=[m["lonlat"][0] for m in constants.DESTINATION_CITIES.values()],
-    lat=[m["lonlat"][1] for m in constants.DESTINATION_CITIES.values()],
-    mode="markers+text",
-    marker=dict(size=7, color="#00d4ff", symbol="circle",
-                line=dict(color="#00d4ff", width=1)),
-    text=[m["label"] for m in constants.DESTINATION_CITIES.values()],
-    textposition="top center",
-    textfont=dict(color="#9ecfff", size=9, family="monospace"),
-    showlegend=False,
-    hoverinfo="skip",
-))
-
-# Epicenter star marker
-_globe_fig.add_trace(go.Scattergeo(
-    lon=[_epi_lon], lat=[_epi_lat],
-    mode="markers",
-    marker=dict(size=12, color="#c81e1e", symbol="star",
-                line=dict(color="#ff8080", width=1.5)),
-    showlegend=False,
-    hoverinfo="skip",
-))
-
-# Orthographic projection centered on epicenter + auto-rotate bearing
-_bearing = st.session_state.get("contagion_globe_bearing", 0.0)
-_globe_fig.update_layout(
-    geo=dict(
-        projection_type="orthographic",
-        projection_rotation=dict(lon=_epi_lon + _bearing, lat=15, roll=0),
-        showland=True,
-        landcolor="#1a2a4a",
-        showocean=True,
-        oceancolor="#0d1b35",
-        showframe=False,
-        showcoastlines=True,
-        coastlinecolor="#2a4a8f",
-        coastlinewidth=0.5,
-        showlakes=False,
-        showcountries=True,
-        countrycolor="#2a4a8f",
-        countrywidth=0.3,
-        bgcolor="rgba(0,0,0,0)",
-    ),
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(0,0,0,0)",
-    margin=dict(l=0, r=0, t=0, b=0),
-    height=650,
-)
-
-
-
-
-
-
-
-
-# ──────────────────────────────────────────────────────────────
-# Main three-column layout: globe (60%) + correlation table (20%)
-# + stacked sparklines (20%). Sparklines live alongside the globe
-# so the "mood gauges" frame the viz instead of being buried below.
-# ──────────────────────────────────────────────────────────────
-# Two-column layout: globe on the left (bigger), right column stacks
-# correlation table on top of ticker sparklines. Earlier three-column
-# split (globe / table / sparks) ate into the globe's width for
-# panels that don't need it.
-col_globe, col_right = st.columns([5, 2])
-
-with col_globe:
-    st.plotly_chart(_globe_fig, use_container_width=True, config={"displayModeBar": False}, key="contagion_globe")
-
-with col_right:
-    # Big month-year anchor above the correlation numbers — gives the
-    # table a visible date header so the eye knows which moment of the
-    # conflict it's reading.
-    st.markdown(
-        f'<div style="font-family:Georgia, serif;font-size:1.9rem;'
-        f'font-weight:600;letter-spacing:-0.01em;margin:0 0 8px;'
-        f'color:#1f2937">{_month_year}</div>',
-        unsafe_allow_html=True,
-    )
-    st.caption("7-day corr vs ME index")
-
-    # RAG colour rules — same semantics as the arc colour ramp on the globe
-    # so the table and the globe agree at a glance:
-    #   strong positive corr (≥ +0.5) = contagion           → red
-    #   strong negative corr (≤ -0.5) = decoupling / hedge  → green
-    #   weak / ambiguous (|corr| 0.2 – 0.5)                 → amber
-    #   noise (|corr| < 0.2)                                → neutral grey
-    #
-    # Rendered as hand-rolled HTML because pandas Styler passed to
-    # st.dataframe drops the cell background on some Streamlit Cloud
-    # pandas/streamlit combos — the hand-rolled version is guaranteed
-    # to render since it's just markdown HTML.
-    # Light-theme RAG palette: tint-100 backgrounds with tint-800 text.
-    # Clean on the default white page and still clearly signals the same
-    # red/green/amber/slate categories as the arcs on the globe.
-    def _rag_corr_style(v: float) -> str:
-        if pd.isna(v):
-            return "background:#f1f5f9;color:#475569;"
-        if v >= 0.5:
-            return "background:#fee2e2;color:#991b1b;"
-        if v <= -0.5:
-            return "background:#dcfce7;color:#166534;"
-        if abs(v) >= 0.2:
-            return "background:#fef3c7;color:#92400e;"
+def _rag_corr_style(v: float) -> str:
+    if pd.isna(v):
         return "background:#f1f5f9;color:#475569;"
+    if v >= 0.5:
+        return "background:#fee2e2;color:#991b1b;"
+    if v <= -0.5:
+        return "background:#dcfce7;color:#166534;"
+    if abs(v) >= 0.2:
+        return "background:#fef3c7;color:#92400e;"
+    return "background:#f1f5f9;color:#475569;"
 
-    _rows_html = "".join(
-        f"<tr class='ql-corr-row'>"
-        f"<td style='padding:6px 8px'>{constants.DESTINATION_CITIES[c]['country']}</td>"
-        f"<td class='ql-corr-cell' style='padding:6px 10px;text-align:right;"
-        f"font-family:ui-monospace,monospace;font-weight:600;border-radius:4px;"
-        f"{_rag_corr_style(v)}'>{v:+.3f}</td>"
-        f"</tr>"
-        for c, v in corr_by_country.items()
-    )
-    _table_html = (
-        "<table class='ql-corr-table' style='width:100%;border-collapse:separate;"
-        "border-spacing:0 4px;font-size:0.88rem'>"
-        "<thead><tr>"
-        "<th style='padding:4px 8px;text-align:left;font-weight:500;"
-        "color:#6b7280;border-bottom:1px solid #e5e7eb'>Country</th>"
-        "<th style='padding:4px 8px;text-align:right;font-weight:500;"
-        "color:#6b7280;border-bottom:1px solid #e5e7eb'>Correlation</th>"
-        "</tr></thead>"
-        f"<tbody>{_rows_html}</tbody>"
-        "</table>"
-    )
-    st.markdown(_table_html, unsafe_allow_html=True)
+
+def _rag_ticker(pct: float, polarity: str) -> str:
+    """RAG colour for a ticker's % change from period start.
+
+    Amber band is ±2% — below that the move is noise, not a signal.
+    Above, a 'bad' direction (given polarity) goes red; a 'good'
+    direction goes green.
+    """
+    red, green, amber = "#b91c1c", "#15803d", "#b45309"
+    if abs(pct) < 2:
+        return amber
+    rising = pct > 0
+    if polarity == "up_is_bad":
+        return red if rising else green
+    return green if rising else red
+
 
 def _ticker_sparkline_svg(
     full_series: pd.Series,
@@ -656,14 +476,6 @@ def _ticker_sparkline_svg(
 ) -> str:
     """Inline SVG sparkline — faded full-period line + solid trail to
     the selected date + a heartbeat-pulsing cursor dot.
-
-    Rendered as raw SVG inside st.markdown (not altair) because
-    Streamlit throttles updates to vega-embed components during rapid
-    st.rerun() loops, which meant the altair version visibly updated
-    only 2-3 times over a full Play. Plain markdown HTML is part of
-    the base render path and refreshes every frame. The <animate> tag
-    drives the heartbeat directly inside the SVG — no CSS keyframe
-    targeting vega-generated DOM needed.
     """
     if len(full_series) < 2 or len(trail_series) < 1:
         return ""
@@ -698,142 +510,14 @@ def _ticker_sparkline_svg(
     )
 
 
-# Tickers live in the SAME right-hand column as the correlation table,
-# stacked below it with a thin separator so the eye reads "correlations
-# first, then the underlying stress signals."  `with col_right:` is
-# reopened here — Streamlit concatenates content from repeat `with`
-# calls on the same column.
-with col_right:
-    st.markdown(
-        "<div style='height:1px;background:rgba(148,163,184,0.2);"
-        "margin:12px 0 10px'></div>",
-        unsafe_allow_html=True,
-    )
-    st.caption("Market stress signals")
-    # polarity: "up_is_bad" means a rising value signals market stress
-    # (energy spike, shipping stress, fear) → colour red on rise, green
-    # on fall. Gold inverts: a rising gold price during crisis is the
-    # safe-haven bid working → colour green on rise.
-    # Category tag appears as a small chip beside each ticker label so
-    # the "Energy · Safe haven · Fear" grouping is clear per-row
-    # instead of being a single header that didn't line up with any
-    # specific ticker.
-    # Fifth field is the hover-tooltip text — shows the instrument's
-    # full identifier. Futures (BZ=F, GC=F) and the VIX index don't
-    # have an ISIN (ISINs only exist for equities/ETFs/bonds), so we
-    # show the exchange + yfinance symbol instead. BDRY is an ETF so
-    # it gets a real ISIN.
-    _panel_tickers = [
-        ("BZ=F", "Brent Crude",      "Energy",     "up_is_bad",  "ICE Brent front-month future · yfinance BZ=F"),
-        ("BDRY", "Baltic Dry (ETF)", "Energy",     "up_is_bad",  "Breakwave Dry Bulk Shipping ETF · ISIN US10965F1012"),
-        ("GC=F", "Gold",             "Safe haven", "up_is_good", "COMEX gold front-month future · yfinance GC=F"),
-        ("^VIX", "VIX",              "Fear",       "up_is_bad",  "CBOE Volatility Index · ^VIX"),
-    ]
-
-    def _rag_ticker(pct: float, polarity: str) -> str:
-        """RAG colour for a ticker's % change from period start.
-
-        Amber band is ±2% — below that the move is noise, not a signal.
-        Above, a 'bad' direction (given polarity) goes red; a 'good'
-        direction goes green.
-
-        Palette is the tint-700 cousin of the globe arc ramp
-        (#b91c1c / #15803d / #b45309) rather than the saturated arc
-        hexes. Arcs live on the dark globe iframe where the saturated
-        hexes read as soft glow, but the ticker text + sparkline trail
-        sit on the white page where the same hexes read as neon and
-        hurt the eye. Same colour family, tone adjusted per context.
-        """
-        red, green, amber = "#b91c1c", "#15803d", "#b45309"
-        if abs(pct) < 2:
-            return amber
-        rising = pct > 0
-        if polarity == "up_is_bad":
-            return red if rising else green
-        return green if rising else red
-    # Coerce selected_date to pd.Timestamp and make the index a
-    # DatetimeIndex before slicing — this removes the Python-date vs
-    # pandas-Timestamp mismatch that was producing empty filtered
-    # series (visible in DevTools as "WARN Infinite extent for field
-    # date" coming from the vega-lite sparkline embedder).
-    _sel_ts = pd.Timestamp(selected_date)
-    for ticker, label, category, polarity, tooltip in _panel_tickers:
-        series = (
-            events[events["ticker"] == ticker]
-            .set_index("date")["close"]
-            .sort_index()
-        )
-        if series.empty:
-            st.markdown(f"**{label}** — *no data*")
-            continue
-        series.index = pd.to_datetime(series.index)
-        # Drop NaN before passing to line_chart — a series that filters
-        # down to all-NaN (or that has leading/trailing NaNs from a parquet
-        # with ragged ticker calendars) makes vega-lite log
-        # "WARN Infinite extent for field 'date'/'close'" because the
-        # domain ends up [Infinity, -Infinity]. dropna keeps the domain
-        # finite even when a ticker has sparse coverage.
-        series_full = series.dropna()
-        series = series[series.index <= _sel_ts].dropna()
-        if series.empty:
-            st.markdown(f"**{label}** — *no data before this date*")
-            continue
-        _start_val = float(series.iloc[0])
-        _end_val = float(series.iloc[-1])
-        _pct = ((_end_val - _start_val) / _start_val * 100) if _start_val else 0.0
-        _colour = _rag_ticker(_pct, polarity)
-        # Direction arrow mirrors the sign of the cumulative change:
-        # ↑ on rising, ↓ on falling, · on flat. The arrow colour matches
-        # the RAG polarity so rising Brent = red ↑, rising Gold = green ↑.
-        _arrow = "↑" if _pct > 0.1 else ("↓" if _pct < -0.1 else "·")
-        # Single <div> instead of mixing markdown bold with HTML spans —
-        # Streamlit's markdown renderer was occasionally swallowing the
-        # trailing pct span when the line started with **bold**. The
-        # ql-ticker-value class gets a brief opacity pulse each re-render
-        # so the values visibly flash when the slider advances.
-        # title= on the row shows the instrument's identifier + data
-        # source as a native browser tooltip on hover — ISIN for the
-        # ETF, exchange + yfinance symbol for futures and indices.
-        st.markdown(
-            f"<div class='ql-ticker-row' title=\"{tooltip}\">"
-            f"<strong>{label}</strong> "
-            f"<span class='ql-ticker-chip'>{category}</span> &nbsp;"
-            f"<span class='ql-ticker-value' "
-            f"style='color:{_colour};font-family:ui-monospace,monospace;"
-            f"font-weight:600'>{_end_val:.2f}</span>"
-            f"&nbsp;&nbsp;"
-            f"<span style='color:{_colour};font-size:0.82em;font-weight:600'>"
-            f"{_arrow} {_pct:+.1f}%</span>"
-            f"</div>",
-            unsafe_allow_html=True,
-        )
-
-        # Inline SVG sparkline — faded full-period line + solid trail
-        # + pulsing cursor dot. We ditched altair here because during
-        # rapid st.rerun() loops Streamlit throttles updates to
-        # vega-embed components, so the altair sparklines only visibly
-        # updated 2-3 times across a full Play. Plain markdown HTML is
-        # part of the base render path and refreshes every frame with
-        # no component reconciliation step. The <animate> tag inside
-        # the SVG drives the heartbeat directly — no CSS keyframe
-        # targeting vega-generated nodes.
-        st.markdown(
-            _ticker_sparkline_svg(series_full, series, _colour),
-            unsafe_allow_html=True,
-        )
-
-
-# ──────────────────────────────────────────────────────────────
-# Methodology + safe haven write-up (collapsible)
-# ──────────────────────────────────────────────────────────────
-def _safe_haven_summary(events: pd.DataFrame) -> str:
+def _safe_haven_summary(evts: pd.DataFrame) -> str:
     """Compute a short narrative on how the safe havens moved during the
     selected period. Returns markdown text."""
-    me_idx = correlations.middle_east_index(events)
+    me_idx = correlations.middle_east_index(evts)
 
     def _window_corr(ticker: str) -> float | None:
         series = (
-            events[events["ticker"] == ticker]
+            evts[evts["ticker"] == ticker]
             .set_index("date")["close"]
             .sort_index()
         )
@@ -850,7 +534,7 @@ def _safe_haven_summary(events: pd.DataFrame) -> str:
 
     def _range_change(ticker: str) -> tuple[float, float] | None:
         series = (
-            events[events["ticker"] == ticker]
+            evts[evts["ticker"] == ticker]
             .set_index("date")["close"]
             .sort_index()
         )
@@ -883,159 +567,363 @@ def _safe_haven_summary(events: pd.DataFrame) -> str:
     return "\n".join(lines) if lines else "_No safe-haven data for this period._"
 
 
-with st.expander(
-    "📘 How this works — correlation, safe havens, and how they responded",
-    expanded=False,
-):
-    st.markdown(
-        """
-        #### How correlation is calculated
-
-        Every ticker in the snapshot has a daily closing series for the selected
-        period. The **Middle East Risk Index** is the simple mean of the three
-        regional proxies (`EIS`, `KSA`, `UAE` ETF closes).
-
-        For each destination country (Mumbai, Istanbul, Frankfurt, New York, London)
-        we compute a **7-day rolling Pearson correlation** between the ME index
-        and that country's 10-year yield (or ETF proxy where the yield series
-        isn't publicly available). The timeline slider picks a date; the globe's
-        arcs colour to the correlation value on that day.
-
-        Reading the colours:
-        - 🔴 **Red (+1)** — markets moved in lockstep with the Middle East: **strong contagion**.
-        - ⚪ **Gray (0)** — no statistical relationship: markets decoupled or noise-dominated.
-        - 🟢 **Green (−1)** — markets moved *against* the Middle East: **flight-to-safety or inverse hedging**.
-
-        #### What counts as a "safe haven"
-
-        Two assets are treated as reference safe havens:
-        - **US 10-year Treasury yield (`^TNX`)** — when investors flee risk they buy
-          US Treasuries, pushing yields down. A falling `^TNX` during a crisis
-          episode is the classic flight-to-safety signature.
-        - **Gold (`GC=F`)** — no counterparty risk, uncorrelated with equity cycles,
-          tends to rally on geopolitical stress.
-
-        The 🟢 arcs to **New York** and **London** on the globe capture the safe-haven
-        hypothesis: when they go green during a Middle East risk spike, capital is
-        flowing *away* from ME assets *toward* Treasuries and the GBP financial hub.
-
-        #### Tickers and data sources
-
-        Everything is snapshotted into the committed parquet at
-        `dashboard/data/contagion/events.parquet` by the ETL script
-        `scripts/fetch_contagion_data.py` — the page does zero network I/O at
-        runtime, so these are the sources the snapshot is built from.
-
-        | Role | Ticker | Instrument | Source |
-        |---|---|---|---|
-        | **Epicenter — ME risk index** | `EIS`  | iShares MSCI Israel ETF         | yfinance |
-        | | `KSA`  | iShares MSCI Saudi Arabia ETF   | yfinance |
-        | | `UAE`  | iShares MSCI UAE ETF            | yfinance |
-        | **Contagion — destination markets** | `FRED:INDIRLTLT01STM` | India 10Y yield (monthly) | FRED CSV API |
-        | | `TUR`  | iShares MSCI Turkey ETF (proxy — TR yield series discontinued) | yfinance |
-        | | `FRED:IRLTLT01DEM156N` | Germany 10Y yield (monthly) | FRED CSV API |
-        | | `^TNX` | CBOE US 10Y Treasury Yield Index   | yfinance |
-        | **Safe haven** | `^TNX` | CBOE US 10Y Treasury Yield Index | yfinance |
-        | | `GC=F` | COMEX gold front-month future  | yfinance |
-        | **Energy link** | `BZ=F` | ICE Brent front-month future | yfinance |
-        | | `BDRY` | Breakwave Dry Bulk Shipping ETF (ISIN US10965F1012) | yfinance |
-        | **Fear gauge** | `^VIX` | CBOE Volatility Index          | yfinance |
-
-        Correlation window: **7 trading days** for daily tickers, **3 months** for
-        the FRED monthly series (mixing monthly data into a daily 7-day window
-        produces zero-variance stretches → ±inf correlations, which we defensively
-        drop but prefer to avoid at the source).
-
-        #### Why "up" is red for some and green for others
-
-        The RAG colour on each ticker (and the ↑ / ↓ arrow beside it) is
-        polarity-aware — rising ≠ always bad. What we're really asking
-        per ticker is *"is this move stress-on or stress-off for the
-        global risk-on/off regime?"*:
-
-        - 🔴 **Brent Crude (`BZ=F`) up = red.** Rising oil during a Middle East
-          episode is the classic transmission channel — it feeds global
-          inflation, squeezes energy-importing countries' current accounts,
-          and signals a supply-side shock has priced in. Falling Brent back to
-          pre-crisis levels = green (stress-off).
-        - 🔴 **Baltic Dry (`BDRY`) up = red.** The Baltic Dry Index tracks
-          dry-bulk shipping rates; it spikes when vessels are rerouted away
-          from conflict chokepoints (Hormuz, Bab-el-Mandeb) or when freight
-          insurance/fuel costs rise. A rising reading prices in a logistics
-          shock that eventually shows up as CPI.
-        - 🟢 **Gold (`GC=F`) up = green.** Gold has no counterparty risk and
-          tends to rally when equity/credit investors seek a crisis hedge. A
-          rising gold price during a Middle East flashpoint is the safe-haven
-          bid working as expected — the hedge is paying. Falling gold during a
-          crisis episode would mean the hedge failed, which is the troubling
-          signal (hence red).
-        - 🔴 **VIX (`^VIX`) up = red.** The S&P 500 implied-volatility index is
-          the market's fear thermometer — a rising VIX always means risk
-          premium is being repriced upward. Falling VIX = calm returning =
-          green.
-
-        Values inside a ±2% band from the period start are shown in **amber**
-        regardless of direction — the move is small enough to be noise, not
-        signal, so the polarity interpretation doesn't apply yet.
-
-        #### A note on the globe animation
-
-        The globe refreshes on every Play step because Streamlit recreates the
-        entire WebGL iframe each rerun — a platform-level constraint of
-        `components.html()`. You may see a brief flicker between frames; this
-        is expected and not a data issue. The arc colours and correlation table
-        are always in sync with the selected date.
-        """
+# ──────────────────────────────────────────────────────────────
+# Globe + data panel — wrapped in st.fragment so playback only
+# reruns this section, not the controls / header / expanders
+# above. st.rerun(scope="fragment") replaces the bare st.rerun()
+# that previously caused the whole page to flash each tick.
+# ──────────────────────────────────────────────────────────────
+@st.fragment
+def _globe_section() -> None:
+    _period_key = st.session_state.get(
+        "contagion_period_key", list(constants.PERIODS.keys())[0]
     )
-    st.markdown("#### How did they respond in this window?")
-    st.markdown(_safe_haven_summary(events))
+    _events = _load(_period_key)
+    _dates = sorted(_events["date"].unique())
+    if not _dates:
+        st.warning("No data for this period.")
+        return
 
+    _idx = st.session_state.contagion_date_idx
+    if _idx >= len(_dates):
+        _idx = len(_dates) - 1
+    _selected_date = _dates[_idx]
+    _month_year = (
+        _selected_date.strftime("%B %Y")
+        if hasattr(_selected_date, "strftime")
+        else str(_selected_date)
+    )
 
-# (Sparklines now live inside the 3-column main layout above — no
-# separate bottom row.)
+    st.caption(f"Showing snapshot at **{_selected_date}**")
 
+    corr_by_country = _correlations_for_date(_events, _selected_date)
 
-# ──────────────────────────────────────────────────────────────
-# Playback tick — MUST be the last thing in the script.
-#
-# Placing `st.rerun()` here (after everything has rendered) lets each
-# frame fully paint: slider, globe iframe, correlation table,
-# sparklines, methodology expander. Earlier this block lived near the
-# top of the file, which meant during Play the rerun fired before the
-# rest of the page rendered — so the globe / table / tickers never
-# redrew mid-playback and only "caught up" when Play stopped.
-# ──────────────────────────────────────────────────────────────
-if st.session_state.contagion_playing:
-    import time as _time
-    # Calendar-monthly stepping: advance to the first data point on or
-    # after the 1st of the next month. Coarser than the previous 2-day
-    # stepping, but the whole point is to shrink the number of iframe
-    # reloads during Play — jumping month-to-month means the 0.6 s
-    # fade-in has time to fully cover each reload, so the globe reads
-    # as smooth progressive snapshots instead of a strobe. The large
-    # month-year badge in the correlation column is now also the
-    # natural unit of playback, so the visual cadence matches.
-    _time.sleep(1.0)
-    _cur_ts = pd.Timestamp(dates[st.session_state.contagion_date_idx])
-    _next_month_start = (_cur_ts + pd.offsets.MonthBegin(1)).date()
-    _next_idx = None
-    for _i in range(
-        st.session_state.contagion_date_idx + 1, len(dates)
+    # ── Plotly orthographic globe ─────────────────────────────────────
+    _globe_fig = go.Figure()
+
+    # Destination countries — choropleth colored by rolling correlation
+    _dest_keys = [k for k in constants.DESTINATION_CITIES if k in _ISO2_TO_ISO3]
+    _globe_fig.add_trace(go.Choropleth(
+        locations=[_ISO2_TO_ISO3[k] for k in _dest_keys],
+        z=[corr_by_country.get(k, 0.0) for k in _dest_keys],
+        locationmode="ISO-3",
+        colorscale=[
+            [0.0, "rgba(50,140,80,0.75)"],
+            [0.5, "rgba(71,85,105,0.55)"],
+            [1.0, "rgba(180,70,70,0.75)"],
+        ],
+        zmin=-1, zmax=1,
+        showscale=False,
+        marker=dict(line=dict(color="#1e3a5f", width=0.8)),
+    ))
+
+    # Epicenter countries — fixed crisis-red
+    _globe_fig.add_trace(go.Choropleth(
+        locations=_EPICENTER_ISO3,
+        z=[0.7] * len(_EPICENTER_ISO3),
+        locationmode="ISO-3",
+        colorscale=[[0.0, "rgba(180,50,50,0.65)"], [1.0, "rgba(180,50,50,0.65)"]],
+        zmin=0, zmax=1,
+        showscale=False,
+        marker=dict(line=dict(color="#ff5050", width=0.8)),
+    ))
+
+    # Arcs: three-layer glow (outer bloom → mid glow → core line)
+    _epi_lon, _epi_lat = constants.EPICENTER_LONLAT
+    for _iso2, _meta in constants.DESTINATION_CITIES.items():
+        _dest_lon, _dest_lat = _meta["lonlat"]
+        _corr = corr_by_country.get(_iso2, 0.0)
+        for _width, _alpha in [(14, 0.05), (5, 0.20), (2, 0.92)]:
+            _globe_fig.add_trace(go.Scattergeo(
+                lon=[_epi_lon, _dest_lon],
+                lat=[_epi_lat, _dest_lat],
+                mode="lines",
+                line=dict(width=_width, color=_corr_arc_color(_corr, _alpha)),
+                showlegend=False,
+                hoverinfo="skip",
+            ))
+
+    # Destination city dots
+    _globe_fig.add_trace(go.Scattergeo(
+        lon=[m["lonlat"][0] for m in constants.DESTINATION_CITIES.values()],
+        lat=[m["lonlat"][1] for m in constants.DESTINATION_CITIES.values()],
+        mode="markers+text",
+        marker=dict(size=7, color="#00d4ff", symbol="circle",
+                    line=dict(color="#00d4ff", width=1)),
+        text=[m["label"] for m in constants.DESTINATION_CITIES.values()],
+        textposition="top center",
+        textfont=dict(color="#9ecfff", size=9, family="monospace"),
+        showlegend=False,
+        hoverinfo="skip",
+    ))
+
+    # Epicenter star marker
+    _globe_fig.add_trace(go.Scattergeo(
+        lon=[_epi_lon], lat=[_epi_lat],
+        mode="markers",
+        marker=dict(size=12, color="#c81e1e", symbol="star",
+                    line=dict(color="#ff8080", width=1.5)),
+        showlegend=False,
+        hoverinfo="skip",
+    ))
+
+    # Orthographic projection centered on epicenter + auto-rotate bearing
+    _bearing = st.session_state.get("contagion_globe_bearing", 0.0)
+    _globe_fig.update_layout(
+        geo=dict(
+            projection_type="orthographic",
+            projection_rotation=dict(lon=_epi_lon + _bearing, lat=15, roll=0),
+            showland=True,
+            landcolor="#1a2a4a",
+            showocean=True,
+            oceancolor="#0d1b35",
+            showframe=False,
+            showcoastlines=True,
+            coastlinecolor="#2a4a8f",
+            coastlinewidth=0.5,
+            showlakes=False,
+            showcountries=True,
+            countrycolor="#2a4a8f",
+            countrywidth=0.3,
+            bgcolor="rgba(0,0,0,0)",
+        ),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=0, r=0, t=0, b=0),
+        height=650,
+    )
+
+    # ── Two-column layout ─────────────────────────────────────────────
+    col_globe, col_right = st.columns([5, 2])
+
+    with col_globe:
+        st.plotly_chart(
+            _globe_fig,
+            use_container_width=True,
+            config={"displayModeBar": False},
+            key="contagion_globe",
+        )
+
+    with col_right:
+        st.markdown(
+            f'<div style="font-family:Georgia, serif;font-size:1.9rem;'
+            f'font-weight:600;letter-spacing:-0.01em;margin:0 0 8px;'
+            f'color:#1f2937">{_month_year}</div>',
+            unsafe_allow_html=True,
+        )
+        st.caption("7-day corr vs ME index")
+
+        _rows_html = "".join(
+            f"<tr class='ql-corr-row'>"
+            f"<td style='padding:6px 8px'>{constants.DESTINATION_CITIES[c]['country']}</td>"
+            f"<td class='ql-corr-cell' style='padding:6px 10px;text-align:right;"
+            f"font-family:ui-monospace,monospace;font-weight:600;border-radius:4px;"
+            f"{_rag_corr_style(v)}'>{v:+.3f}</td>"
+            f"</tr>"
+            for c, v in corr_by_country.items()
+        )
+        _table_html = (
+            "<table class='ql-corr-table' style='width:100%;border-collapse:separate;"
+            "border-spacing:0 4px;font-size:0.88rem'>"
+            "<thead><tr>"
+            "<th style='padding:4px 8px;text-align:left;font-weight:500;"
+            "color:#6b7280;border-bottom:1px solid #e5e7eb'>Country</th>"
+            "<th style='padding:4px 8px;text-align:right;font-weight:500;"
+            "color:#6b7280;border-bottom:1px solid #e5e7eb'>Correlation</th>"
+            "</tr></thead>"
+            f"<tbody>{_rows_html}</tbody>"
+            "</table>"
+        )
+        st.markdown(_table_html, unsafe_allow_html=True)
+
+    _panel_tickers = [
+        ("BZ=F", "Brent Crude",      "Energy",     "up_is_bad",  "ICE Brent front-month future · yfinance BZ=F"),
+        ("BDRY", "Baltic Dry (ETF)", "Energy",     "up_is_bad",  "Breakwave Dry Bulk Shipping ETF · ISIN US10965F1012"),
+        ("GC=F", "Gold",             "Safe haven", "up_is_good", "COMEX gold front-month future · yfinance GC=F"),
+        ("^VIX", "VIX",              "Fear",       "up_is_bad",  "CBOE Volatility Index · ^VIX"),
+    ]
+
+    _sel_ts = pd.Timestamp(_selected_date)
+    with col_right:
+        st.markdown(
+            "<div style='height:1px;background:rgba(148,163,184,0.2);"
+            "margin:12px 0 10px'></div>",
+            unsafe_allow_html=True,
+        )
+        st.caption("Market stress signals")
+        for ticker, label, category, polarity, tooltip in _panel_tickers:
+            series = (
+                _events[_events["ticker"] == ticker]
+                .set_index("date")["close"]
+                .sort_index()
+            )
+            if series.empty:
+                st.markdown(f"**{label}** — *no data*")
+                continue
+            series.index = pd.to_datetime(series.index)
+            series_full = series.dropna()
+            series = series[series.index <= _sel_ts].dropna()
+            if series.empty:
+                st.markdown(f"**{label}** — *no data before this date*")
+                continue
+            _start_val = float(series.iloc[0])
+            _end_val = float(series.iloc[-1])
+            _pct = ((_end_val - _start_val) / _start_val * 100) if _start_val else 0.0
+            _colour = _rag_ticker(_pct, polarity)
+            _arrow = "↑" if _pct > 0.1 else ("↓" if _pct < -0.1 else "·")
+            st.markdown(
+                f"<div class='ql-ticker-row' title=\"{tooltip}\">"
+                f"<strong>{label}</strong> "
+                f"<span class='ql-ticker-chip'>{category}</span> &nbsp;"
+                f"<span class='ql-ticker-value' "
+                f"style='color:{_colour};font-family:ui-monospace,monospace;"
+                f"font-weight:600'>{_end_val:.2f}</span>"
+                f"&nbsp;&nbsp;"
+                f"<span style='color:{_colour};font-size:0.82em;font-weight:600'>"
+                f"{_arrow} {_pct:+.1f}%</span>"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                _ticker_sparkline_svg(series_full, series, _colour),
+                unsafe_allow_html=True,
+            )
+
+    # ──────────────────────────────────────────────────────────────
+    # Methodology + safe haven write-up (collapsible)
+    # ──────────────────────────────────────────────────────────────
+    with st.expander(
+        "📘 How this works — correlation, safe havens, and how they responded",
+        expanded=False,
     ):
-        if pd.Timestamp(dates[_i]).date() >= _next_month_start:
-            _next_idx = _i
-            break
-    if _next_idx is None:
-        # No data beyond the current month → stop at the last point.
-        st.session_state.contagion_date_idx = len(dates) - 1
-        st.session_state.contagion_playing = False
-    else:
-        st.session_state.contagion_date_idx = _next_idx
-    st.rerun()
-elif st.session_state.contagion_auto_rotate:
-    import time as _time
-    _time.sleep(1.2)
-    st.session_state.contagion_globe_bearing = (
-        (st.session_state.contagion_globe_bearing + 5.0) % 360
-    )
-    st.rerun()
+        st.markdown(
+            """
+            #### How correlation is calculated
+
+            Every ticker in the snapshot has a daily closing series for the selected
+            period. The **Middle East Risk Index** is the simple mean of the three
+            regional proxies (`EIS`, `KSA`, `UAE` ETF closes).
+
+            For each destination country (Mumbai, Istanbul, Frankfurt, New York, London)
+            we compute a **7-day rolling Pearson correlation** between the ME index
+            and that country's 10-year yield (or ETF proxy where the yield series
+            isn't publicly available). The timeline slider picks a date; the globe's
+            arcs colour to the correlation value on that day.
+
+            Reading the colours:
+            - 🔴 **Red (+1)** — markets moved in lockstep with the Middle East: **strong contagion**.
+            - ⚪ **Gray (0)** — no statistical relationship: markets decoupled or noise-dominated.
+            - 🟢 **Green (−1)** — markets moved *against* the Middle East: **flight-to-safety or inverse hedging**.
+
+            #### What counts as a "safe haven"
+
+            Two assets are treated as reference safe havens:
+            - **US 10-year Treasury yield (`^TNX`)** — when investors flee risk they buy
+              US Treasuries, pushing yields down. A falling `^TNX` during a crisis
+              episode is the classic flight-to-safety signature.
+            - **Gold (`GC=F`)** — no counterparty risk, uncorrelated with equity cycles,
+              tends to rally on geopolitical stress.
+
+            The 🟢 arcs to **New York** and **London** on the globe capture the safe-haven
+            hypothesis: when they go green during a Middle East risk spike, capital is
+            flowing *away* from ME assets *toward* Treasuries and the GBP financial hub.
+
+            #### Tickers and data sources
+
+            Everything is snapshotted into the committed parquet at
+            `dashboard/data/contagion/events.parquet` by the ETL script
+            `scripts/fetch_contagion_data.py` — the page does zero network I/O at
+            runtime, so these are the sources the snapshot is built from.
+
+            | Role | Ticker | Instrument | Source |
+            |---|---|---|---|
+            | **Epicenter — ME risk index** | `EIS`  | iShares MSCI Israel ETF         | yfinance |
+            | | `KSA`  | iShares MSCI Saudi Arabia ETF   | yfinance |
+            | | `UAE`  | iShares MSCI UAE ETF            | yfinance |
+            | **Contagion — destination markets** | `FRED:INDIRLTLT01STM` | India 10Y yield (monthly) | FRED CSV API |
+            | | `TUR`  | iShares MSCI Turkey ETF (proxy — TR yield series discontinued) | yfinance |
+            | | `FRED:IRLTLT01DEM156N` | Germany 10Y yield (monthly) | FRED CSV API |
+            | | `^TNX` | CBOE US 10Y Treasury Yield Index   | yfinance |
+            | **Safe haven** | `^TNX` | CBOE US 10Y Treasury Yield Index | yfinance |
+            | | `GC=F` | COMEX gold front-month future  | yfinance |
+            | **Energy link** | `BZ=F` | ICE Brent front-month future | yfinance |
+            | | `BDRY` | Breakwave Dry Bulk Shipping ETF (ISIN US10965F1012) | yfinance |
+            | **Fear gauge** | `^VIX` | CBOE Volatility Index          | yfinance |
+
+            Correlation window: **7 trading days** for daily tickers, **3 months** for
+            the FRED monthly series (mixing monthly data into a daily 7-day window
+            produces zero-variance stretches → ±inf correlations, which we defensively
+            drop but prefer to avoid at the source).
+
+            #### Why "up" is red for some and green for others
+
+            The RAG colour on each ticker (and the ↑ / ↓ arrow beside it) is
+            polarity-aware — rising ≠ always bad. What we're really asking
+            per ticker is *"is this move stress-on or stress-off for the
+            global risk-on/off regime?"*:
+
+            - 🔴 **Brent Crude (`BZ=F`) up = red.** Rising oil during a Middle East
+              episode is the classic transmission channel — it feeds global
+              inflation, squeezes energy-importing countries' current accounts,
+              and signals a supply-side shock has priced in. Falling Brent back to
+              pre-crisis levels = green (stress-off).
+            - 🔴 **Baltic Dry (`BDRY`) up = red.** The Baltic Dry Index tracks
+              dry-bulk shipping rates; it spikes when vessels are rerouted away
+              from conflict chokepoints (Hormuz, Bab-el-Mandeb) or when freight
+              insurance/fuel costs rise. A rising reading prices in a logistics
+              shock that eventually shows up as CPI.
+            - 🟢 **Gold (`GC=F`) up = green.** Gold has no counterparty risk and
+              tends to rally when equity/credit investors seek a crisis hedge. A
+              rising gold price during a Middle East flashpoint is the safe-haven
+              bid working as expected — the hedge is paying. Falling gold during a
+              crisis episode would mean the hedge failed, which is the troubling
+              signal (hence red).
+            - 🔴 **VIX (`^VIX`) up = red.** The S&P 500 implied-volatility index is
+              the market's fear thermometer — a rising VIX always means risk
+              premium is being repriced upward. Falling VIX = calm returning =
+              green.
+
+            Values inside a ±2% band from the period start are shown in **amber**
+            regardless of direction — the move is small enough to be noise, not
+            signal, so the polarity interpretation doesn't apply yet.
+
+            #### A note on the globe animation
+
+            During Play, only the globe and data panels refresh — the controls,
+            header, and expanders above remain stable. This is implemented via
+            `st.fragment`, which scopes the rerun to just this section of the page,
+            avoiding the full-page flash that a bare `st.rerun()` would cause.
+            """
+        )
+        st.markdown("#### How did they respond in this window?")
+        st.markdown(_safe_haven_summary(_events))
+
+    # ──────────────────────────────────────────────────────────────
+    # Playback tick — MUST be the last thing in the fragment.
+    # Uses scope="fragment" so only the globe panel refreshes,
+    # not the slider / controls / header above.
+    # ──────────────────────────────────────────────────────────────
+    if st.session_state.contagion_playing:
+        _time.sleep(1.0)
+        _cur_ts = pd.Timestamp(_dates[st.session_state.contagion_date_idx])
+        _next_month_start = (_cur_ts + pd.offsets.MonthBegin(1)).date()
+        _next_idx = None
+        for _i in range(st.session_state.contagion_date_idx + 1, len(_dates)):
+            if pd.Timestamp(_dates[_i]).date() >= _next_month_start:
+                _next_idx = _i
+                break
+        if _next_idx is None:
+            st.session_state.contagion_date_idx = len(_dates) - 1
+            st.session_state.contagion_playing = False
+        else:
+            st.session_state.contagion_date_idx = _next_idx
+        st.rerun(scope="fragment")
+    elif st.session_state.contagion_auto_rotate:
+        _time.sleep(1.2)
+        st.session_state.contagion_globe_bearing = (
+            (st.session_state.contagion_globe_bearing + 5.0) % 360
+        )
+        st.rerun(scope="fragment")
+
+
+_globe_section()
