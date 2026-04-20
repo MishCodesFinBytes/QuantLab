@@ -182,6 +182,22 @@ st.markdown(
         opacity: 1;
     }
 
+    /* Globe iframe — dark navy frame makes the deck.gl atmosphere teal
+       read as sky/atmosphere rather than a background glitch. Rounded
+       corners + shadow give the globe panel visual separation from the
+       white page content so it reads as a designed visualisation window. */
+    [data-testid="stCustomComponentV1"] {
+        background: #000c1e;
+        border-radius: 20px;
+        padding: 6px;
+        box-shadow: 0 4px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px #1a3a5c;
+        overflow: hidden;
+    }
+    [data-testid="stCustomComponentV1"] iframe {
+        border-radius: 14px;
+        display: block;
+    }
+
     </style>
     """,
     unsafe_allow_html=True,
