@@ -4,6 +4,7 @@ Phase 1: data + globe + timeline. Gesture control ships in Phase 2.
 """
 from __future__ import annotations
 
+import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -729,17 +730,61 @@ col_globe, col_right = st.columns([5, 2])
 with col_globe:
     # components.html reloads the iframe on every Play rerun. st.pydeck_chart
     # would avoid that but it doesn't honour _GlobeView — it falls back to
-    # flat Mercator, losing the 3D sphere entirely. No BitmapLayer means the
-    # pydeck 0.9.1 "@@=" image-prop bug no longer applies here.
+    # flat Mercator, losing the 3D sphere entirely.
     _deck_html = deck.to_html(as_string=True, notebook_display=False)
-    # Inject dark background + rounded canvas directly inside the iframe so
-    # the teal atmosphere reads as sky rather than a jarring flat fill.
-    # Done inside the iframe HTML (not via outer Streamlit CSS) because
-    # Streamlit Cloud iframes are cross-origin and outer CSS cannot reach in.
-    # Circular clip: #deck-container becomes a circle via border-radius:50%.
-    # The canvas (position:absolute; 100%×100%) is clipped by overflow:hidden
-    # on the container. At zoom=1.5 the sphere fills the circle so no sky
-    # bleeds in at the edges. Dark navy body shows around the circle as frame.
+
+    # ── Suppress deck.gl GlobeView atmosphere ──────────────────────────────
+    # deck.gl GlobeView auto-adds an AtmosphereEffect post-process that
+    # renders a teal Rayleigh-scattering sky over the entire globe, overpainting
+    # all layer content. The pydeck Python API has no flag to disable it.
+    # Two-pronged workaround (applied inside the iframe HTML string):
+    #
+    # 1. JSON flag: add "atmosphere":false to the GlobeView view object.
+    #    Some deck.gl v9 builds honour this; others silently ignore it.
+    #
+    # 2. JS patch: before createDeck() runs, replace the AtmosphereEffect
+    #    constructor with a no-op so the effect can never be instantiated,
+    #    and zero out getEffects() on the GlobeView prototype so the view
+    #    itself cannot re-add it.
+    _deck_html = re.sub(
+        r'("@@type"\s*:\s*"_?GlobeView")',
+        r'\1, "atmosphere": false',
+        _deck_html,
+    )
+    _atmo_js = (
+        "<script>"
+        "(function(){"
+        "if(typeof deck==='undefined')return;"
+        # Replace AtmosphereEffect constructor with a harmless no-op.
+        "if(deck.AtmosphereEffect){"
+        "deck.AtmosphereEffect=function(){};"
+        "deck.AtmosphereEffect.prototype={"
+        "cleanup:function(){},"
+        "render:function(){return null;},"
+        "postRender:function(){},"
+        "initialize:function(){}"
+        "};"
+        "}"
+        # Patch GlobeView / _GlobeView to never return effects.
+        "['GlobeView','_GlobeView'].forEach(function(n){"
+        "var C=deck[n];"
+        "if(C&&C.prototype)C.prototype.getEffects=function(){return [];};"
+        "});"
+        "})()"
+        "</script>"
+    )
+    # Inject the patch immediately before createDeck so the deck.gl library
+    # has loaded but the DeckGL instance has not yet been constructed.
+    _deck_html = _deck_html.replace(
+        "const deckgl = createDeck(",
+        _atmo_js + "\nconst deckgl = createDeck(",
+        1,
+    )
+
+    # ── Dark body + circular clip ──────────────────────────────────────────
+    # Dark navy body shows around the globe. Circular clip on #deck-container
+    # gives the globe a "porthole" look and hides any residual atmosphere at
+    # the sphere horizon if the JS patch is only partially effective.
     _globe_inject = (
         "<style>"
         "body{background:#000c1e;margin:0;padding:0;overflow:hidden;}"
