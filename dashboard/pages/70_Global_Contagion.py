@@ -732,6 +732,17 @@ with col_globe:
     # flat Mercator, losing the 3D sphere entirely. No BitmapLayer means the
     # pydeck 0.9.1 "@@=" image-prop bug no longer applies here.
     _deck_html = deck.to_html(as_string=True, notebook_display=False)
+    # Inject dark background + rounded canvas directly inside the iframe so
+    # the teal atmosphere reads as sky rather than a jarring flat fill.
+    # Done inside the iframe HTML (not via outer Streamlit CSS) because
+    # Streamlit Cloud iframes are cross-origin and outer CSS cannot reach in.
+    _globe_inject = (
+        "<style>"
+        "body{background:#000c1e;margin:0;overflow:hidden;}"
+        "canvas{border-radius:16px;}"
+        "</style>"
+    )
+    _deck_html = _deck_html.replace("</head>", _globe_inject + "</head>", 1)
     components.html(_deck_html, height=980, scrolling=False)
 
 with col_right:
