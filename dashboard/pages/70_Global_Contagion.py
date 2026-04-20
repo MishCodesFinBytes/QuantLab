@@ -736,10 +736,20 @@ with col_globe:
     # the teal atmosphere reads as sky rather than a jarring flat fill.
     # Done inside the iframe HTML (not via outer Streamlit CSS) because
     # Streamlit Cloud iframes are cross-origin and outer CSS cannot reach in.
+    # The canvas is position:absolute; left:0; top:0; width:100%; height:100%
+    # inside #deck-container. overflow:hidden + border-radius on the container
+    # clips the WebGL canvas to rounded corners. Margin exposes the dark body
+    # background as a frame, making the teal atmosphere read as "sky" not glitch.
     _globe_inject = (
         "<style>"
-        "body{background:#000c1e;margin:0;overflow:hidden;}"
-        "canvas{border-radius:16px;}"
+        "body{background:#000c1e;margin:0;padding:0;overflow:hidden;}"
+        "#deck-container{"
+        "width:calc(100vw - 16px);"
+        "height:calc(100vh - 16px);"
+        "margin:8px;"
+        "border-radius:16px;"
+        "overflow:hidden;"
+        "}"
         "</style>"
     )
     _deck_html = _deck_html.replace("</head>", _globe_inject + "</head>", 1)
