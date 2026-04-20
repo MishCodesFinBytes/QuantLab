@@ -559,10 +559,10 @@ _globe_fig.update_layout(
         showcountries=True,
         countrycolor="#2a4a8f",
         countrywidth=0.3,
-        bgcolor="#000c1e",
+        bgcolor="rgba(0,0,0,0)",
     ),
-    paper_bgcolor="#000c1e",
-    plot_bgcolor="#000c1e",
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
     margin=dict(l=0, r=0, t=0, b=0),
     height=650,
 )
@@ -586,7 +586,7 @@ _globe_fig.update_layout(
 col_globe, col_right = st.columns([5, 2])
 
 with col_globe:
-    st.plotly_chart(_globe_fig, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(_globe_fig, use_container_width=True, config={"displayModeBar": False}, key="contagion_globe")
 
 with col_right:
     # Big month-year anchor above the correlation numbers — gives the
