@@ -4,7 +4,6 @@ Phase 1: data + globe + timeline. Gesture control ships in Phase 2.
 """
 from __future__ import annotations
 
-import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -396,11 +395,17 @@ _month_year = selected_date.strftime("%B %Y") if hasattr(selected_date, "strftim
 # update only 2-3 times across a full Play.
 
 # ──────────────────────────────────────────────────────────────
-# Globe — pydeck ArcLayer on GlobeView
+# Globe — Plotly orthographic globe + correlation arcs
+# Switched from pydeck GlobeView: deck.gl v8's atmosphere shader is
+# baked into the WebGL render pass and cannot be disabled via any
+# Python API, JS prototype patch, or effectManager purge — producing
+# an unavoidable teal haze regardless of clearColor settings.
+# Plotly orthographic projection gives the same 3D-globe aesthetic
+# with zero atmosphere and native Streamlit rendering (no iframe).
 # ──────────────────────────────────────────────────────────────
-import pydeck as pdk  # noqa: E402
+import plotly.graph_objects as go  # noqa: E402
 
-from contagion import correlations, globe  # noqa: E402
+from contagion import correlations  # noqa: E402
 
 
 def _correlations_for_date(events: pd.DataFrame, target_date) -> dict:
@@ -451,270 +456,123 @@ def _correlations_for_date(events: pd.DataFrame, target_date) -> dict:
 
 
 corr_by_country = _correlations_for_date(events, selected_date)
-arc_rows = globe.build_arc_rows(corr_by_country)
-
-# pydeck GlobeView with map_provider=None renders only layers we explicitly
-# add. Without a basemap we'd see arcs floating in empty 3D space, so put a
-# country-outline GeoJsonLayer behind the arcs. The Natural Earth dataset
-# is bundled locally (assets/geojson/world_countries.geojson) rather than
-# fetched from a CDN — the deck.gl renderer cannot gracefully recover
-# when the remote CDN returns HTML instead of GeoJSON, which was breaking
-# the globe on Streamlit Cloud.
-import json as _json
-
-_COUNTRIES_GEOJSON_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "assets" / "geojson" / "world_countries.geojson"
-)
+# ── Plotly orthographic globe ─────────────────────────────────────────────
+# ISO-2 → ISO-3 mapping required by Plotly choropleth locationmode="ISO-3"
+_ISO2_TO_ISO3 = {"IN": "IND", "TR": "TUR", "DE": "DEU", "US": "USA", "GB": "GBR"}
+_EPICENTER_ISO3 = ["ISR", "SAU", "ARE", "IRN"]
 
 
-@st.cache_data
-def _load_countries_geojson() -> dict:
-    with _COUNTRIES_GEOJSON_PATH.open(encoding="utf-8") as f:
-        return _json.load(f)
-
-
-# Group-specific ISO-A2 codes for colouring. Everything else stays neutral.
-_EPICENTER_ISO = {"IL", "SA", "AE", "IR"}          # crisis red
-_DESTINATION_ISO = {"IN", "TR", "DE", "US", "GB"}  # amber — the arc destinations
-
-
-@st.cache_data
-def _split_countries_by_role() -> tuple[dict, dict, dict]:
-    """Split the world GeoJSON into three FeatureCollections so we can
-    apply a different fill colour to each group."""
-    src = _load_countries_geojson()
-    epicenter: list = []
-    destination: list = []
-    rest: list = []
-    for feat in src.get("features", []):
-        iso = feat.get("properties", {}).get("ISO_A2")
-        if iso in _EPICENTER_ISO:
-            epicenter.append(feat)
-        elif iso in _DESTINATION_ISO:
-            destination.append(feat)
-        else:
-            rest.append(feat)
-    return (
-        {"type": "FeatureCollection", "features": epicenter},
-        {"type": "FeatureCollection", "features": destination},
-        {"type": "FeatureCollection", "features": rest},
-    )
-
-
-_epicenter_geo, _destination_geo, _rest_geo = _split_countries_by_role()
-
-# Blue tech-globe basemap — all countries not in the epicenter or
-# destination groups get a slightly lighter navy fill, no stroke.
-# Stroke is intentionally omitted on the world basemap: applying cyan
-# borders to ~200 country polygons in GlobeView floods the entire sphere
-# with cyan (the border width is not constant in 3D projection). Cyan
-# accents are reserved for the five destination countries where they
-# read as highlights rather than noise.
-# White GeoJsonLayer covering the full sphere — renders below all other
-# layers to occlude the Mapbox GL default ocean.  Uses GeoJsonLayer (not
-# PolygonLayer) because GlobeView supports GeoJsonLayer reliably.
-# [-179.9/-89.9] avoids antimeridian-seam artefacts.
-ocean_layer = pdk.Layer(
-    "GeoJsonLayer",
-    data={
-        "type": "FeatureCollection",
-        "features": [{
-            "type": "Feature",
-            "geometry": {
-                "type": "Polygon",
-                # GeoJSON exterior ring must be CCW (right-hand rule).
-                # SW→NW→NE→SE→SW is CCW; the reverse (CW) renders as a hole.
-                "coordinates": [[
-                    [-179.9, -89.9], [-179.9, 89.9],
-                    [179.9, 89.9], [179.9, -89.9], [-179.9, -89.9],
-                ]]
-            },
-            "properties": {}
-        }]
-    },
-    get_fill_color=[255, 255, 255, 255],
-    filled=True,
-    stroked=False,
-    pickable=False,
-)
-
-rest_layer = pdk.Layer(
-    "GeoJsonLayer",
-    data=_rest_geo,
-    stroked=False,
-    filled=True,
-    get_fill_color=[30, 50, 90, 200],   # navy land mass against white background
-    pickable=False,
-)
-
-
-# Destination countries now glow with their *current* correlation: red
-# when the market is moving in lockstep with the Middle East index
-# (contagion), green when it's decoupling (safe-haven / hedge), amber
-# for moderate signal, slate when there's no relationship. The map
-# itself becomes the story — strong correlations = bright saturated
-# fill, weak ones fade toward slate so the eye focuses on where the
-# effect is.
-# Translucent glow fills — alpha is kept low so the night-lights
-# texture still reads through the colour, giving a neon/emissive feel
-# rather than a solid painted blob. The country stroke (configured on
-# the layer, not here) stays bright so the shape is still crisply
-# outlined.
-def _corr_to_destination_fill(v: float) -> list[int]:
+def _corr_arc_color(v: float, alpha: float) -> str:
+    """Diverging colour: green (decoupling) → slate (noise) → red (contagion)."""
     if v >= 0.5:
-        return [180, 70, 70, 80]       # muted rose, more transparent
+        return f"rgba(180,70,70,{alpha:.2f})"
     if v <= -0.5:
-        return [50, 140, 80, 80]       # muted sage, more transparent
+        return f"rgba(50,140,80,{alpha:.2f})"
     if abs(v) >= 0.2:
-        return [200, 140, 40, 60]      # muted amber
-    return [71, 85, 105, 50]           # slate, barely-there
+        return f"rgba(200,140,40,{alpha:.2f})"
+    return f"rgba(71,85,105,{alpha:.2f})"
 
 
-_dest_features_enriched: list[dict] = []
-for _feat in _destination_geo.get("features", []):
-    _iso = _feat.get("properties", {}).get("ISO_A2")
-    _corr = corr_by_country.get(_iso, 0.0)
-    _dest_features_enriched.append(
-        {
-            **_feat,
-            "properties": {
-                **_feat.get("properties", {}),
-                "ql_fill": _corr_to_destination_fill(_corr),
-            },
-        }
-    )
+_globe_fig = go.Figure()
 
-destination_layer = pdk.Layer(
-    "GeoJsonLayer",
-    data={"type": "FeatureCollection", "features": _dest_features_enriched},
-    stroked=True,
-    filled=True,
-    # Accessor expression — each feature carries its own ql_fill rgba
-    # baked in by the Python side. Pydeck serialises this with the
-    # legitimate "@@=" accessor prefix, which deck.gl will evaluate
-    # (unlike the buggy `image` case above).
-    get_fill_color="properties.ql_fill",
-    # Bright edge glow — the soft fill plus this crisp stroke gives the
-    # "neon outline on a dark map" look. Stroke alpha kept high so the
-    # polygon edges pop even when the fill itself is near-transparent.
-    get_line_color=_globe_style.CONTINENT_STROKE,
-    line_width_min_pixels=1.4,
-    pickable=False,
-)
-
-# Epicenter: translucent red fill — retains the crisis-red signal
-# against the blue basemap. Stroke warm-white so it pops against cyan.
-epicenter_layer = pdk.Layer(
-    "GeoJsonLayer",
-    data=_epicenter_geo,
-    stroked=True,
-    filled=True,
-    get_fill_color=[180, 70, 70, 90],
-    get_line_color=[255, 160, 160, 200],
-    line_width_min_pixels=1.6,
-    pickable=False,
-)
-
-# Triple-layer neon-glow arc stack. Outer halo is very wide + very
-# low-opacity (bloom), middle glow fills the body with a soft haze,
-# inner core is a thin bright line. Combined they read like a neon
-# beam on the dark globe instead of three painted strokes. Width is
-# driven by each arc's correlation magnitude (ql width field) so
-# strong signals visibly thicken.
-arc_outer = pdk.Layer(
-    "ArcLayer",
-    data=arc_rows,
-    get_source_position="source",
-    get_target_position="target",
-    get_source_color="color",
-    get_target_color="color",
-    get_width="width * 8",
-    width_min_pixels=6,
-    opacity=0.06,
-    great_circle=True,
-    pickable=False,
-)
-arc_glow = pdk.Layer(
-    "ArcLayer",
-    data=arc_rows,
-    get_source_position="source",
-    get_target_position="target",
-    get_source_color="color",
-    get_target_color="color",
-    get_width="width * 3",
-    width_min_pixels=3,
-    opacity=0.18,
-    great_circle=True,
-    pickable=False,
-)
-arc_layer = pdk.Layer(
-    "ArcLayer",
-    data=arc_rows,
-    get_source_position="source",
-    get_target_position="target",
-    get_source_color="color",
-    get_target_color="color",
-    get_width="width",
-    width_min_pixels=1,
-    opacity=0.95,
-    great_circle=True,
-    pickable=True,
-)
-
-# Glowing cyan dots at each destination city — echoes the digital-globe
-# network aesthetic and gives the arc endpoints a visible anchor.
-_city_nodes = [
-    {"position": list(meta["lonlat"]), "label": meta["label"]}
-    for meta in constants.DESTINATION_CITIES.values()
-]
-city_nodes_layer = pdk.Layer(
-    "ScatterplotLayer",
-    data=_city_nodes,
-    get_position="position",
-    get_fill_color=_globe_style.CITY_NODE_COLOR,
-    get_radius=_globe_style.CITY_NODE_RADIUS,
-    radius_units="meters",
-    pickable=False,
-)
-
-# zoom=0 gives the classic "full earth as a sphere in space" look on
-# pydeck's GlobeView. Higher values flatten the curvature because the
-# viewport fills with land before the sphere edge is visible.
-# bearing is driven by session_state so the auto-rotate checkbox can
-# progressively rotate the globe between reruns.
-# pitch=35 gives a "from orbit, looking down" tilt — the sphere reads
-# as a 3D body in space rather than a head-on disc. latitude nudged
-# up from the epicenter's 26° so Europe/Russia peek above the horizon
-# on load and the arcs emerge from the upper-left of the sphere rather
-# than straight out of the centre.
-view_state = pdk.ViewState(
-    longitude=constants.EPICENTER_LONLAT[0],
-    latitude=constants.EPICENTER_LONLAT[1] + 8,
-    zoom=2.5,
-    pitch=0,
-    bearing=st.session_state.get("contagion_globe_bearing", 0.0),
-)
-
-deck = pdk.Deck(
-    layers=[
-        rest_layer,         # blue tech-globe basemap (all other countries)
-        destination_layer,  # correlation-driven fills over basemap
-        epicenter_layer,    # crisis-red over basemap
-        arc_outer,
-        arc_glow,
-        arc_layer,
-        city_nodes_layer,   # cyan destination city dots at arc endpoints
+# Destination countries — choropleth colored by rolling correlation
+_dest_keys = [k for k in constants.DESTINATION_CITIES if k in _ISO2_TO_ISO3]
+_globe_fig.add_trace(go.Choropleth(
+    locations=[_ISO2_TO_ISO3[k] for k in _dest_keys],
+    z=[corr_by_country.get(k, 0.0) for k in _dest_keys],
+    locationmode="ISO-3",
+    colorscale=[
+        [0.0, "rgba(50,140,80,0.75)"],
+        [0.5, "rgba(71,85,105,0.55)"],
+        [1.0, "rgba(180,70,70,0.75)"],
     ],
-    initial_view_state=view_state,
-    # pydeck's canonical class for the 3D globe is `_GlobeView` with a
-    # leading underscore (deck.gl internal class name). Without the
-    # underscore pydeck silently falls back to MapView (Mercator).
-    views=[pdk.View(type="_GlobeView", controller=True)],
-    parameters={"clearColor": [0.04, 0.06, 0.14, 1]},  # deep navy background
-    map_provider=None,
-    tooltip={"text": "{dest_label}\nCorrelation: {correlation}"},
+    zmin=-1, zmax=1,
+    showscale=False,
+    marker=dict(line=dict(color="#1e3a5f", width=0.8)),
+))
+
+# Epicenter countries — fixed crisis-red
+_globe_fig.add_trace(go.Choropleth(
+    locations=_EPICENTER_ISO3,
+    z=[0.7] * len(_EPICENTER_ISO3),
+    locationmode="ISO-3",
+    colorscale=[[0.0, "rgba(180,50,50,0.65)"], [1.0, "rgba(180,50,50,0.65)"]],
+    zmin=0, zmax=1,
+    showscale=False,
+    marker=dict(line=dict(color="#ff5050", width=0.8)),
+))
+
+# Arcs: three-layer glow (outer bloom → mid glow → core line)
+_epi_lon, _epi_lat = constants.EPICENTER_LONLAT
+for _iso2, _meta in constants.DESTINATION_CITIES.items():
+    _dest_lon, _dest_lat = _meta["lonlat"]
+    _corr = corr_by_country.get(_iso2, 0.0)
+    for _width, _alpha in [(14, 0.05), (5, 0.20), (2, 0.92)]:
+        _globe_fig.add_trace(go.Scattergeo(
+            lon=[_epi_lon, _dest_lon],
+            lat=[_epi_lat, _dest_lat],
+            mode="lines",
+            line=dict(width=_width, color=_corr_arc_color(_corr, _alpha)),
+            showlegend=False,
+            hoverinfo="skip",
+        ))
+
+# Destination city dots
+_globe_fig.add_trace(go.Scattergeo(
+    lon=[m["lonlat"][0] for m in constants.DESTINATION_CITIES.values()],
+    lat=[m["lonlat"][1] for m in constants.DESTINATION_CITIES.values()],
+    mode="markers+text",
+    marker=dict(size=7, color="#00d4ff", symbol="circle",
+                line=dict(color="#00d4ff", width=1)),
+    text=[m["label"] for m in constants.DESTINATION_CITIES.values()],
+    textposition="top center",
+    textfont=dict(color="#9ecfff", size=9, family="monospace"),
+    showlegend=False,
+    hoverinfo="skip",
+))
+
+# Epicenter star marker
+_globe_fig.add_trace(go.Scattergeo(
+    lon=[_epi_lon], lat=[_epi_lat],
+    mode="markers",
+    marker=dict(size=12, color="#c81e1e", symbol="star",
+                line=dict(color="#ff8080", width=1.5)),
+    showlegend=False,
+    hoverinfo="skip",
+))
+
+# Orthographic projection centered on epicenter + auto-rotate bearing
+_bearing = st.session_state.get("contagion_globe_bearing", 0.0)
+_globe_fig.update_layout(
+    geo=dict(
+        projection_type="orthographic",
+        projection_rotation=dict(lon=_epi_lon + _bearing, lat=15, roll=0),
+        showland=True,
+        landcolor="#1a2a4a",
+        showocean=True,
+        oceancolor="#0d1b35",
+        showframe=False,
+        showcoastlines=True,
+        coastlinecolor="#2a4a8f",
+        coastlinewidth=0.5,
+        showlakes=False,
+        showcountries=True,
+        countrycolor="#2a4a8f",
+        countrywidth=0.3,
+        bgcolor="#000c1e",
+    ),
+    paper_bgcolor="#000c1e",
+    plot_bgcolor="#000c1e",
+    margin=dict(l=0, r=0, t=0, b=0),
+    height=650,
 )
+
+
+
+
+
+
+
 
 # ──────────────────────────────────────────────────────────────
 # Main three-column layout: globe (60%) + correlation table (20%)
@@ -728,113 +586,7 @@ deck = pdk.Deck(
 col_globe, col_right = st.columns([5, 2])
 
 with col_globe:
-    # components.html reloads the iframe on every Play rerun. st.pydeck_chart
-    # would avoid that but it doesn't honour _GlobeView — it falls back to
-    # flat Mercator, losing the 3D sphere entirely.
-    _deck_html = deck.to_html(as_string=True, notebook_display=False)
-
-    # ── Suppress deck.gl GlobeView atmosphere ──────────────────────────────
-    # deck.gl GlobeView auto-adds an AtmosphereEffect post-process that
-    # renders a teal Rayleigh-scattering sky over the entire globe, overpainting
-    # all layer content. The pydeck Python API has no flag to disable it.
-    # Two-pronged workaround (applied inside the iframe HTML string):
-    #
-    # 1. JSON flag: add "atmosphere":false to the GlobeView view object.
-    #    Some deck.gl v9 builds honour this; others silently ignore it.
-    #
-    # 2. JS patch: before createDeck() runs, replace the AtmosphereEffect
-    #    constructor with a no-op so the effect can never be instantiated,
-    #    and zero out getEffects() on the GlobeView prototype so the view
-    #    itself cannot re-add it.
-    _deck_html = re.sub(
-        r'("@@type"\s*:\s*"_?GlobeView")',
-        r'\1, "atmosphere": false',
-        _deck_html,
-    )
-    _atmo_js = (
-        "<script>"
-        "(function(){"
-        "if(typeof deck==='undefined')return;"
-        # Replace AtmosphereEffect constructor with a harmless no-op.
-        "if(deck.AtmosphereEffect){"
-        "deck.AtmosphereEffect=function(){};"
-        "deck.AtmosphereEffect.prototype={"
-        "cleanup:function(){},"
-        "render:function(){return null;},"
-        "postRender:function(){},"
-        "initialize:function(){}"
-        "};"
-        "}"
-        # Patch GlobeView / _GlobeView to never return effects.
-        "['GlobeView','_GlobeView'].forEach(function(n){"
-        "var C=deck[n];"
-        "if(C&&C.prototype)C.prototype.getEffects=function(){return [];};"
-        "});"
-        "})()"
-        "</script>"
-    )
-    # Inject the patch immediately before createDeck so the deck.gl library
-    # has loaded but the DeckGL instance has not yet been constructed.
-    _deck_html = _deck_html.replace(
-        "const deckgl = createDeck(",
-        _atmo_js + "\nconst deckgl = createDeck(",
-        1,
-    )
-
-    # ── Dark body + circular clip ──────────────────────────────────────────
-    # Dark navy body shows around the globe. Circular clip on #deck-container
-    # gives the globe a "porthole" look and hides any residual atmosphere at
-    # the sphere horizon if the JS patch is only partially effective.
-    _globe_inject = (
-        "<style>"
-        "body{background:#000c1e;margin:0;padding:0;overflow:hidden;}"
-        "#deck-container{"
-        "width:min(100vw,100vh);"
-        "height:min(100vw,100vh);"
-        "border-radius:50%;"
-        "overflow:hidden;"
-        "position:absolute;"
-        "top:50%;"
-        "left:50%;"
-        "transform:translate(-50%,-50%);"
-        "}"
-        "</style>"
-    )
-    _deck_html = _deck_html.replace("</head>", _globe_inject + "</head>", 1)
-
-    # Post-createDeck purge: deck.gl adds AtmosphereEffect internally using a
-    # module-scoped closure reference, so patching the exported constructor
-    # above prevents new instances but doesn't remove the one already added
-    # during DeckGL construction. This setTimeout fires after createDeck()
-    # returns and removes any Atmosphere effect from the effectManager directly.
-    _post_patch = (
-        "<script>"
-        "setTimeout(function(){"
-        "try{"
-        # deckgl may wrap an inner .deck Deck instance (DeckGL React wrapper)
-        # or be the Deck instance directly.
-        "var d=typeof deckgl!=='undefined'?(deckgl._deck||deckgl.deck||deckgl):null;"
-        "if(!d)return;"
-        "var em=d.effectManager||d._effectManager;"
-        "if(!em)return;"
-        # Walk every list key the effectManager might store effects under.
-        "['_effects','effects','postProcessEffects','_postProcessEffects'].forEach(function(k){"
-        "if(Array.isArray(em[k])){"
-        "em[k]=em[k].filter(function(e){"
-        "var n=(e&&e.constructor&&e.constructor.name)||'';"
-        "return n.indexOf('Atmosphere')<0;"
-        "});"
-        "}"
-        "});"
-        # Force a redraw so the removed effect doesn't appear on the next frame.
-        "if(typeof d.setProps==='function')d.setProps({});"
-        "if(typeof d.redraw==='function')d.redraw('atmo-purge');"
-        "}catch(ignore){}"
-        "},400)"
-        "</script>"
-    )
-    _deck_html = _deck_html.replace("</body>", _post_patch + "</body>", 1)
-    components.html(_deck_html, height=980, scrolling=False)
+    st.plotly_chart(_globe_fig, use_container_width=True, config={"displayModeBar": False})
 
 with col_right:
     # Big month-year anchor above the correlation numbers — gives the
