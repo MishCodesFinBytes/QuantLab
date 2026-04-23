@@ -1,8 +1,8 @@
-import streamlit as st
-from tech_footer import render_tech_footer
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
+import streamlit as st
+from tech_footer import render_tech_footer
 from nav import render_sidebar
 from page_header import render_page_header
 from test_tab import render_test_tab
