@@ -1,5 +1,8 @@
+import logging
 import anthropic
 from src.scanner.models import RiskMetrics
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = (
     "You are a senior risk analyst at an investment bank. "
@@ -15,6 +18,7 @@ class RiskNarrator:
         try:
             self.client = anthropic.Anthropic()
         except Exception:
+            logger.warning("Anthropic client unavailable — will use fallback narrative")
             self.client = None
 
     def generate(self, tickers: list[str], metrics: RiskMetrics) -> str:
@@ -39,6 +43,7 @@ class RiskNarrator:
             )
             return response.content[0].text
         except Exception:
+            logger.exception("Claude API call failed — using fallback narrative")
             return self._fallback(tickers, metrics)
 
     def _fallback(self, tickers: list[str], metrics: RiskMetrics) -> str:

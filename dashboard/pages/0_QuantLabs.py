@@ -17,8 +17,10 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
 
+from html import escape as _escape
 from nav import render_sidebar
 from test_tab import render_test_tab
+from ci_status import fetch_ci_status
 from projects import (
     PROJECTS_BY_CATEGORY,
     FEATURED_KEYS,
@@ -44,16 +46,6 @@ render_sidebar()
 # ─────────────────────────────────────────────────────────────
 
 import re as _re
-
-
-def _escape(s: str) -> str:
-    return (
-        str(s)
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
-    )
 
 
 def _page_url(page_link: str) -> str:
@@ -344,10 +336,11 @@ with tab_welcome:
 
     # Featured grid
     st.markdown('<h2 class="ql-section-heading">Featured</h2>', unsafe_allow_html=True)
-    featured_html = f'<div style="{_FEATURED_GRID_STYLE}">'
-    for p in featured():
-        featured_html += _featured_card_html(p)
-    featured_html += '</div>'
+    featured_html = (
+        f'<div style="{_FEATURED_GRID_STYLE}">'
+        + ''.join(_featured_card_html(p) for p in featured())
+        + '</div>'
+    )
     _ql_html(featured_html)
 
     # Categorised grids (filtered by search)
@@ -362,10 +355,11 @@ with tab_welcome:
             f'<h2 class="ql-section-heading">{_escape(category)}</h2>',
             unsafe_allow_html=True,
         )
-        grid_html = f'<div style="{_CAT_GRID_STYLE}">'
-        for p in matching:
-            grid_html += _cat_card_html(p)
-        grid_html += '</div>'
+        grid_html = (
+            f'<div style="{_CAT_GRID_STYLE}">'
+            + ''.join(_cat_card_html(p) for p in matching)
+            + '</div>'
+        )
         _ql_html(grid_html)
 
     if search_query and not any(
@@ -448,10 +442,11 @@ with tab_all:
 
     all_with_category.sort(key=_sort_key)
 
-    grid_html = f'<div style="{_CAT_GRID_STYLE}">'
-    for category, p in all_with_category:
-        grid_html += _all_projects_card_html(p, category)
-    grid_html += '</div>'
+    grid_html = (
+        f'<div style="{_CAT_GRID_STYLE}">'
+        + ''.join(_all_projects_card_html(p, category) for category, p in all_with_category)
+        + '</div>'
+    )
     _ql_html(grid_html)
 
 # ─────────────────────────────────────────────────────────────
@@ -466,25 +461,7 @@ with tab_health:
 
         st.markdown("### Shared Infrastructure")
 
-        ci_status = {"status": "unknown", "detail": ""}
-        try:
-            r = requests.get(
-                f"https://api.github.com/repos/{GITHUB_REPO}/actions/runs",
-                params={"per_page": 3},
-                timeout=10,
-            )
-            runs = r.json().get("workflow_runs", [])
-            if runs:
-                latest = runs[0]
-                ci_status = {
-                    "status": "ok" if latest.get("conclusion") == "success" else "error" if latest.get("conclusion") == "failure" else "unknown",
-                    "conclusion": latest.get("conclusion", "in_progress"),
-                    "run_number": latest["run_number"],
-                    "url": latest["html_url"],
-                    "created_at": latest["created_at"][:10],
-                }
-        except Exception as e:
-            ci_status = {"status": "unknown", "detail": str(e)}
+        ci_status = fetch_ci_status()
 
         c1, c2, c3 = st.columns(3)
 

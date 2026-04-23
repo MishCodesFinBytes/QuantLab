@@ -55,4 +55,4 @@ async def get_recent_scans(session: AsyncSession, limit: int = 10) -> list[ScanR
         .limit(limit)
     )
     result = await session.execute(stmt)
-    return list(result.scalars().all())
+    return result.scalars().all()

@@ -18,6 +18,13 @@ from lib.mermaid import render_mermaid
 from lib.api_client import check_health, submit_scan, poll_scan, get_recent_scans
 from lib.charts import price_history_chart, cumulative_return_chart, drawdown_chart, weight_pie_chart
 from lib.risk_colors import var_color, cvar_color, drawdown_color, volatility_color, sharpe_color
+from lib.ci_status import fetch_ci_status
+
+
+def rag(s):
+    if s == "ok": return "#28a745", "#fff"
+    if s == "error": return "#dc3545", "#fff"
+    return "#ffc107", "#333"
 
 from pathlib import Path
 
@@ -350,21 +357,7 @@ with tab_health:
             db_status = {"status": "error", "database": str(e)}
 
         # CI check
-        ci_status = {"status": "unknown", "detail": ""}
-        try:
-            r = requests.get(f"https://api.github.com/repos/{GITHUB_REPO}/actions/runs", params={"per_page": 3}, timeout=10)
-            runs = r.json().get("workflow_runs", [])
-            if runs:
-                latest = runs[0]
-                ci_status = {
-                    "status": "ok" if latest.get("conclusion") == "success" else "error" if latest.get("conclusion") == "failure" else "unknown",
-                    "conclusion": latest.get("conclusion", "in_progress"),
-                    "run_number": latest["run_number"],
-                    "url": latest["html_url"],
-                    "created_at": latest["created_at"][:10],
-                }
-        except Exception as e:
-            ci_status = {"status": "unknown", "detail": str(e)}
+        ci_status = fetch_ci_status()
 
         # Status cards
         st.markdown("### Service Status")
@@ -399,11 +392,6 @@ with tab_health:
             st.caption("You're seeing this page")
 
         # RAG Mermaid pipeline
-        def rag(s):
-            if s == "ok": return "#28a745", "#fff"
-            if s == "error": return "#dc3545", "#fff"
-            return "#ffc107", "#333"
-
         api_bg, api_fg = rag(api_status["status"])
         db_bg, db_fg = rag(db_status.get("status", "unknown"))
         ci_bg, ci_fg = rag(ci_status["status"])
@@ -522,12 +510,6 @@ with tab_health:
 # TAB 3: ARCHITECTURE
 # ============================================================
 with tab_arch:
-    # Deployment pipeline with RAG
-    def rag(s):
-        if s == "ok": return "#28a745", "#fff"
-        if s == "error": return "#dc3545", "#fff"
-        return "#ffc107", "#333"
-
     api_bg, api_fg = rag(st.session_state.get("_health_api", "unknown"))
     db_bg, db_fg = rag(st.session_state.get("_health_db", "unknown"))
     ci_bg, ci_fg = rag(st.session_state.get("_health_ci", "unknown"))

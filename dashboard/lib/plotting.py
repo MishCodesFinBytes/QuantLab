@@ -17,6 +17,10 @@ def compute_daily_returns(df: pd.DataFrame) -> pd.Series:
     return df["Close"].pct_change().dropna()
 
 
+def ohlc_colors(df: pd.DataFrame, up: str = "#2a7ae2", down: str = "#e24a4a") -> list[str]:
+    return [up if c >= o else down for c, o in zip(df["Close"], df["Open"])]
+
+
 def detect_outliers(df: pd.DataFrame, n_std: float = 3.0) -> pd.DataFrame:
     """Flag rows where any numeric column exceeds n_std from its mean.
 
@@ -68,10 +72,8 @@ def plotly_volume_bar(df: pd.DataFrame):
     """Volume bar chart using Plotly."""
     import plotly.graph_objects as go
 
-    colors = ["#2a7ae2" if c >= o else "#e24a4a"
-              for c, o in zip(df["Close"], df["Open"])]
     fig = go.Figure(data=[go.Bar(
-        x=df.index, y=df["Volume"], marker_color=colors, name="Volume",
+        x=df.index, y=df["Volume"], marker_color=ohlc_colors(df), name="Volume",
     )])
     fig.update_layout(title="Volume (Plotly)", xaxis_title="Date", yaxis_title="Volume")
     return fig
@@ -161,9 +163,7 @@ def matplotlib_volume_bar(df: pd.DataFrame):
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(10, 3))
-    colors = ["#2a7ae2" if c >= o else "#e24a4a"
-              for c, o in zip(df["Close"], df["Open"])]
-    ax.bar(df.index, df["Volume"], color=colors, width=0.8)
+    ax.bar(df.index, df["Volume"], color=ohlc_colors(df), width=0.8)
     ax.set_title("Volume (Matplotlib)")
     ax.set_xlabel("Date")
     ax.set_ylabel("Volume")
@@ -246,8 +246,7 @@ def altair_volume_bar(df: pd.DataFrame):
     import altair as alt
 
     source = _altair_df(df)
-    source["color"] = ["#2a7ae2" if c >= o else "#e24a4a"
-                        for c, o in zip(source["Close"], source["Open"])]
+    source["color"] = ohlc_colors(df)
 
     return alt.Chart(source).mark_bar().encode(
         x=alt.X("Date:T", title="Date"),
@@ -330,11 +329,8 @@ def bokeh_volume_bar(df: pd.DataFrame):
                x_axis_label="Date", y_axis_label="Volume",
                width=800, height=250)
 
-    colors = ["#2a7ae2" if c >= o else "#e24a4a"
-              for c, o in zip(df["Close"], df["Open"])]
     w = 12 * 60 * 60 * 1000
-
-    p.vbar(x=df.index, top=df["Volume"], width=w, color=colors)
+    p.vbar(x=df.index, top=df["Volume"], width=w, color=ohlc_colors(df))
     return p
 
 
