@@ -118,8 +118,7 @@ with tab_app:
     for i, (name, (preset_tickers, desc)) in enumerate(PRESETS.items()):
         with preset_cols[i]:
             if st.button(f"{name}", help=desc, use_container_width=True):
-                st.session_state.tickers_input = ", ".join(preset_tickers)
-                st.session_state.use_equal_weights = True
+                st.session_state["tickers_field"] = ", ".join(preset_tickers)
 
     # Custom input
     st.markdown("#### Custom Portfolio")
