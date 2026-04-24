@@ -234,14 +234,6 @@ PROJECTS_BY_CATEGORY: dict = {
             tech=["Python", "yfinance", "pandas", "Plotly"],
             page_link="pages/26_Financial_Reporting.py",
         ),
-        Project(
-            key="bond_credit_aws",
-            label="Bond/Credit Risk AWS",
-            description="12-exercise arc — AWS fundamentals through Monte Carlo Credit VaR",
-            tech=["Python", "AWS", "Terraform", "WebSockets", "Redis"],
-            page_link="pages/40_Benchmark_Rates.py",
-            is_capstone=True,
-        ),
     ],
 
     "Tech demos & references": [

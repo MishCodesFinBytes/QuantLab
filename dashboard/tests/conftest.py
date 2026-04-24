@@ -149,36 +149,11 @@ def mock_requests():
 
 
 @pytest.fixture(autouse=True)
-def mock_boto3():
-    """Patch boto3 for Admin page."""
-    mock_client = MagicMock()
-    mock_client.describe_db_instances.return_value = {
-        "DBInstances": [
-            {
-                "DBInstanceStatus": "available",
-                "Endpoint": {"Address": "test.rds.amazonaws.com"},
-            }
-        ]
-    }
-    mock_client.get_function.return_value = {
-        "Configuration": {"FunctionName": "test", "State": "Active"}
-    }
-    mock_client.get_rest_apis.return_value = {"items": []}
-    mock_client.list_objects_v2.return_value = {"Contents": [], "KeyCount": 0}
-    with patch("boto3.client", return_value=mock_client):
-        yield
-
-
-@pytest.fixture(autouse=True)
 def mock_streamlit_secrets():
     """Provide fake Streamlit secrets for pages that need them."""
     secrets = {
         "API_URL": "http://localhost:8000",
         "ADMIN_PASSWORD": "test123",
-        "AWS_ACCESS_KEY_ID": "fake",
-        "AWS_SECRET_ACCESS_KEY": "fake",
-        "AWS_DEFAULT_REGION": "us-east-1",
-        "RDS_INSTANCE_ID": "test-instance",
     }
     with patch("streamlit.secrets", secrets):
         yield
