@@ -102,11 +102,12 @@ _CAT_CHIP_BASE_STYLE = (
 # back to neutral grey so new categories don't need a palette update before
 # they render.
 _CAT_CHIP_PALETTE = {
-    "Geopolitics & risk":         {"bg": "#fee2e2", "fg": "#991b1b"},
-    "Personal finance & property":{"bg": "#dcfce7", "fg": "#166534"},
-    "Stocks & markets":           {"bg": "#dbeafe", "fg": "#1e40af"},
-    "Analytics & Fintech":        {"bg": "#f3e8ff", "fg": "#6b21a8"},
-    "Tech demos & references":    {"bg": "#fef3c7", "fg": "#92400e"},
+    "Geopolitics & risk":              {"bg": "#fee2e2", "fg": "#991b1b"},
+    "Personal finance & property":     {"bg": "#dcfce7", "fg": "#166534"},
+    "Quantitative finance & markets":  {"bg": "#dbeafe", "fg": "#1e40af"},
+    "Data science & analytics":        {"bg": "#f3e8ff", "fg": "#6b21a8"},
+    "Tech demos & references":         {"bg": "#fef3c7", "fg": "#92400e"},
+    "Half-baked":                      {"bg": "#f4f4f4", "fg": "#6b6b6b"},
 }
 _CAT_CHIP_FALLBACK = {"bg": "#f4f4f4", "fg": "#6b6b6b"}
 _CARD_CTA_STYLE = (
@@ -333,6 +334,18 @@ with tab_welcome:
 
     # Tech marquee — rendered via components.html so @keyframes survives
     components.html(_build_marquee_html(), height=90, scrolling=False)
+
+    # About paragraph
+    _ql_html(
+        '<p style="font-family:\'Inter\',system-ui,sans-serif;font-size:0.95rem;'
+        'line-height:1.7;color:#4a4a4a;max-width:680px;margin:1.5rem 0 2rem;">'
+        "Two threads run through these projects: risk and pricing — VaR, portfolio "
+        "optimisation, Monte Carlo simulation, full-stack risk pipelines — and market "
+        "data engineering — time series decomposition, anomaly detection, benchmark "
+        "rate feeds. Everything is built in Python, deployed on Streamlit Cloud and "
+        "Render, with source on GitHub."
+        "</p>"
+    )
 
     # Featured grid
     st.markdown('<h2 class="ql-section-heading">Featured</h2>', unsafe_allow_html=True)

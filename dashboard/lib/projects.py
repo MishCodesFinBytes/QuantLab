@@ -103,7 +103,7 @@ PROJECTS_BY_CATEGORY: dict = {
         ),
     ],
 
-    "Stocks & markets": [
+    "Quantitative finance & markets": [
         Project(
             key="stock_tracker",
             label="Stock Tracker",
@@ -117,13 +117,6 @@ PROJECTS_BY_CATEGORY: dict = {
             description="SMA, EMA, RSI, MACD, and Bollinger Bands overlays",
             tech=["Python", "yfinance", "pandas", "Plotly"],
             page_link="pages/22_Stock_Analysis.py",
-        ),
-        Project(
-            key="stock_prediction",
-            label="Stock Prediction",
-            description="Feature engineering and regression for price forecasting",
-            tech=["Python", "scikit-learn", "Plotly"],
-            page_link="pages/38_Stock_Prediction.py",
         ),
         Project(
             key="portfolio_optimization",
@@ -177,7 +170,7 @@ PROJECTS_BY_CATEGORY: dict = {
         ),
     ],
 
-    "Analytics & Fintech": [
+    "Data science & analytics": [
         Project(
             key="benchmark_rates",
             label="Benchmark Rates",
@@ -205,6 +198,40 @@ PROJECTS_BY_CATEGORY: dict = {
             description="Sentiment-price correlation dashboard",
             tech=["Python", "yfinance", "VADER", "Plotly"],
             page_link="pages/39_Market_Insights.py",
+        ),
+    ],
+
+    "Tech demos & references": [
+        Project(
+            key="big_o",
+            label="Big O Notation",
+            description="Same problem, different complexities — log-log curves of Fibonacci and Pair-sum",
+            tech=["Python", "Plotly", "pytest"],
+            page_link="pages/60_Big_O.py",
+        ),
+        Project(
+            key="etymology",
+            label="Etymology",
+            description="Force-directed graph of English word roots — Greek, Latin, and Proto-Indo-European",
+            tech=["D3.js", "vanilla JS", "YAML"],
+            page_link="pages/50_Etymology.py",
+        ),
+        Project(
+            key="plotting_libraries",
+            label="Plotting Libraries Compared",
+            description="Same data rendered in Plotly, Matplotlib, Altair, and Bokeh side-by-side",
+            tech=["Python", "Plotly", "Matplotlib", "Altair", "Bokeh"],
+            page_link="pages/41_Plotting_Libraries.py",
+        ),
+    ],
+
+    "Half-baked": [
+        Project(
+            key="stock_prediction",
+            label="Stock Prediction",
+            description="Feature engineering and regression for price forecasting",
+            tech=["Python", "scikit-learn", "Plotly"],
+            page_link="pages/38_Stock_Prediction.py",
         ),
         Project(
             key="esg_tracker",
@@ -235,30 +262,6 @@ PROJECTS_BY_CATEGORY: dict = {
             page_link="pages/26_Financial_Reporting.py",
         ),
     ],
-
-    "Tech demos & references": [
-        Project(
-            key="big_o",
-            label="Big O Notation",
-            description="Same problem, different complexities — log-log curves of Fibonacci and Pair-sum",
-            tech=["Python", "Plotly", "pytest"],
-            page_link="pages/60_Big_O.py",
-        ),
-        Project(
-            key="etymology",
-            label="Etymology",
-            description="Force-directed graph of English word roots — Greek, Latin, and Proto-Indo-European",
-            tech=["D3.js", "vanilla JS", "YAML"],
-            page_link="pages/50_Etymology.py",
-        ),
-        Project(
-            key="plotting_libraries",
-            label="Plotting Libraries Compared",
-            description="Same data rendered in Plotly, Matplotlib, Altair, and Bokeh side-by-side",
-            tech=["Python", "Plotly", "Matplotlib", "Altair", "Bokeh"],
-            page_link="pages/41_Plotting_Libraries.py",
-        ),
-    ],
 }
 
 
@@ -266,15 +269,15 @@ PROJECTS_BY_CATEGORY: dict = {
 #   1. The "Featured" grid on the /QuantLabs Welcome tab (top 3 shown)
 #   2. The order of cards on the /QuantLabs All projects tab — featured
 #      first in this order, everything else alphabetical after
-# To reshuffle the "funnest on top" ordering, just rearrange this list.
+# To reshuffle the ordering, just rearrange this list.
 FEATURED_KEYS = [
-    "global_contagion",      # flagship: 3D globe + timeline + (soon) gestures
-    "etymology",             # force-directed word graph
-    "london_house_prices",   # geo maps of 10 years of Land Registry data
-    "big_o",                 # live algorithm runner + log-log plots
-    "rent_vs_buy",           # interactive calculator + scenario charts
-    "portfolio_optimization",
-    "plotting_libraries",
+    "stock_risk_scanner",     # capstone: full-stack, FastAPI, Postgres, Claude API
+    "var_cvar",               # core risk metric
+    "portfolio_optimization", # efficient frontier, max Sharpe
+    "time_series",            # decomposition, ACF
+    "algo_trading",           # backtesting with equity curves
+    "global_contagion",       # flagship: 3D globe + bond-yield contagion
+    "london_house_prices",    # geo maps of 10 years of Land Registry data
 ]
 
 
