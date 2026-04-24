@@ -1,4 +1,4 @@
-"""Frontend tests for the Churros page (RDS controls + Render DB tab)."""
+"""Frontend tests for the Churros page (Render DB admin controls)."""
 import pytest
 from streamlit.testing.v1 import AppTest
 
@@ -17,7 +17,7 @@ class TestChurros:
 
     def test_shows_title(self):
         at = self._run()
-        assert any("RDS Admin" in t.value for t in at.title)
+        assert any("Admin" in t.value for t in at.title)
 
     def test_has_password_form(self):
         """The auth gate should show a password text_input."""

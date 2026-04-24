@@ -15,10 +15,10 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
+
 import streamlit as st
 from tech_footer import render_tech_footer
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from test_tab import render_test_tab
 from render_admin import RenderClient, RenderConfig, RenderError, rewrite_scheme
 
