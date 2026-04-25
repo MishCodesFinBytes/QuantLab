@@ -1,4 +1,4 @@
-"""QuantLabs — Welcome (portfolio) + All projects + System Health.
+"""QuantLabs — All projects + System Health.
 
 Lives at /QuantLabs. The app root (/) is the resume page in app.py; this
 page is the actual project hub that users reach by clicking `ENTER
@@ -7,12 +7,9 @@ QUANTLABS →` on the resume (or the QuantLabs brand in the sidebar).
 
 from pathlib import Path
 import sys
-import json
 import time
 
-import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
@@ -23,13 +20,9 @@ from test_tab import render_test_tab
 from ci_status import fetch_ci_status
 from projects import (
     PROJECTS_BY_CATEGORY,
-    FEATURED_KEYS,
-    all_projects,
-    featured,
     category_with_capstones_last,
 )
 
-HERE = Path(__file__).parent
 GITHUB_REPO = "mish-codes/QuantLab"
 
 st.set_page_config(
@@ -56,23 +49,6 @@ def _page_url(page_link: str) -> str:
     return "/" + name
 
 
-_FEATURED_CARD_STYLE = (
-    "display:block;text-decoration:none;color:#1a1a1a;"
-    "background:#ffffff;border:1px solid #e5e5e5;border-radius:4px;"
-    "padding:1.6rem 1.5rem;transition:border-color 0.15s;"
-)
-_FEATURED_TITLE_STYLE = (
-    "font-family:'Fraunces',Georgia,serif !important;font-size:1.3rem;font-weight:600;"
-    "color:#d97706;margin:0 0 0.5rem;line-height:1.2;letter-spacing:-0.01em;"
-)
-_FEATURED_DESC_STYLE = (
-    "font-family:'Inter',system-ui,sans-serif !important;font-size:0.92rem;line-height:1.5;"
-    "color:#1a1a1a;margin:0 0 0.9rem;"
-)
-_FEATURED_TECH_STYLE = (
-    "font-family:'Inter',system-ui,sans-serif !important;font-size:0.74rem;color:#6b6b6b;"
-    "letter-spacing:0.01em;"
-)
 _CAT_CARD_STYLE = (
     "display:block;text-decoration:none;color:#1a1a1a;"
     "background:#ffffff;border:1px solid #e5e5e5;border-radius:4px;"
@@ -109,54 +85,9 @@ _CAT_CHIP_PALETTE = {
     "Tech demos & references":         {"bg": "#fef3c7", "fg": "#92400e"},
     "Half-baked":                      {"bg": "#f4f4f4", "fg": "#6b6b6b"},
 }
-_CAT_CHIP_FALLBACK = {"bg": "#f4f4f4", "fg": "#6b6b6b"}
-_CARD_CTA_STYLE = (
-    "font-family:'Inter',system-ui,sans-serif !important;font-size:0.68rem;"
-    "font-weight:600;color:#d97706;letter-spacing:0.04em;margin-top:0.5rem;"
-)
-_FEATURED_GRID_STYLE = (
-    "display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:1rem;"
-)
 _CAT_GRID_STYLE = (
     "display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:0.5rem;"
 )
-
-
-def _featured_card_html(p) -> str:
-    tech = " · ".join(_escape(t) for t in p.tech)
-    return (
-        f'<a style="{_FEATURED_CARD_STYLE}" href="{_escape(_page_url(p.page_link))}" target="_self">'
-        f'<div style="{_FEATURED_TITLE_STYLE}">{_escape(p.label)}</div>'
-        f'<div style="{_FEATURED_DESC_STYLE}">{_escape(p.description)}</div>'
-        f'<div style="{_FEATURED_TECH_STYLE}">{tech}</div>'
-        f'</a>'
-    )
-
-
-def _all_projects_card_html(p, category: str) -> str:
-    """Card for the All projects tab — includes a category-coloured chip
-    since these cards are not grouped by category, plus an explicit `Open →`
-    footer so users can see that the card is clickable."""
-    tech = " · ".join(_escape(t) for t in p.tech)
-    capstone = (
-        f'<span style="{_CAPSTONE_STYLE}">Capstone</span>' if p.is_capstone else ""
-    )
-    colors = _CAT_CHIP_PALETTE.get(category, _CAT_CHIP_FALLBACK)
-    chip_style = (
-        f'{_CAT_CHIP_BASE_STYLE}background:{colors["bg"]};color:{colors["fg"]};'
-    )
-    cat_chip = f'<div style="{chip_style}">{_escape(category)}</div>'
-    cta = f'<div style="{_CARD_CTA_STYLE}">OPEN →</div>'
-    return (
-        f'<a class="ql-all-card" style="{_CAT_CARD_STYLE}" '
-        f'href="{_escape(_page_url(p.page_link))}" target="_self">'
-        f'{cat_chip}'
-        f'<div style="{_CAT_TITLE_STYLE}">{_escape(p.label)}{capstone}</div>'
-        f'<div style="{_CAT_DESC_STYLE}">{_escape(p.description)}</div>'
-        f'<div style="{_CAT_TECH_STYLE}">{tech}</div>'
-        f'{cta}'
-        f'</a>'
-    )
 
 
 def _cat_card_html(p) -> str:
@@ -173,121 +104,11 @@ def _cat_card_html(p) -> str:
     )
 
 
-def _matches_query(p, query: str) -> bool:
-    if not query:
-        return True
-    q = query.lower()
-    if q in p.label.lower():
-        return True
-    if q in p.description.lower():
-        return True
-    if any(q in t.lower() for t in p.tech):
-        return True
-    return False
-
-
-# ─────────────────────────────────────────────────────────────
-# Animated stats counter (replaces the graph)
-# ─────────────────────────────────────────────────────────────
-
-def _build_stats_counter_html(total: int, n_cats: int, n_featured: int) -> str:
-    """Self-contained HTML+JS that animates three counters from 0 to target."""
-    return f"""
-<!doctype html>
-<html><head><meta charset="utf-8"><style>
-  body {{ margin: 0; font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
-          background: transparent; color: #6b6b6b; }}
-  .stats {{ display: flex; justify-content: center; gap: 2.2rem;
-            font-size: 0.86rem; letter-spacing: 0.05em; padding-top: 4px; }}
-  .stat {{ display: inline-flex; gap: 0.4em; align-items: baseline; }}
-  .num {{ color: #1a1a1a; font-weight: 600; font-size: 1.05rem; }}
-  .sep {{ color: #cccccc; }}
-</style></head>
-<body>
-<div class="stats">
-  <span class="stat"><span class="num" data-target="{total}">0</span> projects</span>
-  <span class="sep">·</span>
-  <span class="stat"><span class="num" data-target="{n_cats}">0</span> categories</span>
-  <span class="sep">·</span>
-  <span class="stat"><span class="num" data-target="{n_featured}">0</span> featured</span>
-  <span class="sep">·</span>
-  <span class="stat">open source</span>
-</div>
-<script>
-document.querySelectorAll('.num').forEach(el => {{
-  const target = parseInt(el.dataset.target, 10);
-  const duration = 900;
-  const start = performance.now();
-  function tick(now) {{
-    const t = Math.min(1, (now - start) / duration);
-    const eased = 1 - Math.pow(1 - t, 3);
-    el.textContent = Math.round(target * eased);
-    if (t < 1) requestAnimationFrame(tick);
-  }}
-  requestAnimationFrame(tick);
-}});
-</script>
-</body></html>
-"""
-
-
-def _build_marquee_html() -> str:
-    """Horizontal infinite-scroll marquee of project names, rendered inside
-    a components iframe so the @keyframes animation survives Streamlit's
-    HTML sanitizer."""
-    names = [p.label for p in all_projects()]
-    items = " &nbsp;·&nbsp; ".join(_escape(n) for n in names)
-    return f"""
-<!doctype html>
-<html><head><meta charset="utf-8"><style>
-  html, body {{ margin: 0; background: transparent; }}
-  .wrap {{
-    overflow: hidden;
-    border-top: 1px solid #e5e5e5;
-    border-bottom: 1px solid #e5e5e5;
-    padding: 0.85rem 0;
-    background: #fafafa;
-    -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
-    mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
-  }}
-  .track {{
-    display: flex;
-    width: max-content;
-    animation: ql-scroll 55s linear infinite;
-  }}
-  .content {{
-    font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
-    font-size: 0.82rem;
-    color: #6b6b6b;
-    letter-spacing: 0.04em;
-    padding-right: 2.5rem;
-    white-space: nowrap;
-  }}
-  @keyframes ql-scroll {{
-    from {{ transform: translateX(0); }}
-    to   {{ transform: translateX(-50%); }}
-  }}
-</style></head>
-<body>
-<div class="wrap">
-  <div class="track">
-    <span class="content">{items}</span>
-    <span class="content" aria-hidden="true">{items}</span>
-  </div>
-</div>
-</body></html>
-"""
-
-
 # ─────────────────────────────────────────────────────────────
 # Tabs
 # ─────────────────────────────────────────────────────────────
 
-tab_all, tab_welcome, tab_health = st.tabs(["All projects", "Welcome", "System Health"])
-
-# ─────────────────────────────────────────────────────────────
-# Welcome — landing portfolio view
-# ─────────────────────────────────────────────────────────────
+tab_all, tab_health = st.tabs(["All projects", "System Health"])
 
 def _ql_html(html: str) -> None:
     """Render raw HTML without Streamlit's markdown processor eating class
@@ -299,105 +120,17 @@ def _ql_html(html: str) -> None:
         st.markdown(html, unsafe_allow_html=True)
 
 
-with tab_welcome:
-    # Hero — use st.markdown so Streamlit wraps the heading with its action
-    # elements, which plays with our .ql-hero-title * descendant selector.
-    st.markdown(
-        '<div class="ql-hero">'
-        '<h1 class="ql-hero-title">QuantLabs</h1>'
-        '<p class="ql-hero-subtitle">Interactive finance and data experiments in Python</p>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    total = len(all_projects())
-    n_cats = len(PROJECTS_BY_CATEGORY)
-    n_featured = len(featured())
-
-    # Search box
-    _ql_html('<div class="ql-search-wrap">')
-    search_query = st.text_input(
-        "Search",
-        value="",
-        placeholder="Search projects by name, description, or tech…",
-        label_visibility="collapsed",
-        key="ql_landing_search",
-    )
-    _ql_html('</div>')
-
-    # Animated stats counter
-    components.html(
-        _build_stats_counter_html(total, n_cats, n_featured),
-        height=60,
-        scrolling=False,
-    )
-
-    # Tech marquee — rendered via components.html so @keyframes survives
-    components.html(_build_marquee_html(), height=90, scrolling=False)
-
-    # About paragraph
-    _ql_html(
-        '<p style="font-family:\'Inter\',system-ui,sans-serif;font-size:0.95rem;'
-        'line-height:1.7;color:#4a4a4a;max-width:680px;margin:1.5rem 0 2rem;">'
-        "Two threads run through these projects: risk and pricing — VaR, portfolio "
-        "optimisation, Monte Carlo simulation, full-stack risk pipelines — and market "
-        "data engineering — time series decomposition, anomaly detection, benchmark "
-        "rate feeds. Everything is built in Python, deployed on Streamlit Cloud and "
-        "Render, with source on GitHub."
-        "</p>"
-    )
-
-    # Featured grid
-    st.markdown('<h2 class="ql-section-heading">Featured</h2>', unsafe_allow_html=True)
-    featured_html = (
-        f'<div style="{_FEATURED_GRID_STYLE}">'
-        + ''.join(_featured_card_html(p) for p in featured())
-        + '</div>'
-    )
-    _ql_html(featured_html)
-
-    # Categorised grids (filtered by search)
-    for category in PROJECTS_BY_CATEGORY.keys():
-        matching = [
-            p for p in category_with_capstones_last(category)
-            if _matches_query(p, search_query)
-        ]
-        if not matching:
-            continue
-        st.markdown(
-            f'<h2 class="ql-section-heading">{_escape(category)}</h2>',
-            unsafe_allow_html=True,
-        )
-        grid_html = (
-            f'<div style="{_CAT_GRID_STYLE}">'
-            + ''.join(_cat_card_html(p) for p in matching)
-            + '</div>'
-        )
-        _ql_html(grid_html)
-
-    if search_query and not any(
-        _matches_query(p, search_query) for p in all_projects()
-    ):
-        _ql_html(
-            f'<p style="text-align:center;color:#6b6b6b;margin-top:2rem;">'
-            f'No projects match "{_escape(search_query)}".</p>'
-        )
-
-    _ql_html('<div style="height: 4rem;"></div>')
-
 # ─────────────────────────────────────────────────────────────
-# All projects — sortable table view
+# All projects — collapsible category sections
 # ─────────────────────────────────────────────────────────────
 
 with tab_all:
     st.markdown(
         '<h1 class="ql-page-title">All projects</h1>'
-        '<p class="ql-page-subtitle">Every QuantLabs project at a glance, alphabetical</p>',
+        '<p class="ql-page-subtitle">Every QuantLabs project, grouped by category</p>',
         unsafe_allow_html=True,
     )
 
-    # Local CSS: staggered fade-in on load + lift on hover. Scoped to
-    # .ql-all-card so nothing else on the page inherits these animations.
     _ql_html(
         """
         <style>
@@ -416,8 +149,6 @@ with tab_all:
             box-shadow: 0 6px 18px rgba(26, 26, 26, 0.08);
             border-color: #d97706 !important;
         }
-        /* Stagger: each card waits a bit longer before its fade-in starts.
-           Covers up to ~30 cards; anything beyond that just snaps in. */
         .ql-all-card:nth-child(1)  { animation-delay: 0.00s; }
         .ql-all-card:nth-child(2)  { animation-delay: 0.03s; }
         .ql-all-card:nth-child(3)  { animation-delay: 0.06s; }
@@ -433,34 +164,14 @@ with tab_all:
         """
     )
 
-    # Flatten the category map into [(category, project), …] then sort so
-    # that projects in FEATURED_KEYS appear first in that order ("funnest
-    # on top") and everything else falls through alphabetically.
-    # Category becomes a colour-coded chip on each card so the info that
-    # used to live in the table's Category column stays visible.
-    all_with_category: list[tuple[str, object]] = []
-    for category, projs in PROJECTS_BY_CATEGORY.items():
-        for p in projs:
-            all_with_category.append((category, p))
-
-    _featured_index = {key: i for i, key in enumerate(FEATURED_KEYS)}
-
-    def _sort_key(item: tuple[str, object]):
-        _, proj = item
-        if proj.key in _featured_index:
-            # Featured group — (0, position-in-FEATURED_KEYS, label)
-            return (0, _featured_index[proj.key], proj.label.lower())
-        # Everything else — (1, 0, label) so it sorts alphabetically after
-        return (1, 0, proj.label.lower())
-
-    all_with_category.sort(key=_sort_key)
-
-    grid_html = (
-        f'<div style="{_CAT_GRID_STYLE}">'
-        + ''.join(_all_projects_card_html(p, category) for category, p in all_with_category)
-        + '</div>'
-    )
-    _ql_html(grid_html)
+    for category in PROJECTS_BY_CATEGORY:
+        projs = category_with_capstones_last(category)
+        with st.expander(f"{category}  ({len(projs)})", expanded=(category != "Half-baked")):
+            _ql_html(
+                f'<div style="{_CAT_GRID_STYLE}">'
+                + ''.join(_cat_card_html(p) for p in projs)
+                + '</div>'
+            )
 
 # ─────────────────────────────────────────────────────────────
 # System Health — preserved from original
