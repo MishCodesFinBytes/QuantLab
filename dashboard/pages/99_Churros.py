@@ -103,7 +103,7 @@ with tab_status:
         )
 
     st.markdown("---")
-    if st.button("Refresh status", use_container_width=True, key="refresh_status"):
+    if st.button("Refresh status", width='stretch', key="refresh_status"):
         st.rerun()
 
 # ========================================================== Render DB tab

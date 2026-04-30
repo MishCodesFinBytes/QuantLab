@@ -91,7 +91,7 @@ with tab_app:
                 text_auto=".4f",
             )
             fig.update_layout(showlegend=False)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         with chart_tab2:
             rate_df = (
@@ -102,7 +102,7 @@ with tab_app:
                 .reset_index(drop=True)
             )
             rate_df["Converted"] = rate_df["Rate"] * amount
-            st.dataframe(rate_df, use_container_width=True, height=400)
+            st.dataframe(rate_df, width='stretch', height=400)
     else:
         with st.expander("Full Rate Table"):
             rate_df = (
@@ -113,7 +113,7 @@ with tab_app:
                 .reset_index(drop=True)
             )
             rate_df["Converted"] = rate_df["Rate"] * amount
-            st.dataframe(rate_df, use_container_width=True, height=400)
+            st.dataframe(rate_df, width='stretch', height=400)
 
 with tab_tests:
     render_test_tab("test_currency_dashboard.py")

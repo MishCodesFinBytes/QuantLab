@@ -109,7 +109,7 @@ with tab_app:
                 title="Assets & Liabilities Breakdown",
             )
             fig_bar.update_layout(yaxis=dict(categoryorder="total ascending"))
-            st.plotly_chart(fig_bar, use_container_width=True)
+            st.plotly_chart(fig_bar, width='stretch')
 
         with chart_tab2:
             donut_data = []
@@ -125,7 +125,7 @@ with tab_app:
                     title="Composition",
                 )
                 fig_donut.update_traces(textinfo="percent+label")
-                st.plotly_chart(fig_donut, use_container_width=True)
+                st.plotly_chart(fig_donut, width='stretch')
 
 with tab_tests:
     render_test_tab("test_personal_finance.py")

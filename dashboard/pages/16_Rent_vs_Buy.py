@@ -345,7 +345,7 @@ else:
         f"**£{abs(result.buy_rent_delta):,.0f}** over {plan_to_stay_years} years."
     )
 
-st.plotly_chart(build_cost_over_time_chart(result), use_container_width=True)
+st.plotly_chart(build_cost_over_time_chart(result), width='stretch')
 
 with st.expander("Buying breakdown"):
     b = result.buy_breakdown

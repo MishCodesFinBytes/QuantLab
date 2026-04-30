@@ -11,7 +11,6 @@ import sys
 from pathlib import Path
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 
@@ -68,4 +67,4 @@ st.markdown(
 _resume_html = (STATIC_DIR / "resume.html").read_text(encoding="utf-8")
 _resume_html = _resume_html.replace("{{QUANTLABS_URL}}", QUANTLABS_URL)
 
-components.html(_resume_html, height=4200, scrolling=True)
+st.iframe(_resume_html, height=4200, scrolling=True)

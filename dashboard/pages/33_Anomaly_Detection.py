@@ -107,7 +107,7 @@ with tab_app:
         xaxis_title="Date", yaxis_title="Daily Return",
         height=500, margin=dict(t=60, b=40),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     # -- Anomaly dates table ------------------------------------------------------
     if n_anomalies > 0:
@@ -116,7 +116,7 @@ with tab_app:
             anomaly_df["Return"] = anomaly_df["Return"].map("{:.4%}".format)
             anomaly_df.index = anomaly_df.index.strftime("%Y-%m-%d")
             anomaly_df.index.name = "Date"
-            st.dataframe(anomaly_df, use_container_width=True)
+            st.dataframe(anomaly_df, width='stretch')
     else:
         st.info("No anomalies detected with current settings.")
 

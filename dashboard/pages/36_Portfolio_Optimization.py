@@ -119,7 +119,7 @@ with tab_app:
         st.metric("Sharpe Ratio", f"{results[max_sharpe_idx, 2]:.2f}")
         with st.expander("Weights"):
             st.dataframe(pd.DataFrame({"Ticker": tickers, "Weight": ms_w}).set_index("Ticker")
-                         .style.format("{:.2%}"), use_container_width=True)
+                         .style.format("{:.2%}"), width='stretch')
 
     with col_mv:
         st.markdown("**Min Volatility**")
@@ -129,7 +129,7 @@ with tab_app:
         st.metric("Sharpe Ratio", f"{results[min_vol_idx, 2]:.2f}")
         with st.expander("Weights"):
             st.dataframe(pd.DataFrame({"Ticker": tickers, "Weight": mv_w}).set_index("Ticker")
-                         .style.format("{:.2%}"), use_container_width=True)
+                         .style.format("{:.2%}"), width='stretch')
 
     # -- Scatter plot -------------------------------------------------------------
     fig = go.Figure()
@@ -153,7 +153,7 @@ with tab_app:
         title="Efficient Frontier", xaxis_title="Annualized Volatility",
         yaxis_title="Annualized Return", height=550, margin=dict(t=60, b=40),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 with tab_tests:
     render_test_tab("test_portfolio_optimization.py")

@@ -118,7 +118,7 @@ with tab_app:
             title="Investment Growth Over Time",
             xaxis_title="Year", yaxis_title="Amount ($)", hovermode="x unified",
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with tab2:
         alt_return = st.slider("Alternative Return (%)", 1.0, 15.0, 5.0, step=0.5, key="alt")
@@ -138,7 +138,7 @@ with tab_app:
             title="Growth Comparison: Base vs Alternative Return",
             xaxis_title="Year", yaxis_title="Balance ($)", hovermode="x unified",
         )
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
     # -- Summary table -------------------------------------------------------------
     with st.expander("Year-by-Year Schedule"):
@@ -146,7 +146,7 @@ with tab_app:
         display_df["year"] = display_df["year"].map(lambda x: f"{x:.0f}")
         for col in ["balance", "contributions", "growth"]:
             display_df[col] = display_df[col].map(lambda x: f"${x:,.2f}")
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        st.dataframe(display_df, width='stretch', hide_index=True)
 
 with tab_tests:
     render_test_tab("test_investment_planner.py")

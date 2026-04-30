@@ -150,7 +150,7 @@ with tab_app:
         title="Projected Retirement Savings",
         xaxis_title="Age", yaxis_title="Balance ($)", hovermode="x unified",
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     # -- Monte Carlo distribution -------------------------------------------------
     if run_mc and "finals" in result:
@@ -163,7 +163,7 @@ with tab_app:
             )
             fig_hist.add_vline(x=result["final"], line_dash="dash", line_color="red",
                                annotation_text="Deterministic")
-            st.plotly_chart(fig_hist, use_container_width=True)
+            st.plotly_chart(fig_hist, width='stretch')
 
 with tab_tests:
     render_test_tab("test_retirement_calculator.py")

@@ -128,7 +128,7 @@ with tab_app:
         xaxis_title="Sentiment Score", height=max(400, len(HEADLINES) * 28),
         margin=dict(l=350, t=60, b=40),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     # -- Table ---------------------------------------------------------------------
     with st.expander("Headlines and Scores"):
@@ -138,7 +138,7 @@ with tab_app:
                     "color: red" if v == "Negative" else "color: gray"),
                 subset=["Label"],
             ),
-            use_container_width=True, hide_index=True,
+            width='stretch', hide_index=True,
         )
 
 with tab_tests:

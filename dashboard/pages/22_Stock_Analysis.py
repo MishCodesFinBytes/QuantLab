@@ -123,7 +123,7 @@ with tab_app:
 
     fig.update_layout(height=200 + n_rows * 250, margin=dict(t=60, b=30),
                       xaxis_rangeslider_visible=False)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 with tab_tests:
     render_test_tab("test_stock_analysis.py")

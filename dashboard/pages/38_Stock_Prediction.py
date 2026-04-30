@@ -150,7 +150,7 @@ with tab_app:
             xaxis_title="Date", yaxis_title="Daily Return",
             height=500, margin=dict(t=60, b=40),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with tab2:
         fig2 = go.Figure()
@@ -169,7 +169,7 @@ with tab_app:
             xaxis_title="Actual Return", yaxis_title="Predicted Return",
             height=400, margin=dict(t=50, b=40),
         )
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
 with tab_tests:
     render_test_tab("test_stock_prediction.py")

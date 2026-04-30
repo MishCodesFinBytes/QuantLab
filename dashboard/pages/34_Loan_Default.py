@@ -131,7 +131,7 @@ with tab_app:
         fig_imp = go.Figure(go.Bar(x=imp_df["Importance"], y=imp_df["Feature"],
                                    orientation="h", marker_color="steelblue"))
         fig_imp.update_layout(title="Feature Importance", height=350, margin=dict(t=40, b=30))
-        st.plotly_chart(fig_imp, use_container_width=True)
+        st.plotly_chart(fig_imp, width='stretch')
 
     with tab2:
         cm = results["cm"]
@@ -143,7 +143,7 @@ with tab_app:
         fig_cm.update_layout(title="Confusion Matrix", height=350,
                              xaxis_title="Predicted", yaxis_title="Actual",
                              margin=dict(t=40, b=30))
-        st.plotly_chart(fig_cm, use_container_width=True)
+        st.plotly_chart(fig_cm, width='stretch')
 
     # -- User prediction ----------------------------------------------------------
     st.divider()

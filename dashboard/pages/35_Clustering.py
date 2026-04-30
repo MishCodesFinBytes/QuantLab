@@ -51,7 +51,7 @@ with tab_app:
         data = st.data_editor(
             default_data,
             num_rows="dynamic",
-            use_container_width=True,
+            width='stretch',
         )
         if len(data) < 3:
             st.warning("Need at least 3 rows to cluster.")
@@ -138,7 +138,7 @@ with tab_app:
             height=500, color_discrete_sequence=px.colors.qualitative.Set2,
         )
         fig.update_layout(margin=dict(t=50, b=40))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with tab2:
         if algorithm == "K-Means" and inertias is not None:
@@ -153,7 +153,7 @@ with tab_app:
                 xaxis_title="Number of Clusters (k)", yaxis_title="Inertia",
                 height=350, margin=dict(t=50, b=40),
             )
-            st.plotly_chart(elbow_fig, use_container_width=True)
+            st.plotly_chart(elbow_fig, width='stretch')
         else:
             st.info("Elbow method is only available for K-Means.")
 
@@ -162,7 +162,7 @@ with tab_app:
         profile = data.groupby("Cluster")[feature_cols].mean().round(2)
         profile.index = profile.index.astype(str)
         profile["count"] = data.groupby("Cluster").size()
-        st.dataframe(profile, use_container_width=True)
+        st.dataframe(profile, width='stretch')
 
 with tab_tests:
     render_test_tab("test_clustering.py")

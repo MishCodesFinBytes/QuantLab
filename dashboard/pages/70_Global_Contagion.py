@@ -329,7 +329,7 @@ with col_slider:
     st.session_state.contagion_date_idx = idx
 with col_btn:
     btn_label = "⏸ Pause" if st.session_state.contagion_playing else "▶ Play"
-    if st.button(btn_label, use_container_width=True):
+    if st.button(btn_label, width='stretch'):
         st.session_state.contagion_playing = not st.session_state.contagion_playing
         st.rerun()
 with col_rotate:
@@ -586,7 +586,7 @@ _globe_fig.update_layout(
 col_globe, col_right = st.columns([5, 2])
 
 with col_globe:
-    st.plotly_chart(_globe_fig, use_container_width=True, config={"displayModeBar": False}, key="contagion_globe")
+    st.plotly_chart(_globe_fig, width='stretch', config={"displayModeBar": False}, key="contagion_globe")
 
 with col_right:
     # Big month-year anchor above the correlation numbers — gives the

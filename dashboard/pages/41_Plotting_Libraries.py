@@ -80,7 +80,7 @@ with tab_app:
 
     edited_df = st.data_editor(
         raw_df.round(2),
-        use_container_width=True,
+        width='stretch',
         num_rows="fixed",
         key="ohlcv_editor",
     )
@@ -102,10 +102,10 @@ with tab_app:
     )
 
     with tab_plotly:
-        st.plotly_chart(plotly_line_chart(edited_df), use_container_width=True)
-        st.plotly_chart(plotly_candlestick(edited_df), use_container_width=True)
-        st.plotly_chart(plotly_volume_bar(edited_df), use_container_width=True)
-        st.plotly_chart(plotly_returns_histogram(edited_df), use_container_width=True)
+        st.plotly_chart(plotly_line_chart(edited_df), width='stretch')
+        st.plotly_chart(plotly_candlestick(edited_df), width='stretch')
+        st.plotly_chart(plotly_volume_bar(edited_df), width='stretch')
+        st.plotly_chart(plotly_returns_histogram(edited_df), width='stretch')
 
     with tab_mpl:
         st.pyplot(matplotlib_line_chart(edited_df))
@@ -114,10 +114,10 @@ with tab_app:
         st.pyplot(matplotlib_returns_histogram(edited_df))
 
     with tab_altair:
-        st.altair_chart(altair_line_chart(edited_df), use_container_width=True)
-        st.altair_chart(altair_candlestick(edited_df), use_container_width=True)
-        st.altair_chart(altair_volume_bar(edited_df), use_container_width=True)
-        st.altair_chart(altair_returns_histogram(edited_df), use_container_width=True)
+        st.altair_chart(altair_line_chart(edited_df), width='stretch')
+        st.altair_chart(altair_candlestick(edited_df), width='stretch')
+        st.altair_chart(altair_volume_bar(edited_df), width='stretch')
+        st.altair_chart(altair_returns_histogram(edited_df), width='stretch')
 
     with tab_bokeh:
         from bokeh.embed import file_html

@@ -90,7 +90,7 @@ with tab_app:
 
             fig.update_layout(height=700, margin=dict(t=60, b=30), showlegend=False,
                               title=f"{ticker} Multiplicative Decomposition (period={decomp_period})")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         with tab2:
             returns = prices.pct_change().dropna()
@@ -112,7 +112,7 @@ with tab_app:
                 xaxis_title="Lag", yaxis_title="Autocorrelation",
                 height=400, margin=dict(t=60, b=40),
             )
-            st.plotly_chart(acf_fig, use_container_width=True)
+            st.plotly_chart(acf_fig, width='stretch')
 
         st.caption(
             "Multiplicative decomposition separates price into trend, seasonal, and residual "

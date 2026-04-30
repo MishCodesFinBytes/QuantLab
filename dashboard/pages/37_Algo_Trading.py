@@ -133,7 +133,7 @@ with tab_app:
                                       name="Sell", marker=dict(symbol="triangle-down", size=10, color="red")))
         fig1.update_layout(title=f"{ticker} -- {strategy} Signals", height=450,
                            margin=dict(t=50, b=40))
-        st.plotly_chart(fig1, use_container_width=True)
+        st.plotly_chart(fig1, width='stretch')
 
     with tab2:
         fig2 = go.Figure()
@@ -143,7 +143,7 @@ with tab_app:
                                   line=dict(color="gray", dash="dash")))
         fig2.update_layout(title="Equity Curve", yaxis_title="Cumulative Return",
                            height=400, margin=dict(t=50, b=40))
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
 with tab_tests:
     render_test_tab("test_algo_trading.py")

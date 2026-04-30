@@ -92,7 +92,7 @@ with tab_app:
     fig.update_yaxes(title_text="Price ($)", row=1, col=1)
     fig.update_yaxes(title_text="Volume", row=2, col=1)
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 with tab_tests:
     render_test_tab("test_stock_tracker.py")

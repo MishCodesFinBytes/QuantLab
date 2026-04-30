@@ -77,7 +77,7 @@ with tab_app:
             "Category": st.column_config.TextColumn("Category", required=True),
             "Amount": st.column_config.NumberColumn("Amount ($)", min_value=0.0, format="%.2f", required=True),
         },
-        use_container_width=True,
+        width='stretch',
         hide_index=True,
     )
 
@@ -143,7 +143,7 @@ with tab_app:
             hole=0.4,
         )
         fig_pie.update_traces(textinfo="label+percent")
-        st.plotly_chart(fig_pie, use_container_width=True)
+        st.plotly_chart(fig_pie, width='stretch')
 
     with tab2:
         fig_bar = go.Figure()
@@ -159,7 +159,7 @@ with tab_app:
             yaxis=dict(autorange="reversed"),
             showlegend=False,
         )
-        st.plotly_chart(fig_bar, use_container_width=True)
+        st.plotly_chart(fig_bar, width='stretch')
 
     # -- Breakdown table -----------------------------------------------------------
     with st.expander("Detailed Breakdown"):
@@ -167,7 +167,7 @@ with tab_app:
         detail_df["amount"] = detail_df["amount"].map(lambda x: f"${x:,.2f}")
         detail_df["pct"] = detail_df["pct"].map(lambda x: f"{x:.1f}%")
         detail_df.columns = ["Category", "Amount", "% of Income"]
-        st.dataframe(detail_df, use_container_width=True, hide_index=True)
+        st.dataframe(detail_df, width='stretch', hide_index=True)
 
 with tab_tests:
     render_test_tab("test_budget_tracker.py")

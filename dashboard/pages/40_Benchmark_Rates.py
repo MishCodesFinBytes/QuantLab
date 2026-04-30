@@ -107,14 +107,14 @@ with tab_app:
             xaxis_title="Date", yaxis_title=f"PnL ({ccy_symbol})",
             hovermode="x unified", height=350,
         )
-        st.plotly_chart(fig_pnl, use_container_width=True)
+        st.plotly_chart(fig_pnl, width='stretch')
 
         with st.expander("Daily Accrual Schedule"):
             display_df = df[["date", "rate", "daily_accrual", "fixed_accrual", "net_daily", "cumulative_pnl"]].copy()
             display_df.columns = ["Date", f"{rate_name} (%)", "Float Accrual", "Fixed Accrual", "Net Daily", "Cumulative PnL"]
             for col in ["Float Accrual", "Fixed Accrual", "Net Daily", "Cumulative PnL"]:
                 display_df[col] = display_df[col].map(lambda x: f"{ccy_symbol}{x:,.2f}")
-            st.dataframe(display_df, use_container_width=True, hide_index=True)
+            st.dataframe(display_df, width='stretch', hide_index=True)
 
     # ── Rate Comparison ──────────────────────────────────────────────────
     st.divider()
@@ -173,7 +173,7 @@ with tab_app:
             xaxis_title="Date", yaxis_title="Rate (%)",
             hovermode="x unified", height=400,
         )
-        st.plotly_chart(fig_ts, use_container_width=True)
+        st.plotly_chart(fig_ts, width='stretch')
 
         # Distribution chart
         fig_dist = go.Figure()
@@ -190,7 +190,7 @@ with tab_app:
             xaxis_title="Daily Change (%)", yaxis_title="Count",
             barmode="overlay", height=350,
         )
-        st.plotly_chart(fig_dist, use_container_width=True)
+        st.plotly_chart(fig_dist, width='stretch')
 
         # Spread chart (only when multiple rates available)
         if len([r for r in rates.values() if not r.empty]) >= 2:
@@ -223,7 +223,7 @@ with tab_app:
                     xaxis_title="Date", yaxis_title="Spread (%)",
                     hovermode="x unified", height=400,
                 )
-                st.plotly_chart(fig_spread, use_container_width=True)
+                st.plotly_chart(fig_spread, width='stretch')
 
 with tab_tests:
     render_test_tab("test_benchmark_rates.py")

@@ -104,7 +104,7 @@ with tab_growth:
             title="Average Price by District",
         )
         fig_map.update_layout(margin=dict(l=0, r=0, t=30, b=0), height=450)
-        st.plotly_chart(fig_map, use_container_width=True)
+        st.plotly_chart(fig_map, width='stretch')
 
     with chart_col:
         if not agg.empty:
@@ -119,7 +119,7 @@ with tab_growth:
                 xaxis_title="Year", yaxis_title="Price (\u00a3)",
                 height=450,
             )
-            st.plotly_chart(fig_line, use_container_width=True)
+            st.plotly_chart(fig_line, width='stretch')
         else:
             st.info(f"No data found for {district}.")
 
@@ -161,7 +161,7 @@ with tab_compare:
     if not agg_b.empty:
         fig_cmp.add_trace(go.Scatter(x=agg_b["year"], y=agg_b["avg_price"], mode="lines+markers", name=dist_b, line=dict(color="#e24a4a", width=3)))
     fig_cmp.update_layout(title=f"{dist_a} vs {dist_b} — Average House Price", xaxis_title="Year", yaxis_title="Price (\u00a3)", height=450)
-    st.plotly_chart(fig_cmp, use_container_width=True)
+    st.plotly_chart(fig_cmp, width='stretch')
 
 with tab_brand:
     with st.expander("How it works"):
@@ -237,14 +237,14 @@ with tab_brand:
                 ))
 
             fig_brand.update_layout(margin=dict(l=0, r=0, t=30, b=0), height=500)
-            st.plotly_chart(fig_brand, use_container_width=True)
+            st.plotly_chart(fig_brand, width='stretch')
 
             fig_bar = go.Figure(data=[
                 go.Bar(name=f"Near {brand}", x=["Average Price"], y=[avg_near], marker_color="#2ea043"),
                 go.Bar(name=f"Away from {brand}", x=["Average Price"], y=[avg_far], marker_color="#aaa"),
             ])
             fig_bar.update_layout(title=f"The {brand} Effect", yaxis_title="Average Price (\u00a3)", barmode="group", height=350)
-            st.plotly_chart(fig_bar, use_container_width=True)
+            st.plotly_chart(fig_bar, width='stretch')
 
 with tab_bench:
     st.markdown("### Benchmark Lab — pandas vs polars")
@@ -286,7 +286,7 @@ with tab_bench:
                 run_clicked = st.button(
                     "\u25b6 Run Benchmark",
                     key="bench_run_btn",
-                    use_container_width=True,
+                    width='stretch',
                 )
 
         st.caption(presets[chosen_key]["description"])
@@ -305,7 +305,7 @@ with tab_bench:
             st.info("Click **Run Benchmark** to start.")
         else:
             st.plotly_chart(
-                build_overview_chart(results), use_container_width=True
+                build_overview_chart(results), width='stretch'
             )
 
             st.markdown("#### Per-op detail")
@@ -317,7 +317,7 @@ with tab_bench:
                     kind = card["preview_kind"]
                     preview = card["preview"]
                     if kind == "dataframe":
-                        st.dataframe(preview, use_container_width=True)
+                        st.dataframe(preview, width='stretch')
                     elif kind == "scalar":
                         st.metric("Row count", f"{preview:,}")
                     elif kind == "write":
@@ -347,13 +347,13 @@ with tab_bench:
                 )
                 st.dataframe(
                     pd.read_parquet(presets[chosen_key]["path"]).head(100),
-                    use_container_width=True,
+                    width='stretch',
                 )
             except Exception as exc:
                 st.warning(f"PyGWalker render error: {exc}")
                 st.dataframe(
                     pd.read_parquet(presets[chosen_key]["path"]).head(1000),
-                    use_container_width=True,
+                    width='stretch',
                 )
 
 with tab_tests:

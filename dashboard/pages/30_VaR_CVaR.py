@@ -102,7 +102,7 @@ with tab_app:
         xaxis_title="Daily Return", yaxis_title="Frequency",
         height=500, margin=dict(t=60, b=40),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     st.caption(
         "VaR estimates the maximum expected loss at a given confidence level. "

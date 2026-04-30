@@ -118,7 +118,7 @@ with tab_app:
     preset_cols = st.columns(len(PRESETS))
     for i, (name, (preset_tickers, desc)) in enumerate(PRESETS.items()):
         with preset_cols[i]:
-            if st.button(f"{name}", help=desc, use_container_width=True):
+            if st.button(f"{name}", help=desc, width='stretch'):
                 st.session_state["tickers_field"] = ", ".join(preset_tickers)
 
     # Custom input
@@ -170,7 +170,7 @@ with tab_app:
     norm_weights = [w / 100.0 for w in weights] if weight_sum > 0 else []
 
     # Scan button
-    if st.button("Scan", type="primary", disabled=not can_scan, use_container_width=True):
+    if st.button("Scan", type="primary", disabled=not can_scan, width='stretch'):
         if not _check_rate_limit():
             st.error("Rate limit reached — max 10 scans per hour. Try again later.")
         else:
@@ -300,14 +300,14 @@ Return per unit of risk. Above 1.0 = good (adequately compensated). Below 0.5 = 
             prices = st.session_state.scan_prices
             c1, c2 = st.columns(2)
             with c1:
-                st.plotly_chart(price_history_chart(prices), use_container_width=True)
+                st.plotly_chart(price_history_chart(prices), width='stretch')
             with c2:
-                st.plotly_chart(cumulative_return_chart(prices, scan_weights), use_container_width=True)
+                st.plotly_chart(cumulative_return_chart(prices, scan_weights), width='stretch')
             c3, c4 = st.columns(2)
             with c3:
-                st.plotly_chart(drawdown_chart(prices, scan_weights), use_container_width=True)
+                st.plotly_chart(drawdown_chart(prices, scan_weights), width='stretch')
             with c4:
-                st.plotly_chart(weight_pie_chart(scan_tickers, scan_weights), use_container_width=True)
+                st.plotly_chart(weight_pie_chart(scan_tickers, scan_weights), width='stretch')
 
     # Scan History
     st.markdown("---")

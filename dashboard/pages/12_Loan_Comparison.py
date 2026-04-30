@@ -117,7 +117,7 @@ with tab_app:
             go.Bar(name="Loan B", x=categories, y=[monthly_b, interest_b, total_b], marker_color="#EF553B"),
         ])
         fig.update_layout(title="Loan A vs Loan B", barmode="group", yaxis_title="Amount ($)")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with tab2:
         fig2 = go.Figure()
@@ -127,7 +127,7 @@ with tab_app:
             title="Remaining Balance Over Time",
             xaxis_title="Payment Period", yaxis_title="Balance ($)", hovermode="x unified",
         )
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
     # -- Month-by-month comparison ------------------------------------------------
     with st.expander("Month-by-Month Comparison"):
@@ -139,7 +139,7 @@ with tab_app:
             )
             compare = compare.merge(temp, on="period", how="left")
         compare = compare.fillna("--")
-        st.dataframe(compare, use_container_width=True, hide_index=True)
+        st.dataframe(compare, width='stretch', hide_index=True)
 
 with tab_tests:
     render_test_tab("test_loan_comparison.py")

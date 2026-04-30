@@ -183,7 +183,7 @@ with tab_app:
     )
     fig.update_yaxes(title_text="Price ($)", secondary_y=False)
     fig.update_yaxes(title_text="Sentiment Score", secondary_y=True, range=[-1, 1])
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     # -- Top positive / negative headlines -----------------------------------------
     tab1, tab2 = st.tabs(["Top 5 Most Positive", "Top 5 Most Negative"])
@@ -192,13 +192,13 @@ with tab_app:
         top_pos = sent_df.nlargest(5, "Sentiment")[["Date", "Headline", "Sentiment"]]
         top_pos["Date"] = top_pos["Date"].dt.strftime("%Y-%m-%d")
         top_pos["Sentiment"] = top_pos["Sentiment"].map("{:.3f}".format)
-        st.dataframe(top_pos, use_container_width=True, hide_index=True)
+        st.dataframe(top_pos, width='stretch', hide_index=True)
 
     with tab2:
         top_neg = sent_df.nsmallest(5, "Sentiment")[["Date", "Headline", "Sentiment"]]
         top_neg["Date"] = top_neg["Date"].dt.strftime("%Y-%m-%d")
         top_neg["Sentiment"] = top_neg["Sentiment"].map("{:.3f}".format)
-        st.dataframe(top_neg, use_container_width=True, hide_index=True)
+        st.dataframe(top_neg, width='stretch', hide_index=True)
 
     st.caption(
         "Sentiment scores are computed using VADER. "

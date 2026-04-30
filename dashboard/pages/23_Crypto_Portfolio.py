@@ -107,7 +107,7 @@ with tab_app:
             hole=0.45, title="Portfolio Allocation",
         )
         fig.update_traces(textinfo="percent+label")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with chart_tab2:
         st.dataframe(
@@ -118,7 +118,7 @@ with tab_app:
                 "24h Change %": "{:+.2f}%",
                 "Market Cap": "${:,.0f}",
             }),
-            use_container_width=True,
+            width='stretch',
         )
 
 with tab_tests:

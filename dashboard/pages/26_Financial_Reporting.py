@@ -73,7 +73,7 @@ with tab_app:
     with st.expander("Summary Statistics"):
         stats = df[["Open", "High", "Low", "Close", "Volume"]].describe().T
         stats["range"] = stats["max"] - stats["min"]
-        st.dataframe(stats.style.format("{:.2f}"), use_container_width=True)
+        st.dataframe(stats.style.format("{:.2f}"), width='stretch')
 
     # -- Charts -------------------------------------------------------------------
     chart_tab1, chart_tab2 = st.tabs(["Price History", "Daily Returns Distribution"])
@@ -81,7 +81,7 @@ with tab_app:
     with chart_tab1:
         fig_price = px.line(df, x=df.index, y="Close", title=f"{ticker} Closing Price")
         fig_price.update_layout(xaxis_title="Date", yaxis_title="Price ($)")
-        st.plotly_chart(fig_price, use_container_width=True)
+        st.plotly_chart(fig_price, width='stretch')
 
     with chart_tab2:
         returns_clean = df["Daily_Return"].dropna()
@@ -91,7 +91,7 @@ with tab_app:
             labels={"value": "Daily Return", "count": "Frequency"},
         )
         fig_hist.update_layout(showlegend=False)
-        st.plotly_chart(fig_hist, use_container_width=True)
+        st.plotly_chart(fig_hist, width='stretch')
 
     # -- Export Data --------------------------------------------------------------
     st.subheader("Export Data")

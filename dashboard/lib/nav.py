@@ -1,28 +1,7 @@
 """Shared sidebar navigation for all dashboard pages."""
 
-import logging
 from pathlib import Path
 import streamlit as st
-
-
-# Silence Streamlit deprecation noise that spams Cloud logs every page render.
-# We can't migrate yet — local Streamlit is older than Cloud and the
-# replacements (width="stretch", st.iframe) either don't exist locally or
-# don't have a drop-in equivalent for inline HTML. Revisit when Streamlit
-# ships stable replacements that work across versions.
-class _DeprecationNoiseFilter(logging.Filter):
-    _NOISY_SUBSTRINGS = (
-        "use_container_width",
-        "st.components.v1.html",
-    )
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        msg = record.getMessage()
-        return not any(s in msg for s in self._NOISY_SUBSTRINGS)
-
-
-for _logger_name in ("streamlit", "streamlit.runtime", "streamlit.elements"):
-    logging.getLogger(_logger_name).addFilter(_DeprecationNoiseFilter())
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 

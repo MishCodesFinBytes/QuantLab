@@ -98,7 +98,7 @@ with tab_app:
             labels={"month": "Month", "balance": "Balance ($)"},
         )
         fig.update_layout(hovermode="x unified")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with tab2:
         fig2 = px.bar(
@@ -107,14 +107,14 @@ with tab_app:
             labels={"value": "Amount ($)", "month": "Month", "variable": "Component"},
             barmode="stack",
         )
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
     # ── Full schedule ──────────────────────────────────────────────────────────
     with st.expander("Full Amortization Schedule"):
         display_df = df.copy()
         for col in ["payment", "principal", "interest", "balance"]:
             display_df[col] = display_df[col].map(lambda x: f"${x:,.2f}")
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        st.dataframe(display_df, width='stretch', hide_index=True)
 
 with tab_tests:
     render_test_tab("test_credit_card_calculator.py")

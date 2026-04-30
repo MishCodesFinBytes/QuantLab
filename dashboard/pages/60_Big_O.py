@@ -37,7 +37,7 @@ with col_run:
     run_clicked = st.button(
         "\u25b6 Run benchmark",
         key="bigo_run_btn",
-        use_container_width=True,
+        width='stretch',
     )
 
 problem = PROBLEMS[chosen_key]
@@ -55,7 +55,7 @@ result = st.session_state.get(cache_key)
 if result is None:
     st.info("Click **Run benchmark** to start.")
 else:
-    st.plotly_chart(build_complexity_chart(result), use_container_width=True)
+    st.plotly_chart(build_complexity_chart(result), width='stretch')
 
     st.markdown("#### Per-algorithm detail")
     for vr in result.variant_results:
@@ -71,7 +71,7 @@ else:
                     f"\u26a0 Results disagreed with other variants at "
                     f"n={', '.join(str(n) for _, n in bad)}"
                 )
-            st.dataframe(card["rows"], use_container_width=True, hide_index=True)
+            st.dataframe(card["rows"], width='stretch', hide_index=True)
 
 # -- Tech stack ---------------------------------------------------------------
 render_tech_footer(["Python", "Plotly", "Streamlit"])

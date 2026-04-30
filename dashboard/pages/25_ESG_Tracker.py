@@ -158,7 +158,7 @@ with tab_app:
         display_cols = ["Company", "Ticker", "Sector", "E_Score", "S_Score", "G_Score", "ESG_Total"]
         st.dataframe(
             selected[display_cols].style.format({"ESG_Total": "{:.1f}"}),
-            use_container_width=True,
+            width='stretch',
         )
 
     # -- Charts --------------------------------------------------------------------
@@ -183,7 +183,7 @@ with tab_app:
             title="ESG Radar",
             height=500,
         )
-        st.plotly_chart(fig_radar, use_container_width=True)
+        st.plotly_chart(fig_radar, width='stretch')
 
     with chart_tab2:
         sector_avg = (
@@ -202,7 +202,7 @@ with tab_app:
             color_discrete_sequence=["#2ecc71", "#3498db", "#9b59b6"],
         )
         fig_bar.update_layout(yaxis_range=[0, 100])
-        st.plotly_chart(fig_bar, use_container_width=True)
+        st.plotly_chart(fig_bar, width='stretch')
 
 with tab_tests:
     render_test_tab("test_esg_tracker.py")
